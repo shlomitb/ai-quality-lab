@@ -1,0 +1,40 @@
+
+[
+    {
+        "id": 1,
+        "ai_response": "Yes, you can return an unopened product within 30 days.",
+        "expected_judge_evaluation": "PASS",
+        "description": "Clearly correct answer."
+    },
+    {
+        "id": 2,
+        "ai_response": "No, products cannot be returned after 14 days.",
+        "expected_judge_evaluation": "FAIL",
+        "description": "Incorrectly applies the opened-product rule to an unopened product."
+    },
+    {
+        "id": 3,
+        "ai_response": "Yes, you can return an unopened product within 30 days. Refunds are issued to the original payment method.",
+        "expected_judge_evaluation": "PASS",
+        "description": "Correct answer with additional information that is supported by the policy."
+    },
+    {
+        "id": 4,
+        "ai_response": "Yes, you can return an unopened product within 30 days. However, products purchased more than 25 days ago require manager approval.",
+        "expected_judge_evaluation": "FAIL",
+        "description": "The main answer is correct, but the AI invents an unsupported policy rule."
+    },
+    {
+        "id": 5,
+        "ai_response": "Yes, you can return it, but only if the product is defective.",
+        "expected_judge_evaluation": "FAIL",
+        "description": "Incorrectly adds a requirement that applies only to opened products."
+    },
+    {
+        "id": 6,
+        "ai_response": "Yes, you can return an unopened product after 20 days.",
+        "expected_judge_evaluation": "PASS",
+        "description": "Correct answer even though it does not repeat the full 30-day rule."
+    }
+]
+

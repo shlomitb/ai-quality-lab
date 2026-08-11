@@ -76,6 +76,16 @@ def evaluate_behavior_with_llm(
 def evaluate_response(client, policy, question, ai_response, evaluation_criteria):
     """
     The second llm call will judge the response of the first llm call
+
+    models:
+    gemini-3.6-flash - the best to try for LLM judge
+    gemini-3.5-flash - Very strong general model
+    gemini-3.5-flash-lite: cheap/fast
+    gemini-3.1-flash-lite: good inexpesive option
+    gemini-3.6-flashlite: cheap/fast
+    gemini-2.5-pro: More capable reasoning model; worth experimenting with
+    gemini-2.5-flash: have used it Older generation
+    gemini-2.5-flash-lite: have used it Older generation
     """
 
     prompt = f"""
@@ -111,7 +121,7 @@ def evaluate_response(client, policy, question, ai_response, evaluation_criteria
     # print("prompt: ", prompt)
 
     result = client.models.generate_content(
-        model="gemini-2.5-flash",
+        model="gemini-3.6-flash",
         contents=prompt
     )
 
@@ -120,6 +130,23 @@ def evaluate_response(client, policy, question, ai_response, evaluation_criteria
     print("JUDGE RESPONSE:", repr(result.text))
     return result.text.strip()
 
+
+def calculate_accuracy(expected, actual):
+
+
+    if len(expected) != len(actual):
+        raise ValueError("Expected and actual results must have the same length.")
+
+    if not expected:
+        return 0.0
+
+    correct = 0
+
+    for expected_value, actual_value in zip(expected, actual):
+        if expected_value == actual_value:
+            correct += 1
+
+    return correct / len(expected)
 
 
 def main():
