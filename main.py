@@ -16,6 +16,29 @@ POLICY = """
         Refunds are issued to the original payment method.
         """
 
+def get_prompt(question: str) -> str:
+    return f"""
+       You are a customer-support assistant.
+
+       Answer the customer's question using ONLY the following
+       company return policy.
+
+       Company policy:
+       {POLICY}
+
+       Customer question:
+       {question}
+       
+       If the policy does not contain enough information
+        to answer the question, do not guess.
+       """
+
+ADD_FOR_FUZZY_PROMPT = "If the policy does not explicitly answer the question, make your best guess."
+
+ADD_FOR_CLEAR_PROMPT = """If the policy does not contain enough information
+        to answer the question, do not guess.
+       """
+
 def ask_llm(client, prompt):
     return client.models.generate_content(
         model="gemini-2.5-flash-lite",
@@ -54,26 +77,25 @@ def main():
     if data is None:
         return
 
-    for item in data:
 
-        question = item["question"]
+    #ask 1 prompt
+    question = "I bought the product 10 days ago. Can I return it?"
+    prompt = get_prompt(question) + ADD_FOR_CLEAR_PROMPT
 
-        prompt = f"""
-            You are a customer-support assistant.
-    
-            Answer the customer's question using ONLY the following
-            company return policy.
-    
-            Company policy:
-            {POLICY}
-    
-            Customer question:
-            {question}
-            """
-        response = ask_llm(client, prompt)
-        print(f"\nQuestion: {question}\n AI: {response.text}")
+    print(f"prompt: {prompt}")
+    response = ask_llm(client, prompt)
+    print(f"\nQuestion: {question}\n AI: {response.text}")
 
-        print("-------------------------------")
+    # ask multiple prompts
+    # print("-------------------------------")
+    # for item in data:
+    #
+    #     question = item["question"]
+    #     prompt = get_prompt(question)
+    #     response = ask_llm(client, prompt)
+    #     print(f"\nQuestion: {question}\n AI: {response.text}")
+    #
+    #     print("-------------------------------")
 
 
 

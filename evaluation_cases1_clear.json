@@ -1,0 +1,39 @@
+[
+    {
+        "question": "Can I return an unopened product after 20 days?",
+        "expected": "yes"
+    },
+    {
+        "question": "Can I return an unopened product after 35 days?",
+        "expected": "no"
+    },
+    {
+        "question": "Can I return an opened product after 10 days if it is defective?",
+        "expected": "yes"
+    },
+    {
+        "question": "Can I return an opened product after 10 days if it is not defective?",
+        "expected": "no"
+    },
+    {
+        "question": "Can I return an opened product after 20 days if it is defective?",
+        "expected": "no"
+    },
+    {
+        "question": "Can I return a digital product?",
+        "expected": "no"
+    },
+    {
+        "question": "Where will my refund be sent?",
+        "expected": "original payment method"
+    },
+    {
+        "question": "Can I return an unopened product after 31 days?",
+        "expected": "no"
+    },
+    {
+        "question": "I opened the product 10 days ago, but it isn't defective. Can I return it?",
+        "expected": "no"
+    }
+
+]

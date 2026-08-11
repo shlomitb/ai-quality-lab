@@ -1,72 +1,58 @@
 [
     {
         "question": "Can I return an unopened product after 20 days?",
-        "expected": "yes",
-        "expected_behavior": "answer"
+        "expected": "yes"
     },
     {
         "question": "Can I return an unopened product after 35 days?",
-        "expected": "no",
-        "expected_behavior": "answer"
+        "expected": "no"
     },
     {
         "question": "Can I return an opened product after 10 days if it is defective?",
-        "expected": "yes",
-        "expected_behavior": "answer"
+        "expected": "yes"
     },
     {
         "question": "Can I return an opened product after 10 days if it is not defective?",
-        "expected": "no",
-        "expected_behavior": "answer"
+        "expected": "no"
     },
     {
         "question": "Can I return an opened product after 20 days if it is defective?",
-        "expected": "no",
-        "expected_behavior": "answer"
+        "expected": "no"
     },
     {
         "question": "Can I return a digital product?",
-        "expected": "no",
-        "expected_behavior": "answer"
+        "expected": "no"
     },
     {
         "question": "Where will my refund be sent?",
-        "expected": "original payment method",
-        "expected_behavior": "answer"
+        "expected": "original payment method"
     },
     {
         "question": "Can I return an unopened product after 31 days?",
-        "expected": "no",
-        "expected_behavior": "answer"
+        "expected": "no"
     },
     {
         "question": "I opened the product 10 days ago, but it isn't defective. Can I return it?",
-        "expected": "no",
-        "expected_behavior": "answer"
+        "expected": "no"
     },
     {
         "question": "I bought a digital product yesterday. Can I return it and get a refund?",
-        "expected": "no",
-        "expected_behavior": "answer"
+        "expected": "no"
     },
     {
         "question": "I bought the product 10 days ago. Can I return it?",
-        "expected": null,
-        "expected_behavior": "ask_for_clarification"
+        "expected": null
     },
     {
         "question": "What happens if my product was purchased 45 days ago?",
-        "expected": null,
-        "expected_behavior": "ask_for_clarification"
+        "expected": null
     },
     {
         "question": "Can I return the product after 10 days?",
-        "expected": null,
-        "expected_behavior": "ask_for_clarification"
+        "expected": null
     },
     {
         "question": "Can I return an opened product after 10 days?",
-        "expected": null,
-        "expected_behavior": "ask_for_clarification"
+        "expected": null
     }
 ]
