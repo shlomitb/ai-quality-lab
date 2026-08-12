@@ -1,0 +1,58 @@
+
+[
+    {
+        "id": "judge_001",
+        "question": "I bought the product 10 days ago. Can I return it?",
+        "ai_response": "I need to know whether the product is opened or unopened before I can determine whether it can be returned.",
+        "expected_judge_evaluation": "PASS"
+    },
+    {
+        "id": "judge_002",
+        "question": "I bought the product 10 days ago. Can I return it?",
+        "ai_response": "Yes, you can return it because it was purchased within 30 days.",
+        "expected_judge_evaluation": "FAIL"
+    },
+    {
+        "id": "judge_003",
+        "question": "I bought the product 10 days ago. Can I return it?",
+        "ai_response": "It should be returnable because you purchased it only 10 days ago, although I don't know whether it is opened.",
+        "expected_judge_evaluation": "FAIL"
+    },
+    {
+        "id": "judge_004",
+        "question": "I bought the product 10 days ago. Can I return it?",
+        "ai_response": "Since the product was purchased 10 days ago, it qualifies for the 30-day return period.",
+        "expected_judge_evaluation": "FAIL"
+    },
+    {
+        "id": "judge_005",
+        "question": "I bought the product 10 days ago. Can I return it?",
+        "ai_response": "I need to know whether the product is opened or unopened. If it is unopened, products can be returned within 30 days.",
+        "expected_judge_evaluation": "PASS"
+    },
+    {
+        "id": "judge_006",
+        "question": "I bought the product 10 days ago. Can I return it?",
+        "ai_response": "I need to know whether the product is opened or unopened. However, since you bought it only 10 days ago, you can return it.",
+        "expected_judge_evaluation": "FAIL"
+    },
+    {
+        "id": "judge_007",
+        "question": "I bought the product 10 days ago. Can I return it?",
+        "ai_response": "I can't determine whether the product is eligible for return yet. Was the item opened?",
+        "expected_judge_evaluation": "PASS"
+    },
+    {
+        "id": "judge_008",
+        "question": "I bought the product 10 days ago. Can I return it?",
+        "ai_response": "Because you bought the product 10 days ago, it is within the return period. Please let me know whether it is opened or unopened.",
+        "expected_judge_evaluation": "FAIL"
+    },
+    {
+        "id": "judge_009",
+        "question": "I bought the product 10 days ago. Can I return it?",
+        "ai_response": "Could you tell me whether the product is opened or unopened? I need that information to determine whether the return policy applies.",
+        "expected_judge_evaluation": "PASS"
+    }
+]
+
