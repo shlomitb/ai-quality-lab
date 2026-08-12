@@ -1,3 +1,7 @@
+from google.genai import types
+from typing import Type
+from evaluation_result import EvaluationResult
+
 """
     Requirement: Handling insufficient information
 
@@ -19,6 +23,40 @@ CLARIFICATION_KEYWORDS = [
     "please tell me",
     "could you tell me",
 ]
+
+JUDGE_PROMPT = prompt = """
+        You are an AI quality evaluator.
+    
+        Your job is to evaluate whether an AI customer-support
+        response satisfies the specified evaluation criteria
+        and follows the company return policy.
+    
+        Company policy:
+        {policy}
+    
+        Customer question:
+        {question}
+    
+        AI response:
+        {response}
+    
+        Evaluation criteria:
+        {evaluation_criteria}
+    
+        PASS if the AI response satisfies all of the evaluation
+        criteria and does not contradict the company policy.
+    
+        FAIL if the AI response violates the policy, gives
+        unsupported information, fails to follow the required
+        behavior, or does not satisfy the evaluation criteria.
+    
+        Return your evaluation as JSON with exactly these fields:
+    
+        {
+            "result": "PASS" or "FAIL",
+            "reason": "brief explanation"
+        }
+    """
 
 def evaluate_behavior(response, expected_behavior):
     """
@@ -72,9 +110,7 @@ def evaluate_behavior_with_llm(
 
     return result.text.strip()
 
-
-def evaluate_response(client, policy, question, ai_response, evaluation_criteria):
-    """
+"""
     The second llm call will judge the response of the first llm call
 
     models:
@@ -87,6 +123,8 @@ def evaluate_response(client, policy, question, ai_response, evaluation_criteria
     gemini-2.5-flash: have used it Older generation
     gemini-2.5-flash-lite: have used it Older generation
     """
+
+def evaluate_response(client, policy, question, ai_response, evaluation_criteria):
 
     prompt = f"""
     You are an AI quality evaluator.
@@ -112,23 +150,30 @@ def evaluate_response(client, policy, question, ai_response, evaluation_criteria
     Do not penalize the AI response for using different wording
     from the evaluation criteria if the meaning is correct.
 
-    Return only one of these:
-    PASS
-    FAIL
+    Return a structured evaluation containing:
+    - result: "PASS" or "FAIL"
+    - reason: a brief explanation of why the response passed or failed
     """
 
 
     # print("prompt: ", prompt)
 
+    config = types.GenerateContentConfig(
+        response_mime_type="application/json",
+        response_schema=EvaluationResult,
+    )
+
     result = client.models.generate_content(
         model="gemini-3.6-flash",
-        contents=prompt
+        contents=prompt,
+        config=config
     )
 
     # return result.text.strip()
 
-    print("JUDGE RESPONSE:", repr(result.text))
-    return result.text.strip()
+    print("JUDGE RESPONSE:", result.parsed)
+
+    return result.parsed
 
 
 def calculate_accuracy(expected, actual):
@@ -150,20 +195,27 @@ def calculate_accuracy(expected, actual):
 
 
 def main():
-    print(evaluate_behavior(
-        "I need to know whether the product is opened.",
-        "ask_for_clarification"
-    ))
-
-    print(evaluate_behavior(
-        "Yes, you can return the unopened product within 30 days.",
-        "answer"
-    ))
+    # print(evaluate_behavior(
+    #     "I need to know whether the product is opened.",
+    #     "ask_for_clarification"
+    # ))
+    #
+    # print(evaluate_behavior(
+    #     "Yes, you can return the unopened product within 30 days.",
+    #     "answer"
+    # ))
+    #
+    # print(evaluate_behavior(
+    #     "Could you tell me whether the product is defective?",
+    #     "ask_for_clarification"
+    # ))
 
     print(evaluate_behavior(
         "Could you tell me whether the product is defective?",
         "ask_for_clarification"
     ))
+
+
 
 
 if __name__ == "__main__":

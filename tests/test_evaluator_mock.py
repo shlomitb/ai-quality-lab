@@ -1,6 +1,6 @@
 from unittest.mock import Mock
-
 from src.evaluator import evaluate_response
+from evaluation_result import EvaluationResult
 
 
 """
@@ -14,7 +14,10 @@ It does not test whether Gemini itself is a good judge.
 def test_evaluator_returns_pass():
     client = Mock()
 
-    client.models.generate_content.return_value.text = "PASS"
+    client.models.generate_content.return_value.parsed = EvaluationResult(
+        result="PASS",
+        reason="The AI correctly stated that an unopened product can be returned within 30 days."
+    )
 
     result = evaluate_response(
         client=client,
@@ -27,13 +30,17 @@ def test_evaluator_returns_pass():
         )
     )
 
-    assert result == "PASS"
+    assert result.result == "PASS"
 
 
 def test_evaluator_returns_fail():
     client = Mock()
 
-    client.models.generate_content.return_value.text = "FAIL"
+
+    client.models.generate_content.return_value.parsed = EvaluationResult(
+        result="FAIL",
+        reason="The AI correctly stated that an unopened product can be returned within 30 days."
+    )
 
     result = evaluate_response(
         client=client,
@@ -46,13 +53,16 @@ def test_evaluator_returns_fail():
         )
     )
 
-    assert result == "FAIL"
+    assert result.result == "FAIL"
 
 
 def test_evaluator_calls_llm():
     client = Mock()
 
-    client.models.generate_content.return_value.text = "PASS"
+    client.models.generate_content.return_value.parsed = EvaluationResult(
+        result="PASS",
+        reason="The AI correctly stated that an unopened product can be returned within 30 days."
+    )
 
     question = "Can I return an unopened product after 20 days?"
     ai_response = "Yes, you can return it."

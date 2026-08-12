@@ -1,6 +1,7 @@
 
 import json
 from unittest.mock import Mock
+from evaluation_result import EvaluationResult
 
 from src.evaluator import evaluate_response
 
@@ -22,8 +23,9 @@ def test_mock_golden_cases():
         client = Mock()
 
         # Pretend the LLM judge returned the expected result.
-        client.models.generate_content.return_value.text = (
-            case["expected_judge_evaluation"]
+        client.models.generate_content.return_value.parsed = EvaluationResult(
+            result=case["expected_judge_evaluation"],
+            reason="Mocked judge response."
         )
 
         result = evaluate_response(
@@ -44,4 +46,5 @@ def test_mock_golden_cases():
             )
         )
 
-        assert result == case["expected_judge_evaluation"]
+        assert isinstance(result, EvaluationResult)
+        assert result.result == case["expected_judge_evaluation"]

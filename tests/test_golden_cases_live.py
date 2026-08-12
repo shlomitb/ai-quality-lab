@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from google import genai
 
 from src.evaluator import evaluate_response
+from evaluation_result import EvaluationResult
 
 
 POLICY = """
@@ -52,7 +53,9 @@ def load_golden_cases():
 #         print(f"\nGolden case {case['id']}")
 #         print(f"AI response: {case['ai_response']}")
 #         print(f"Expected judge evaluation: {case['expected_judge_evaluation']}")
-#         print(f"Actual judge evaluation: {evaluation}")
+#         print(f"Actual judge result: {evaluation.result}")
+#         print(f"Judge reason: {evaluation.reason}")
 #
-#         assert evaluation == case["expected_judge_evaluation"]
-
+#         assert evaluation.result == case["expected_judge_evaluation"]
+#
+#
