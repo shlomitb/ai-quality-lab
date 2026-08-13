@@ -4,7 +4,10 @@ from agent import answer_customer
 from evaluator import evaluate_response
 from llm_client import create_client
 from tools import get_return_policy
+from report_generator import generate_report
 
+
+MAX_CASES = 4
 
 def load_evaluation_cases():
     with open("../data/evaluation_cases.json") as file:
@@ -12,61 +15,50 @@ def load_evaluation_cases():
 
 
 def main():
-
     client = create_client()
-
     cases = load_evaluation_cases()
+    if MAX_CASES:
+        cases = cases[:MAX_CASES]
 
-    # Get the policy once
     policy = get_return_policy()
 
-    case = cases[7]
-    question = case["question"]
-    # 1. Run the agent
-    ai_response = answer_customer(
-        client=client,
-        question=question
-    )
+    results = []
 
-    # 2. Judge the agent's response
-    evaluation = evaluate_response(
-        client=client,
-        policy=policy,
-        question=question,
-        ai_response=ai_response,
-        evaluation_criteria=case["evaluation_criteria"]
-    )
+    for case in cases:
+        ai_response = answer_customer(
+            client=client,
+            question=case["question"]
+        )
 
-    print("\n" + "=" * 60)
-    print(f"QUESTION: {question}")
-    print(f"\nAI RESPONSE:\n{ai_response}")
-    print(f"\nJUDGE: {evaluation.result}")
-    print(f"REASON: {evaluation.reason}")
+        evaluation = evaluate_response(
+            client=client,
+            policy=policy,
+            question=case["question"],
+            ai_response=ai_response,
+            evaluation_criteria=case["evaluation_criteria"]
+        )
 
-    print(f"EXPECTED BEHAVIOR: {case['expected_behavior']}")
-    print(f"ACTUAL BEHAVIOR:   {evaluation.behavior}")
+        results.append({
+            "question": case["question"],
+            "expected_behavior": case["expected_behavior"],
+            "actual_behavior": evaluation.behavior,
+            "behavior_correct": (
+                evaluation.behavior == case["expected_behavior"]
+            ),
+            "expected_answer": case["expected"],
+            "actual_answer": evaluation.answer,
+            "answer_correct": (
+                evaluation.answer == case["expected"]
+            ),
+            "expected_judge": case["expected_judge_evaluation"],
+            "actual_judge": evaluation.result,
+            "judge_correct": (
+                evaluation.result == case["expected_judge_evaluation"]
+            ),
+            "reason": evaluation.reason,
+        })
 
-    if evaluation.behavior == case["expected_behavior"]:
-        print("BEHAVIOR CORRECT: YES")
-    else:
-        print("BEHAVIOR CORRECT: NO")
-
-    print(f"EXPECTED ANSWER:   {case['expected']}")
-    print(f"ACTUAL ANSWER:     {evaluation.answer}")
-
-    if evaluation.answer == case["expected"]:
-        print("ANSWER CORRECT:    YES")
-    else:
-        print("ANSWER CORRECT:    NO")
-
-    print(f"JUDGE RESULT:      {evaluation.result}")
-
-    expected_judge_result = case["expected_judge_evaluation"]
-
-    if evaluation.result == expected_judge_result:
-        print("JUDGE CORRECT: YES")
-    else:
-        print("JUDGE CORRECT: NO")
+    generate_report(results)
 
 
 if __name__ == "__main__":
