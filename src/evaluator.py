@@ -1,5 +1,6 @@
 from google.genai import types
 
+from src.config import JUDGE_MODEL
 from src.evaluation_result import EvaluationResult
 from src.llm import ask_llm
 
@@ -10,7 +11,7 @@ def evaluate_response(
     question,
     ai_response,
     evaluation_criteria,
-    model="gemini-3.6-flash"
+    model=JUDGE_MODEL
 ):
 
     prompt = f"""
