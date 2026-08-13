@@ -1,9 +1,7 @@
+import json
 
-import os
-
-from dotenv import load_dotenv
-from google import genai
-
+from llm_client import create_client
+from llm import ask_llm
 from evaluator import evaluate_response
 
 
@@ -19,69 +17,40 @@ Refunds are issued to the original payment method.
 """
 
 
+def load_evaluation_cases():
+    with open("data/evaluation_cases_small.json", "r") as file:
+        return json.load(file)
+
+
 def main():
-    load_dotenv()
+    client = create_client()
 
-    api_key = os.getenv("GEMINI_API_KEY")
+    cases = load_evaluation_cases()
 
-    if not api_key:
-        raise ValueError("GEMINI_API_KEY was not found.")
+    for case in cases:
 
-    client = genai.Client(api_key=api_key)
+        # 1. First LLM answers the customer
+        ai_response = ask_llm(
+            client=client,
+            policy=POLICY,
+            question=case["question"]
+        )
 
-    # -------------------------------------------------
-    # Test 1: This response should PASS
-    # -------------------------------------------------
+        # 2. Second LLM judges the answer
+        evaluation = evaluate_response(
+            client=client,
+            policy=POLICY,
+            question=case["question"],
+            ai_response=ai_response,
+            evaluation_criteria=case["evaluation_criteria"]
+        )
 
-    question = "I bought the product 10 days ago. Can I return it?"
-
-    ai_response = (
-        "I need to know whether the product is opened or unopened "
-        "before I can determine whether it can be returned."
-    )
-
-    evaluation_criteria = (
-        "The AI should not guess because the question does not "
-        "specify whether the product is opened or unopened. "
-        "It should ask for the missing information."
-    )
-
-    result = evaluate_response(
-        client,
-        POLICY,
-        question,
-        ai_response,
-        evaluation_criteria
-    )
-
-    print("\n--- TEST 1 ---")
-    print("Result:", result.result)
-    print("Reason:", result.reason)
-
-    # -------------------------------------------------
-    # Test 2: This response should FAIL
-    # -------------------------------------------------
-
-    question = "I bought the product 10 days ago. Can I return it?"
-
-    ai_response = (
-        "Yes, you can return it because it is within the "
-        "30-day return period."
-    )
-
-    result = evaluate_response(
-        client,
-        POLICY,
-        question,
-        ai_response,
-        evaluation_criteria
-    )
-
-    print("\n--- TEST 2 ---")
-    print("Result:", result.result)
-    print("Reason:", result.reason)
+        print("\n" + "=" * 60)
+        print(f"QUESTION: {case['question']}")
+        print(f"\nAI RESPONSE:\n{ai_response}")
+        print(f"\nJUDGE: {evaluation.result}")
+        print(f"REASON: {evaluation.reason}")
 
 
 if __name__ == "__main__":
     main()
-

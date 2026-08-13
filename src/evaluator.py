@@ -1,222 +1,73 @@
 from google.genai import types
-from typing import Type
+
 from evaluation_result import EvaluationResult
-
-"""
-    Requirement: Handling insufficient information
-
-    When the policy does not contain enough information
-    to determine an answer:
-
-    1. The AI must not make an unsupported assumption.
-    2. The AI must explain what information is missing.
-    3. The AI must ask the customer for the missing information.
-
-    Simple keyword matching is not a reliable enough way to test for AI evaluation.
-    Since the response could contain a keyword phrase that is in a different context, when the response may be good.
+from llm_client import call_llm
 """
 
+LLM judge
 
-CLARIFICATION_KEYWORDS = [
-    "need to know",
-    "more information",
-    "please tell me",
-    "could you tell me",
-]
+    build evaluation prompt
+    configure structured output
+    call_llm()
+    return EvaluationResult
 
-JUDGE_PROMPT = prompt = """
-        You are an AI quality evaluator.
-    
-        Your job is to evaluate whether an AI customer-support
-        response satisfies the specified evaluation criteria
-        and follows the company return policy.
-    
-        Company policy:
-        {policy}
-    
-        Customer question:
-        {question}
-    
-        AI response:
-        {response}
-    
-        Evaluation criteria:
-        {evaluation_criteria}
-    
-        PASS if the AI response satisfies all of the evaluation
-        criteria and does not contradict the company policy.
-    
-        FAIL if the AI response violates the policy, gives
-        unsupported information, fails to follow the required
-        behavior, or does not satisfy the evaluation criteria.
-    
-        Return your evaluation as JSON with exactly these fields:
-    
-        {
-            "result": "PASS" or "FAIL",
-            "reason": "brief explanation"
-        }
-    """
+"""
 
-def evaluate_behavior(response, expected_behavior):
-    """
-    checks for keywords in response and if they appear returns ask for clarification instead of the answer
-
-    can make mistakes if a keyword phrase is found in the response but the meaning is different.
-    :param response:
-    :param expected_behavior:
-    :return:
-    """
-    for phrase in CLARIFICATION_KEYWORDS:
-        if phrase in response.lower():
-            return "ask_for_clarification"
-    return "answer"
-
-def evaluate_behavior_with_llm(
+def evaluate_response(
     client,
     policy,
     question,
     ai_response,
-    expected_behavior
+    evaluation_criteria
 ):
-    prompt = f"""
-    You are an AI quality evaluator.
-
-    Determine whether the AI response demonstrates
-    the expected behavior.
-
-    Company policy:
-    {policy}
-
-    Customer question:
-    {question}
-
-    AI response:
-    {ai_response}
-
-    Expected behavior:
-    {expected_behavior}
-
-    Return only:
-    PASS
-    or
-    FAIL
     """
+    Use an LLM judge to evaluate an AI response.
 
-    result = client.models.generate_content(
-        model="gemini-2.5-flash-lite",
-        contents=prompt
-    )
-
-    return result.text.strip()
-
-"""
-    The second llm call will judge the response of the first llm call
-
-    models:
-    gemini-3.6-flash - the best to try for LLM judge
-    gemini-3.5-flash - Very strong general model
-    gemini-3.5-flash-lite: cheap/fast
-    gemini-3.1-flash-lite: good inexpesive option
-    gemini-3.6-flashlite: cheap/fast
-    gemini-2.5-pro: More capable reasoning model; worth experimenting with
-    gemini-2.5-flash: have used it Older generation
-    gemini-2.5-flash-lite: have used it Older generation
+    The judge evaluates the response using only the
+    company policy and evaluation criteria.
     """
-
-def evaluate_response(client, policy, question, ai_response, evaluation_criteria):
 
     prompt = f"""
     You are an AI quality evaluator.
-
+    
     Evaluate the AI response using ONLY the company policy
     and the evaluation criteria provided below.
-
+    
     Company policy:
     {policy}
-
+    
     Customer question:
     {question}
-
+    
     AI response:
     {ai_response}
-
+    
     Evaluation criteria:
     {evaluation_criteria}
-
+    
     Determine whether the AI response is consistent with
     the company policy and satisfies the evaluation criteria.
-
+    
     Do not penalize the AI response for using different wording
     from the evaluation criteria if the meaning is correct.
-
+    
     Return a structured evaluation containing:
     - result: "PASS" or "FAIL"
     - reason: a brief explanation of why the response passed or failed
     """
-
-
-    # print("prompt: ", prompt)
 
     config = types.GenerateContentConfig(
         response_mime_type="application/json",
         response_schema=EvaluationResult,
     )
 
-    result = client.models.generate_content(
-        model="gemini-3.6-flash",
-        contents=prompt,
+    # gemini-3.6-flash
+    # gemini-3.5-flash
+    result = call_llm(
+        client=client,
+        model="gemini-3.5-flash-lite",
+        prompt=prompt,
         config=config
     )
 
-    # return result.text.strip()
-
-    print("JUDGE RESPONSE:", result.parsed)
-
     return result.parsed
-
-
-def calculate_accuracy(expected, actual):
-
-
-    if len(expected) != len(actual):
-        raise ValueError("Expected and actual results must have the same length.")
-
-    if not expected:
-        return 0.0
-
-    correct = 0
-
-    for expected_value, actual_value in zip(expected, actual):
-        if expected_value == actual_value:
-            correct += 1
-
-    return correct / len(expected)
-
-
-def main():
-    # print(evaluate_behavior(
-    #     "I need to know whether the product is opened.",
-    #     "ask_for_clarification"
-    # ))
-    #
-    # print(evaluate_behavior(
-    #     "Yes, you can return the unopened product within 30 days.",
-    #     "answer"
-    # ))
-    #
-    # print(evaluate_behavior(
-    #     "Could you tell me whether the product is defective?",
-    #     "ask_for_clarification"
-    # ))
-
-    print(evaluate_behavior(
-        "Could you tell me whether the product is defective?",
-        "ask_for_clarification"
-    ))
-
-
-
-
-if __name__ == "__main__":
-    main()

@@ -13,7 +13,7 @@
         "expected": "no",
         "expected_behavior": "answer",
         "evaluation_criteria": "The AI should state that an opened product purchased 20 days ago cannot be returned because opened products can only be returned within 14 days, even if the product is defective.",
-        "expected_judge_evaluation": "PASS",
+        "expected_judge_evaluation": "FAIL",
         "my_description_not_used": "Correctly applies the 14-day limit"
     },
     {
@@ -29,7 +29,7 @@
         "expected": null,
         "expected_behavior": "ask_for_clarification",
         "evaluation_criteria": "The AI should not give a yes/no answer because the policy allows opened products to be returned only if they are defective. The AI should ask whether the product is defective before determining whether it can be returned.",
-        "expected_judge_evaluation": "PASS",
+        "expected_judge_evaluation": "FAIL",
         "my_description_not_used": "Asks for the specific missing information"
     }
 ]
