@@ -15,7 +15,7 @@ def create_client():
     return genai.Client(api_key=api_key)
 
 
-def call_llm(client, model, prompt, config=None):
+def ask_llm(client, prompt, model="gemini-3.6-flash", config=None):
     response = client.models.generate_content(
         model=model,
         contents=prompt,

@@ -1,7 +1,5 @@
-import json
-
 from llm_client import create_client
-from llm import ask_llm
+from agent import answer_customer
 from evaluator import evaluate_response
 
 
@@ -17,43 +15,43 @@ Refunds are issued to the original payment method.
 """
 
 
-def load_evaluation_cases():
-    with open("data/evaluation_cases_small.json", "r") as file:
-        return json.load(file)
-
-
 def main():
+
     client = create_client()
 
-    cases = load_evaluation_cases()
+    # One customer question for now
+    question = "I bought the product 10 days ago. Can I return it?"
 
-    model = "gemini-3.6-flash"
+    evaluation_criteria = (
+        "The AI should not guess because the question does not "
+        "specify whether the product is opened or unopened. "
+        "It should ask for the missing information."
+    )
 
-    for case in cases:
+    # 1. Agent answers the customer
+    ai_response = answer_customer(
+        client=client,
+        policy=POLICY,
+        question=question
+    )
 
-        # 1. First LLM answers the customer
-        ai_response = ask_llm(
-            client=client,
-            policy=POLICY,
-            question=case["question"],
-            model=model
-        )
+    print("\nAI RESPONSE:")
+    print(ai_response)
 
-        # 2. Second LLM judges the answer
-        evaluation = evaluate_response(
-            client=client,
-            policy=POLICY,
-            question=case["question"],
-            ai_response=ai_response,
-            evaluation_criteria=case["evaluation_criteria"],
-            model=model
-        )
+    # 2. Judge evaluates the agent's response
+    evaluation = evaluate_response(
+        client=client,
+        policy=POLICY,
+        question=question,
+        ai_response=ai_response,
+        evaluation_criteria=evaluation_criteria
+    )
 
-        print("\n" + "=" * 60)
-        print(f"QUESTION: {case['question']}")
-        print(f"\nAI RESPONSE:\n{ai_response}")
-        print(f"\nJUDGE: {evaluation.result}")
-        print(f"REASON: {evaluation.reason}")
+    print("\nJUDGE:")
+    print(evaluation.result)
+
+    print("\nREASON:")
+    print(evaluation.reason)
 
 
 if __name__ == "__main__":

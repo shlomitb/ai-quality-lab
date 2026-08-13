@@ -1,7 +1,7 @@
 from google.genai import types
 
 from src.evaluation_result import EvaluationResult
-from src.llm_client import call_llm
+from src.llm import ask_llm
 
 
 def evaluate_response(
@@ -47,10 +47,10 @@ def evaluate_response(
         response_schema=EvaluationResult,
     )
 
-    response = call_llm(
+    response = ask_llm(
         client=client,
-        model=model,
         prompt=prompt,
+        model=model,
         config=config
     )
 

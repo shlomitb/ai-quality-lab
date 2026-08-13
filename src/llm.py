@@ -1,4 +1,4 @@
-from llm_client import call_llm
+
 
 
 """
@@ -13,24 +13,16 @@ build customer-support prompt
 #gemini-3.6-flash
 #gemini-3.5-flash
 
-def ask_llm(client, policy, question, model="gemini-3.6-flash"):
-
-    prompt = f"""
-    You are a customer-support assistant.
-    
-    Answer the customer's question using ONLY the company return policy.
-    
-    Company policy:
-    {policy}
-    
-    Customer question:
-    {question}
-    """
-
-    response = call_llm(
-        client=client,
+def ask_llm(
+    client,
+    prompt,
+    model="gemini-3.6-flash",
+    config=None
+):
+    response = client.models.generate_content(
         model=model,
-        prompt=prompt
+        contents=prompt,
+        config=config
     )
 
-    return response.text
+    return response
