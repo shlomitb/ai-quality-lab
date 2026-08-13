@@ -29,6 +29,7 @@ def answer_customer(client, question):
         tools=[get_return_policy]
     )
 
+
     response = ask_llm(
         client=client,
         prompt=prompt,

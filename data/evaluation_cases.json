@@ -1,106 +1,121 @@
-
 [
     {
         "question": "Can I return an unopened physical product after 20 days?",
         "expected": "yes",
         "expected_behavior": "answer",
-        "evaluation_criteria": "The AI should clearly state that an unopened physical product purchased 20 days ago can be returned because unopened products can be returned within 30 days."
+        "evaluation_criteria": "The AI should clearly state that an unopened physical product purchased 20 days ago can be returned because unopened products can be returned within 30 days.",
+        "expected_judge_evaluation": "PASS"
     },
     {
         "question": "Can I return an unopened product after 35 days?",
         "expected": "no",
         "expected_behavior": "answer",
-        "evaluation_criteria": "The AI should correctly state that an unopened product cannot be returned after the 30-day return period."
+        "evaluation_criteria": "The AI should correctly state that an unopened product cannot be returned after the 30-day return period.",
+        "expected_judge_evaluation": "PASS"
     },
     {
         "question": "Can I return an opened product after 10 days if it is defective?",
         "expected": "yes",
         "expected_behavior": "answer",
-        "evaluation_criteria": "The AI should correctly state that an opened product can be returned within 14 days if it is defective."
+        "evaluation_criteria": "The AI should correctly state that an opened product can be returned within 14 days if it is defective.",
+        "expected_judge_evaluation": "PASS"
     },
     {
         "question": "Can I return an opened product after 10 days if it is not defective?",
         "expected": "no",
         "expected_behavior": "answer",
-        "evaluation_criteria": "The AI should correctly state that an opened product can only be returned within 14 days if it is defective."
+        "evaluation_criteria": "The AI should correctly state that an opened product can only be returned within 14 days if it is defective.",
+        "expected_judge_evaluation": "PASS"
     },
     {
         "question": "Can I return an opened product after 20 days if it is defective?",
         "expected": "no",
         "expected_behavior": "answer",
-        "evaluation_criteria": "The AI should correctly apply the 14-day limit for opened products, even when the product is defective."
+        "evaluation_criteria": "The AI should correctly apply the 14-day limit for opened products, even when the product is defective.",
+        "expected_judge_evaluation": "PASS"
     },
     {
         "question": "Can I return a digital product?",
         "expected": "no",
         "expected_behavior": "answer",
-        "evaluation_criteria": "The AI should correctly state that digital products cannot be returned."
+        "evaluation_criteria": "The AI should correctly state that digital products cannot be returned.",
+        "expected_judge_evaluation": "PASS"
     },
     {
         "question": "Where will my refund be sent?",
         "expected": "original payment method",
         "expected_behavior": "answer",
-        "evaluation_criteria": "The AI should correctly state that refunds are issued to the original payment method."
+        "evaluation_criteria": "The AI should correctly state that refunds are issued to the original payment method.",
+        "expected_judge_evaluation": "PASS"
     },
     {
         "question": "Can I return an unopened product after 31 days?",
         "expected": "no",
         "expected_behavior": "answer",
-        "evaluation_criteria": "The AI should correctly state that an unopened product cannot be returned after the 30-day return period."
+        "evaluation_criteria": "The AI should correctly state that an unopened product cannot be returned after the 30-day return period.",
+        "expected_judge_evaluation": "PASS"
     },
     {
         "question": "I opened the product 10 days ago, but it isn't defective. Can I return it?",
         "expected": "no",
         "expected_behavior": "answer",
-        "evaluation_criteria": "The AI should correctly state that an opened product is only eligible for return within 14 days if it is defective."
+        "evaluation_criteria": "The AI should correctly state that an opened product is only eligible for return within 14 days if it is defective.",
+        "expected_judge_evaluation": "PASS"
     },
     {
         "question": "I bought a digital product yesterday. Can I return it and get a refund?",
         "expected": "no",
         "expected_behavior": "answer",
-        "evaluation_criteria": "The AI should correctly state that digital products cannot be returned. The purchase date does not change this policy."
+        "evaluation_criteria": "The AI should correctly state that digital products cannot be returned. The purchase date does not change this policy.",
+        "expected_judge_evaluation": "PASS"
     },
     {
         "question": "I bought the product 10 days ago. Can I return it?",
         "expected": null,
         "expected_behavior": "ask_for_clarification",
-        "evaluation_criteria": "The AI should not guess because the question does not specify whether the product is opened or unopened. It should ask for the missing information."
+        "evaluation_criteria": "The AI should not guess because the question does not specify whether the product is opened or unopened. It should ask for the missing information.",
+        "expected_judge_evaluation": "PASS"
     },
     {
         "question": "What happens if my product was purchased 45 days ago?",
         "expected": null,
         "expected_behavior": "ask_for_clarification",
-        "evaluation_criteria": "The AI should not make a definitive return decision because the question does not specify whether the product is opened or unopened. It should ask for the missing information."
+        "evaluation_criteria": "The AI should not make a definitive return decision because the question does not specify whether the product is opened or unopened. It should ask for the missing information.",
+        "expected_judge_evaluation": "PASS"
     },
     {
         "question": "Can I return the product after 10 days?",
         "expected": null,
         "expected_behavior": "ask_for_clarification",
-        "evaluation_criteria": "The AI should not guess because the question does not provide enough information about whether the product is opened, unopened, or defective. It should ask for the relevant missing information."
+        "evaluation_criteria": "The AI should not guess because the question does not provide enough information about whether the product is opened, unopened, or defective. It should ask for the relevant missing information.",
+        "expected_judge_evaluation": "PASS"
     },
     {
         "question": "Can I return an opened product after 10 days?",
         "expected": null,
         "expected_behavior": "ask_for_clarification",
-        "evaluation_criteria": "The AI should recognize that for an opened product the policy requires it to be defective, and should ask whether the product is defective."
+        "evaluation_criteria": "The AI should recognize that for an opened product the policy requires it to be defective, and should ask whether the product is defective.",
+        "expected_judge_evaluation": "PASS"
     },
     {
         "question": "Can I return an opened product after 20 days if defective?",
         "expected": "no",
         "expected_behavior": "answer",
-        "evaluation_criteria": "The AI should clearly state that an opened product purchased 20 days ago cannot be returned, even if it is defective, because opened defective products can only be returned within 14 days."
+        "evaluation_criteria": "The AI should clearly state that an opened product purchased 20 days ago cannot be returned, even if it is defective, because opened defective products can only be returned within 14 days.",
+        "expected_judge_evaluation": "PASS"
     },
     {
         "question": "Can I return the product after 20 days?",
         "expected": null,
         "expected_behavior": "ask_for_clarification",
-        "evaluation_criteria": "The AI should not give a definitive yes or no answer because the question does not specify whether the product is unopened, opened and defective, or digital. It should ask for the relevant missing information."
+        "evaluation_criteria": "The AI should not give a definitive yes or no answer because the question does not specify whether the product is unopened, opened and defective, or digital. It should ask for the relevant missing information.",
+        "expected_judge_evaluation": "PASS"
     },
     {
         "question": "Can I return an unopened product after 20 days?",
         "expected": null,
         "expected_behavior": "ask_for_clarification",
-        "evaluation_criteria": "The AI should recognize that the question does not specify whether the product is physical or digital. It should ask for clarification because digital products cannot be returned, while unopened physical products can be returned within 30 days."
+        "evaluation_criteria": "The AI should recognize that the question does not specify whether the product is physical or digital. It should ask for clarification because digital products cannot be returned, while unopened physical products can be returned within 30 days.",
+        "expected_judge_evaluation": "PASS"
     }
 ]
-
