@@ -20,7 +20,7 @@ def main():
     # Get the policy once
     policy = get_return_policy()
 
-    case = cases[4]
+    case = cases[7]
     question = case["question"]
     # 1. Run the agent
     ai_response = answer_customer(
@@ -44,7 +44,21 @@ def main():
     print(f"REASON: {evaluation.reason}")
 
     print(f"EXPECTED BEHAVIOR: {case['expected_behavior']}")
+    print(f"ACTUAL BEHAVIOR:   {evaluation.behavior}")
+
+    if evaluation.behavior == case["expected_behavior"]:
+        print("BEHAVIOR CORRECT: YES")
+    else:
+        print("BEHAVIOR CORRECT: NO")
+
     print(f"EXPECTED ANSWER:   {case['expected']}")
+    print(f"ACTUAL ANSWER:     {evaluation.answer}")
+
+    if evaluation.answer == case["expected"]:
+        print("ANSWER CORRECT:    YES")
+    else:
+        print("ANSWER CORRECT:    NO")
+
     print(f"JUDGE RESULT:      {evaluation.result}")
 
     expected_judge_result = case["expected_judge_evaluation"]

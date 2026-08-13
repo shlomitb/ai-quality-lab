@@ -40,6 +40,22 @@ def evaluate_response(
     
     Return a structured evaluation containing:
     - result: "PASS" or "FAIL"
+    - behavior: "answer" or "ask_for_clarification"
+    - reason: a brief explanation of why the response passed or failed
+    
+    Determine the behavior demonstrated by the AI response:
+    - "answer" if the AI gives a substantive answer or decision.
+    - "ask_for_clarification" if the AI asks for information needed before it can determine the answer.
+    
+    Determine the semantic answer given by the AI:
+    - "yes" if the AI's answer is yes
+    - "no" if the AI's answer is no
+    - "null" if the AI does not make a yes/no decision because clarification is needed
+    
+    Return a structured evaluation containing:
+    - result: "PASS" or "FAIL"
+    - behavior: "answer" or "ask_for_clarification"
+    - answer: "yes", "no", or null
     - reason: a brief explanation of why the response passed or failed
     """
 
