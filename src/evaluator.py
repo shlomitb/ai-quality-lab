@@ -1,31 +1,17 @@
 from google.genai import types
 
-from evaluation_result import EvaluationResult
-from llm_client import call_llm
-"""
+from src.evaluation_result import EvaluationResult
+from src.llm_client import call_llm
 
-LLM judge
-
-    build evaluation prompt
-    configure structured output
-    call_llm()
-    return EvaluationResult
-
-"""
 
 def evaluate_response(
     client,
     policy,
     question,
     ai_response,
-    evaluation_criteria
+    evaluation_criteria,
+    model="gemini-3.6-flash"
 ):
-    """
-    Use an LLM judge to evaluate an AI response.
-
-    The judge evaluates the response using only the
-    company policy and evaluation criteria.
-    """
 
     prompt = f"""
     You are an AI quality evaluator.
@@ -61,13 +47,11 @@ def evaluate_response(
         response_schema=EvaluationResult,
     )
 
-    # gemini-3.6-flash
-    # gemini-3.5-flash
-    result = call_llm(
+    response = call_llm(
         client=client,
-        model="gemini-3.5-flash-lite",
+        model=model,
         prompt=prompt,
         config=config
     )
 
-    return result.parsed
+    return response.parsed

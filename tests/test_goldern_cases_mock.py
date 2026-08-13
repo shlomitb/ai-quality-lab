@@ -1,7 +1,7 @@
 
 import json
 from unittest.mock import Mock
-from evaluation_result import EvaluationResult
+from src.evaluation_result import EvaluationResult
 
 from src.evaluator import evaluate_response
 

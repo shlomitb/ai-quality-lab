@@ -1,13 +1,5 @@
 
 import json
-import os
-
-from dotenv import load_dotenv
-from google import genai
-
-from src.evaluator import evaluate_response
-from evaluation_result import EvaluationResult
-
 
 POLICY = """
 Customers may return unopened products within 30 days.

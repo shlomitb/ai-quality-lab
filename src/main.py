@@ -27,13 +27,16 @@ def main():
 
     cases = load_evaluation_cases()
 
+    model = "gemini-3.6-flash"
+
     for case in cases:
 
         # 1. First LLM answers the customer
         ai_response = ask_llm(
             client=client,
             policy=POLICY,
-            question=case["question"]
+            question=case["question"],
+            model=model
         )
 
         # 2. Second LLM judges the answer
@@ -42,7 +45,8 @@ def main():
             policy=POLICY,
             question=case["question"],
             ai_response=ai_response,
-            evaluation_criteria=case["evaluation_criteria"]
+            evaluation_criteria=case["evaluation_criteria"],
+            model=model
         )
 
         print("\n" + "=" * 60)

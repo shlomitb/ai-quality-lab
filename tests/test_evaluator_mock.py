@@ -1,6 +1,6 @@
 from unittest.mock import Mock
 from src.evaluator import evaluate_response
-from evaluation_result import EvaluationResult
+from src.evaluation_result import EvaluationResult
 
 
 """
