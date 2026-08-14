@@ -1,88 +1,98 @@
-
 [
     {
         "id": "judge_001",
-        "test_type": "needs more clarification",
-        "question": "I bought the product 10 days ago. Can I return it?",
+        "test_type": "needs_clarification",
+        "question": "I bought the physical product 10 days ago. Can I return it?",
         "ai_response": "I need to know whether the product is opened or unopened before I can determine whether it can be returned.",
+        "evaluation_criteria": "The AI should not make a return decision because the question does not specify whether the physical product is opened or unopened. It should ask for that missing information.",
         "expected_judge_evaluation": "PASS"
     },
     {
         "id": "judge_002",
-        "test_type": "unsupported_assumption, the AI make a decision without enough information",
-        "question": "I bought the product 10 days ago. Can I return it?",
+        "test_type": "unsupported_assumption",
+        "question": "I bought the physical product 10 days ago. Can I return it?",
         "ai_response": "Yes, you can return it because it was purchased within 30 days.",
+        "evaluation_criteria": "The AI should not make a definitive return decision because the question does not specify whether the physical product is opened or unopened. It should ask for the missing information.",
         "expected_judge_evaluation": "FAIL"
     },
     {
         "id": "judge_003",
-        "test_type": "partial_clarification_with_assumption, the AI acknowledge missing information but still make a decision.",
-        "question": "I bought the product 10 days ago. Can I return it?",
+        "test_type": "partial_clarification_with_assumption",
+        "question": "I bought the physical product 10 days ago. Can I return it?",
         "ai_response": "It should be returnable because you purchased it only 10 days ago, although I don't know whether it is opened.",
+        "evaluation_criteria": "The AI should not make a definitive return decision because the question does not specify whether the physical product is opened or unopened. It should ask for the missing information instead of making an assumption.",
         "expected_judge_evaluation": "FAIL"
     },
     {
         "id": "judge_004",
-        "test_type": "missing_required_information, the AI ignorea a required piece of information.",
-        "question": "I bought the product 10 days ago. Can I return it?",
+        "test_type": "missing_required_information",
+        "question": "I bought the physical product 10 days ago. Can I return it?",
         "ai_response": "Since the product was purchased 10 days ago, it qualifies for the 30-day return period.",
+        "evaluation_criteria": "The AI should not conclude that the product qualifies for return because the question does not specify whether the physical product is opened or unopened. It should ask for the missing information.",
         "expected_judge_evaluation": "FAIL"
     },
     {
         "id": "judge_005",
-        "test_type": "incomplete_clarification, the AI asks about something relevant but fail to resolve the actual issue.",
-        "question": "I bought the product 10 days ago. Can I return it?",
+        "test_type": "incomplete_clarification",
+        "question": "I bought the physical product 10 days ago. Can I return it?",
         "ai_response": "Yes, as long as it is not a digital product.",
+        "evaluation_criteria": "The AI should ask whether the physical product is opened or unopened. The response should not make a return decision without that information.",
         "expected_judge_evaluation": "FAIL"
     },
     {
         "id": "judge_006",
-        "test_type": "correct_clarification, the AI asks exactly for the missing information.",
-        "question": "I bought the product 10 days ago. Can I return it?",
+        "test_type": "correct_clarification",
+        "question": "I bought the physical product 10 days ago. Can I return it?",
         "ai_response": "I can help you determine that. Is the product opened or unopened?",
+        "evaluation_criteria": "The AI should recognize that the question does not specify whether the physical product is opened or unopened and should ask for that missing information.",
         "expected_judge_evaluation": "PASS"
     },
     {
         "id": "judge_007",
-        "test_type": "missing_policy_condition, the AI omits a condition required by the policy.",
-        "question": "Can I return an opened product after 10 days?",
+        "test_type": "missing_policy_condition",
+        "question": "Can I return an opened physical product after 10 days?",
         "ai_response": "Yes, opened products can be returned within 14 days.",
+        "evaluation_criteria": "The AI should recognize that opened physical products can only be returned within 14 days if they are defective. Because the question does not specify whether the product is defective, the AI should ask for clarification rather than answer yes.",
         "expected_judge_evaluation": "FAIL"
     },
     {
         "id": "judge_008",
-        "test_type": "correct_missing_condition_clarification, the ai identifies and asks about the missing condition.",
-        "question": "Can I return an opened product after 10 days?",
+        "test_type": "correct_missing_condition_clarification",
+        "question": "Can I return an opened physical product after 10 days?",
         "ai_response": "Was the product defective?",
+        "evaluation_criteria": "The AI should recognize that an opened physical product can only be returned within 14 days if it is defective, and should ask whether the product was defective.",
         "expected_judge_evaluation": "PASS"
     },
     {
         "id": "judge_009",
-        "test_type": "boundary_condition, does the judge handle exact policy limits correctly?",
-        "question": "Can I return an unopened product after 30 days?",
-        "ai_response": "Yes. Unopened products can be returned within 30 days.",
+        "test_type": "boundary_condition",
+        "question": "Can I return an unopened physical product 30 days after purchase?",
+        "ai_response": "Yes. Unopened physical products can be returned within 30 days.",
+        "evaluation_criteria": "The AI should correctly recognize that an unopened physical product is eligible for return when exactly 30 days have passed, because the policy allows returns within 30 days.",
         "expected_judge_evaluation": "PASS"
     },
     {
         "id": "judge_010",
-        "test_type": "boundary_condition, does the judge handle exact policy limits correctly?",
-        "question": "Can I return an unopened product after 31 days?",
-        "ai_response": "Yes, unopened products can be returned as long as you purchased them recently.",
+        "test_type": "boundary_condition",
+        "question": "Can I return an unopened physical product after 31 days?",
+        "ai_response": "Yes, unopened physical products can be returned as long as you purchased them recently.",
+        "evaluation_criteria": "The AI should correctly apply the 30-day limit and state that an unopened physical product purchased after 31 days cannot be returned.",
         "expected_judge_evaluation": "FAIL"
     },
     {
         "id": "judge_011",
-        "test_type": "policy_compliance, the response correctly follows the policy.",
+        "test_type": "policy_compliance",
         "question": "Can I return a digital product?",
         "ai_response": "Digital products cannot be returned, so unfortunately you are not eligible for a refund.",
+        "evaluation_criteria": "The AI should clearly state that digital products cannot be returned.",
         "expected_judge_evaluation": "PASS"
     },
     {
         "id": "judge_012",
-        "test_type": "hallucinated_policy_exception, the AI invents an exception that isn't in the policy.",
+        "test_type": "hallucinated_policy_exception",
         "question": "Can I return a digital product?",
         "ai_response": "Digital products cannot be returned unless they were purchased less than 30 days ago.",
+        "evaluation_criteria": "The AI should state that digital products cannot be returned. The policy does not provide a 30-day exception for digital products, so the AI should not invent one.",
         "expected_judge_evaluation": "FAIL"
     }
 ]
-

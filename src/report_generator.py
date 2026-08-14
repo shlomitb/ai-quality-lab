@@ -5,29 +5,18 @@ from metrics import behavior_accuracy, answer_accuracy, judge_accuracy
 def generate_report(results):
     total = len(results)
 
-    behavior_correct = sum(
-        result["behavior_correct"]
-        for result in results
-    )
-
-    answer_correct = sum(
-        result["answer_correct"]
-        for result in results
-    )
-
-    judge_correct = sum(
-        result["judge_correct"]
-        for result in results
-    )
+    behavior = behavior_accuracy(results)
+    answer = answer_accuracy(results)
+    judge = judge_accuracy(results)
 
     print("\n" + "=" * 60)
     print("AGENT EVALUATION REPORT")
     print("=" * 60)
 
     print(f"Total cases:       {total}")
-    print(f"Behavior correct:  {behavior_correct}/{total}")
-    print(f"Answer correct:    {answer_correct}/{total}")
-    print(f"Judge correct:     {judge_correct}/{total}")
+    print(f"Behavior correct:  {behavior:.1%}")
+    print(f"Answer correct:    {answer:.1%}")
+    print(f"Judge correct:     {judge:.1%}")
 
     failures = [
         result for result in results

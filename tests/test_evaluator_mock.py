@@ -16,6 +16,8 @@ def test_evaluator_returns_pass():
 
     client.models.generate_content.return_value.parsed = EvaluationResult(
         result="PASS",
+        behavior="answer",
+        answer="yes",
         reason="The AI correctly stated that an unopened product can be returned within 30 days."
     )
 
@@ -39,6 +41,8 @@ def test_evaluator_returns_fail():
 
     client.models.generate_content.return_value.parsed = EvaluationResult(
         result="FAIL",
+        behavior="answer",
+        answer="no",
         reason="The AI correctly stated that an unopened product can be returned within 30 days."
     )
 
@@ -61,6 +65,8 @@ def test_evaluator_calls_llm():
 
     client.models.generate_content.return_value.parsed = EvaluationResult(
         result="PASS",
+        behavior="answer",
+        answer="yes",
         reason="The AI correctly stated that an unopened product can be returned within 30 days."
     )
 

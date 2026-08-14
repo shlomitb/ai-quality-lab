@@ -23,8 +23,11 @@ def test_mock_golden_cases():
         client = Mock()
 
         # Pretend the LLM judge returned the expected result.
+
         client.models.generate_content.return_value.parsed = EvaluationResult(
             result=case["expected_judge_evaluation"],
+            behavior="answer",
+            answer="yes",
             reason="Mocked judge response."
         )
 

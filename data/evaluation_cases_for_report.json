@@ -1,0 +1,37 @@
+[
+    {
+        "question": "Can I return an unopened physical product after 20 days?",
+        "expected": "yes",
+        "expected_behavior": "answer",
+        "evaluation_criteria": "The AI should clearly state that an unopened physical product purchased 20 days ago can be returned because unopened products can be returned within 30 days."
+    },
+    {
+        "question": "Can I return an opened product after 20 days if it is defective?",
+        "expected": "no",
+        "expected_behavior": "answer",
+        "evaluation_criteria": "The AI should clearly state that an opened product purchased 20 days ago cannot be returned, even if it is defective, because opened defective products can only be returned within 14 days."
+    },
+    {
+        "question": "I bought the product 10 days ago. Can I return it?",
+        "expected": null,
+        "expected_behavior": "ask_for_clarification",
+        "evaluation_criteria": "The AI should not guess because the question does not provide enough information to determine eligibility. It should ask for the relevant missing information."
+    },
+    {
+        "question": "Can I return an opened product after 10 days?",
+        "expected": null,
+        "expected_behavior": "ask_for_clarification",
+        "evaluation_criteria": "The AI should recognize that an opened product can only be returned within 14 days if it is defective, and should ask whether the product is defective."
+    },
+    {
+        "question": "Can I return a digital product?",
+        "expected": "no",
+        "expected_behavior": "answer",
+        "evaluation_criteria": "The AI should clearly state that digital products cannot be returned and should answer directly without asking unnecessary clarifying questions."
+    },
+    {
+        "question": "Can I return an unopened product after 20 days?",
+        "expected": null,
+        "expected_behavior": "ask_for_clarification",
+        "evaluation_criteria": "The AI should recognize that the question does not specify whether the product is physical or digital. It should ask for clarification because digital products cannot be returned, while unopened physical products can be returned within 30 days."    }
+]

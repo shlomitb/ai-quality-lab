@@ -7,10 +7,19 @@ from tools import get_return_policy
 from report_generator import generate_report
 
 
-MAX_CASES = 4
+
+"""
+Tests what the agent did.
+"""
+
+
+MAX_CASES = 2
+
+FILEPATH = "../data/evaluation_cases_for_report.json"
+#"../data/evaluation_cases.json"
 
 def load_evaluation_cases():
-    with open("../data/evaluation_cases.json") as file:
+    with open(FILEPATH) as file:
         return json.load(file)
 
 
@@ -43,18 +52,14 @@ def main():
             "expected_behavior": case["expected_behavior"],
             "actual_behavior": evaluation.behavior,
             "behavior_correct": (
-                evaluation.behavior == case["expected_behavior"]
+                    evaluation.behavior == case["expected_behavior"]
             ),
             "expected_answer": case["expected"],
             "actual_answer": evaluation.answer,
             "answer_correct": (
-                evaluation.answer == case["expected"]
+                    evaluation.answer == case["expected"]
             ),
-            "expected_judge": case["expected_judge_evaluation"],
-            "actual_judge": evaluation.result,
-            "judge_correct": (
-                evaluation.result == case["expected_judge_evaluation"]
-            ),
+            "judge_result": evaluation.result,
             "reason": evaluation.reason,
         })
 
