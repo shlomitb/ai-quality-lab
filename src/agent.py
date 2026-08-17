@@ -1,8 +1,7 @@
 from google.genai import types
 
 from src.llm import ask_llm
-from src.tools import get_return_policy
-
+from src.tools import get_return_policy, get_product_information
 
 
 def get_tool_calls(response):
@@ -18,26 +17,38 @@ def get_tool_calls(response):
 def answer_customer_with_trace(client, question):
     prompt = f"""
         You are a customer-support assistant.
-
-        Answer the customer's question using the company's return policy.
-
+    
+        Answer the customer's question using the appropriate available tool.
+    
         Customer question:
         {question}
-
-        If you need the return policy to answer the question,
-        use the get_return_policy tool.
-
-        If the customer's question does not contain enough information
-        to determine whether they are eligible for a return, ask for
-        the specific missing information.
-
+    
+        Available tools:
+    
+        - get_return_policy:
+          Use this to retrieve the company's return policy and return rules.
+    
+        - get_product_information:
+          Use this to retrieve information about the product, such as its
+          name, category, or price.
+    
+        Choose the tool or tools that are relevant to the customer's question.
+        Do not use a tool unnecessarily.
+    
+        If the question does not contain enough information to determine
+        whether the customer is eligible for a return, ask for the specific
+        missing information.
+    
         Do not make assumptions.
-        Do not give a list of possible outcomes instead of asking
-        for the missing information.
+        Do not give a list of possible outcomes instead of asking for
+        the missing information.
         """
 
     config = types.GenerateContentConfig(
-        tools=[get_return_policy]
+        tools=[
+            get_return_policy,
+            get_product_information,
+        ]
     )
 
     response = ask_llm(

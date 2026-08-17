@@ -10,3 +10,11 @@ def get_return_policy():
     
     Refunds are issued to the original payment method.
     """
+
+
+def get_product_information():
+    return {
+        "category": "physical",
+        "name": "Example Product",
+        "price": 49.99,
+    }
