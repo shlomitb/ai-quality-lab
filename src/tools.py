@@ -12,9 +12,9 @@ def get_return_policy():
     """
 
 
-def get_product_information():
+def get_product_information(product_name: str) -> dict:
     return {
         "category": "physical",
-        "name": "Example Product",
+        "name": product_name,
         "price": 49.99,
     }

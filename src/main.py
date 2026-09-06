@@ -1,5 +1,5 @@
 from llm_client import create_client
-from agent import answer_customer, answer_customer_with_trace, get_tool_calls
+from agent import answer_customer, answer_customer_with_trace, get_tool_call_details, get_tool_calls
 from evaluator import evaluate_response
 from src.tools import get_return_policy
 
@@ -40,13 +40,19 @@ def main():
     # 1. Agent answers the customer
     response = answer_customer_with_trace(
         client=client,
-        question="Can I return an opened product after 20 days if defective?"
+        question="What is the price of the Example Product?"
     )
 
-    tool_calls = get_tool_calls(response)
+    print(response)
 
-    print(tool_calls)
-    assert "get_return_policy" in tool_calls
+    tool_call_details = get_tool_call_details(response)
+
+    print(tool_call_details)
+
+    # tool_calls = get_tool_calls(response)
+    # #
+    # print(tool_calls)
+    # assert "get_return_policy" in tool_calls
 
     # 2. Judge evaluates the agent's response
     # evaluation = evaluate_response(

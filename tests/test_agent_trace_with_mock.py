@@ -1,6 +1,6 @@
 from unittest.mock import Mock
 
-from src.agent import get_tool_calls
+from src.agent import get_tool_calls, get_tool_call_details
 
 
 """
@@ -70,3 +70,32 @@ def test_get_tool_calls_with_two_tools():
     tool_calls = get_tool_calls(response)
 
     assert tool_calls == ["tool1", "tool2"]
+
+
+def test_get_tool_call_details_with_arguments():
+    response = Mock()
+
+    function_call = Mock()
+    function_call.name = "get_product_information"
+    function_call.args = {
+        "product_name": "Example Product"
+    }
+
+    part = Mock()
+    part.function_call = function_call
+
+    content = Mock()
+    content.parts = [part]
+
+    response.automatic_function_calling_history = [content]
+
+    tool_call_details = get_tool_call_details(response)
+
+    assert tool_call_details == [
+        {
+            "name": "get_product_information",
+            "args": {
+                "product_name": "Example Product"
+            }
+        }
+    ]

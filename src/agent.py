@@ -14,6 +14,22 @@ def get_tool_calls(response):
 
     return tool_calls
 
+def get_tool_call_details(response):
+    tool_calls = []
+
+    for content in response.automatic_function_calling_history or []:
+        for part in content.parts or []:
+            if part.function_call is not None:
+                tool_calls.append(
+                    {
+                        "name": part.function_call.name,
+                        "args": part.function_call.args,
+                    }
+                )
+
+    return tool_calls
+
+
 def answer_customer_with_trace(client, question):
     prompt = f"""
         You are a customer-support assistant.
@@ -29,8 +45,8 @@ def answer_customer_with_trace(client, question):
           Use this to retrieve the company's return policy and return rules.
     
         - get_product_information:
-          Use this to retrieve information about the product, such as its
-          name, category, or price.
+          Use this to retrieve information about a specific product.
+          It requires the product_name argument
     
         Choose the tool or tools that are relevant to the customer's question.
         Do not use a tool unnecessarily.
