@@ -6,12 +6,25 @@ import pytest
 
 """
 There are 2 tools in answer_customer_with_trace
-and here we test that the llm choosed the correct tool to use based on the question asked.py
+and here we test that the llm chose the correct tool to use based on the question asked.py
+
+A real LLM integration test with deterministic assertions.
+
+→ Gemini actually runs the agent
+→ the real agent makes the tool-selection/argument decision
+Then:
+Deterministic assertion
+→ we check the result against an exact expected value
 """
 
 
 @pytest.mark.llm
 def test_agent_calls_return_policy_tool():
+    """
+        There are 2 tools in answer_customer_with_trace
+        Here test that the tool called is "get_return_policy"
+       :return:
+    """
     client = create_client()
 
     response = answer_customer_with_trace(
@@ -28,6 +41,11 @@ def test_agent_calls_return_policy_tool():
 
 @pytest.mark.llm
 def test_agent_selects_product_information_tool():
+    """
+        There are 2 tools in answer_customer_with_trace
+        Here test that the tool called is "get_product_information"
+    :return:
+    """
     client = create_client()
 
     response = answer_customer_with_trace(
@@ -42,6 +60,10 @@ def test_agent_selects_product_information_tool():
 
 @pytest.mark.llm
 def test_agent_passes_correct_product_name():
+    """
+    test that the product name is returned as an argument in the llm response
+    :return:
+    """
     client = create_client()
 
     response = answer_customer_with_trace(
