@@ -5,6 +5,7 @@ from src.tools import get_return_policy, get_product_information
 
 
 def get_tool_calls(response):
+    """Return the names of tools called during the agent run."""
     tool_calls = []
 
     for content in response.automatic_function_calling_history or []:
@@ -15,6 +16,7 @@ def get_tool_calls(response):
     return tool_calls
 
 def get_tool_call_details(response):
+    """Return tool names and arguments from the agent run."""
     tool_calls = []
 
     for content in response.automatic_function_calling_history or []:
@@ -30,7 +32,27 @@ def get_tool_call_details(response):
     return tool_calls
 
 
+def get_tool_result_details(response):
+    """Return tool names and results from the agent run."""
+    tool_results = []
+
+    for content in response.automatic_function_calling_history or []:
+        for part in content.parts or []:
+            function_response = getattr(part, "function_response", None)
+
+            if function_response is not None:
+                tool_results.append(
+                    {
+                        "name": function_response.name,
+                        "response": function_response.response,
+                    }
+                )
+
+    return tool_results
+
+
 def answer_customer_with_trace(client, question):
+    """Run the customer-support agent and return the full response."""
     prompt = f"""
         You are a customer-support assistant.
     

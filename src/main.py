@@ -1,5 +1,5 @@
 from llm_client import create_client
-from agent import answer_customer, answer_customer_with_trace, get_tool_call_details, get_tool_calls
+from agent import answer_customer, answer_customer_with_trace, get_tool_call_details, get_tool_result_details, get_tool_calls
 from evaluator import evaluate_response
 from src.tools import get_return_policy
 
@@ -43,11 +43,16 @@ def main():
         question="What is the price of the Example Product?"
     )
 
-    print(response)
+    #print(response)
 
-    tool_call_details = get_tool_call_details(response)
+    tool_results = get_tool_result_details(response)
 
-    print(tool_call_details)
+    print(tool_results)
+
+    # tool_call_details = get_tool_call_details(response)
+    #
+    # print(tool_call_details)
+
 
     # tool_calls = get_tool_calls(response)
     # #

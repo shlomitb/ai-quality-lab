@@ -1,30 +1,16 @@
-from src.llm_client import create_client
-from src.agent import answer_customer_with_trace, get_tool_calls, get_tool_call_details
-
 import pytest
 
+from src.agent import (answer_customer_with_trace,
+                       get_tool_calls,
+                       get_tool_call_details,
+                       get_tool_result_details)
 
-"""
-There are 2 tools in answer_customer_with_trace
-and here we test that the llm chose the correct tool to use based on the question asked.py
-
-A real LLM integration test with deterministic assertions.
-
-→ Gemini actually runs the agent
-→ the real agent makes the tool-selection/argument decision
-Then:
-Deterministic assertion
-→ we check the result against an exact expected value
-"""
+from src.llm_client import create_client
 
 
 @pytest.mark.llm
 def test_agent_calls_return_policy_tool():
-    """
-        There are 2 tools in answer_customer_with_trace
-        Here test that the tool called is "get_return_policy"
-       :return:
-    """
+    """Verify that the agent selects the return-policy tool."""
     client = create_client()
 
     response = answer_customer_with_trace(
@@ -41,11 +27,7 @@ def test_agent_calls_return_policy_tool():
 
 @pytest.mark.llm
 def test_agent_selects_product_information_tool():
-    """
-        There are 2 tools in answer_customer_with_trace
-        Here test that the tool called is "get_product_information"
-    :return:
-    """
+    """Verify that the agent selects the product-information tool."""
     client = create_client()
 
     response = answer_customer_with_trace(
@@ -60,10 +42,7 @@ def test_agent_selects_product_information_tool():
 
 @pytest.mark.llm
 def test_agent_passes_correct_product_name():
-    """
-    test that the product name is returned as an argument in the llm response
-    :return:
-    """
+    """Verify that the agent passes the correct product name to the tool."""
     client = create_client()
 
     response = answer_customer_with_trace(
@@ -78,6 +57,32 @@ def test_agent_passes_correct_product_name():
             "name": "get_product_information",
             "args": {
                 "product_name": "Example Product"
+            }
+        }
+    ]
+
+
+@pytest.mark.llm
+def test_agent_receives_expected_product_information():
+    """Verify that the expected product information appears in the tool result."""
+    client = create_client()
+
+    response = answer_customer_with_trace(
+        client=client,
+        question="What is the price of the Example Product?"
+    )
+
+    tool_results = get_tool_result_details(response)
+
+    assert tool_results == [
+        {
+            "name": "get_product_information",
+            "response": {
+                "result": {
+                    "category": "physical",
+                    "name": "Example Product",
+                    "price": 49.99
+                }
             }
         }
     ]

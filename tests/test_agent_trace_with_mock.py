@@ -1,6 +1,6 @@
 from unittest.mock import Mock
 
-from src.agent import get_tool_calls, get_tool_call_details
+from src.agent import get_tool_calls, get_tool_call_details, get_tool_result_details
 
 
 """
@@ -96,6 +96,44 @@ def test_get_tool_call_details_with_arguments():
             "name": "get_product_information",
             "args": {
                 "product_name": "Example Product"
+            }
+        }
+    ]
+
+
+def test_get_tool_result_details():
+    response = Mock()
+
+    function_response = Mock()
+    function_response.name = "get_product_information"
+    function_response.response = {
+        "result": {
+            "category": "physical",
+            "name": "Example Product",
+            "price": 49.99
+        }
+    }
+
+    part = Mock()
+    part.function_response = function_response
+    part.function_call = None
+
+    content = Mock()
+    content.parts = [part]
+
+    response.automatic_function_calling_history = [content]
+
+    tool_results = get_tool_result_details(response)
+
+    assert tool_results == [
+        {
+            "name": "get_product_information",
+            "response": {
+                "result": {
+                    "category": "physical",
+                    "name": "Example Product",
+                    "price": 49.99
+                }
             }
         }
     ]
