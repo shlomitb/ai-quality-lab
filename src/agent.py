@@ -1,3 +1,4 @@
+from deepeval.tracing import observe, update_current_trace
 from google.genai import types
 
 from src.llm import ask_llm
@@ -51,6 +52,7 @@ def get_tool_result_details(response):
     return tool_results
 
 
+@observe(type="agent")
 def answer_customer_with_trace(client, question):
     """Run the customer-support agent and return the full response."""
     prompt = f"""
@@ -93,6 +95,11 @@ def answer_customer_with_trace(client, question):
         client=client,
         prompt=prompt,
         config=config
+    )
+
+    update_current_trace(
+        input=question,
+        output=response.text,
     )
 
     return response

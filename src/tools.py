@@ -1,4 +1,8 @@
 
+
+from deepeval.tracing import observe
+
+@observe(type="tool")
 def get_return_policy():
     return """
     Customers may return unopened products within 30 days.
@@ -12,6 +16,7 @@ def get_return_policy():
     """
 
 
+@observe(type="tool")
 def get_product_information(product_name: str) -> dict:
     return {
         "category": "physical",
