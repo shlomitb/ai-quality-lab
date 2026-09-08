@@ -2,7 +2,7 @@ import os
 
 from deepeval import assert_test
 from deepeval.dataset import Golden
-from deepeval.metrics import TaskCompletionMetric
+from deepeval.metrics import TaskCompletionMetric, StepEfficiencyMetric
 from deepeval.models import GeminiModel
 
 from src.agent import answer_customer_with_trace
@@ -15,12 +15,22 @@ gemini_model = GeminiModel(
     temperature=0,
 )
 
-def test_return_agent_task_completion():
+task_completion = TaskCompletionMetric(
+    threshold=0.5,
+    model=gemini_model,
+)
+
+step_efficiency = StepEfficiencyMetric(
+    threshold=0.5,
+    model=gemini_model,
+)
+
+
+def test_return_agent_trajectory():
     golden = Golden(
         input=(
             "Can I return the Example Product after 20 days, "
-            "and what is its price?"
-        )
+            "" "and what is its price?")
     )
 
     answer_customer_with_trace(
@@ -28,12 +38,7 @@ def test_return_agent_task_completion():
         question=golden.input,
     )
 
-    metric = TaskCompletionMetric(
-        threshold=0.5,
-        model=gemini_model,
-    )
-
     assert_test(
         golden=golden,
-        metrics=[metric],
+        metrics=[task_completion, step_efficiency],
     )
