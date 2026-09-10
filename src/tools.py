@@ -76,3 +76,60 @@ def search_product_catalog(product_name: str) -> dict:
     return {
         "result": product
     }
+
+
+@observe(type="tool")
+def get_order_information(order_id: str) -> dict:
+    orders = {
+        "12345": {
+            "order_id": "12345",
+            "product_name": "Example Product",
+            "days_since_purchase": 20,
+            "opened": True,
+            "defective": True,
+        }
+    }
+
+    order = orders.get(order_id)
+
+    if order is None:
+        return {
+            "result": {
+                "error": "Order not found."
+            }
+        }
+
+    return {
+        "result": order
+    }
+
+
+@observe(type="tool")
+def check_return_eligibility(
+    product_name: str,
+    days_since_purchase: int,
+    opened: bool,
+    defective: bool,
+) -> dict:
+    if days_since_purchase <= 30 and not opened:
+        return {
+            "result": {
+                "eligible": True,
+                "reason": "Unopened products can be returned within 30 days.",
+            }
+        }
+
+    if days_since_purchase <= 14 and opened and defective:
+        return {
+            "result": {
+                "eligible": True,
+                "reason": "Opened defective products can be returned within 14 days.",
+            }
+        }
+
+    return {
+        "result": {
+            "eligible": False,
+            "reason": "The product does not meet the return requirements.",
+        }
+    }

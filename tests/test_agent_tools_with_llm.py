@@ -201,3 +201,70 @@ def test_agent_handles_both_product_information_tools_failing():
 
     # print("\nFINAL RESPONSE:")
     # print(response.text)
+
+
+@pytest.mark.llm
+def test_agent_uses_order_information_to_check_return_eligibility():
+    """
+    We are teting here that the llm chooses to 1st call tool "get_order_information"
+    since it has the order id and needs the details in this tool call response
+    in order to call the 2nd tool "check_return_eligibility"
+
+    We saw when we ran it that a rd tool was called taht we did not expect: "get_return_policy"
+    We assume this was because the agent may have wanted the actual return-policy text so it could explain the eligibility decision to the customer.
+    Due to the agent's interpretation of the prompt.
+    """
+    client = create_client()
+
+    response = answer_customer_with_trace(
+        client=client,
+        question="Can I return order 12345?",
+    )
+
+    tool_call_details = get_tool_call_details(response)
+
+    print("\nTOOL CALLS:")
+    print(tool_call_details)
+
+    assert tool_call_details[0] == {
+        "name": "get_order_information",
+        "args": {
+            "order_id": "12345",
+        },
+    }
+
+    assert tool_call_details[1] == {
+        "name": "check_return_eligibility",
+        "args": {
+            "product_name": "Example Product",
+            "days_since_purchase": 20,
+            "opened": True,
+            "defective": True,
+        },
+    }
+
+
+@pytest.mark.llm
+def test_agent_gets_product_name_from_order():
+    """
+    This test is more deterministic in expecting only 1 tool to be called,
+    due to the way the prompt is written.
+    """
+    client = create_client()
+
+    response = answer_customer_with_trace(
+        client=client,
+        question="What is the product name for order 12345?",
+    )
+
+    tool_call_details = get_tool_call_details(response)
+
+    print("\nTOOL CALLS:")
+    print(tool_call_details)
+
+    assert tool_call_details[0] == {
+        "name": "get_order_information",
+        "args": {
+            "order_id": "12345",
+        },
+    }

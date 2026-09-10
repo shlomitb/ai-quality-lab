@@ -5,7 +5,9 @@ from src.llm import ask_llm
 from src.tools import (
     get_return_policy,
     get_product_information,
-    search_product_catalog
+    search_product_catalog,
+    get_order_information,
+    check_return_eligibility,
 )
 
 
@@ -81,6 +83,16 @@ def answer_customer_with_trace(client, question):
           if get_product_information returns an error.
         
           Do not invent product information if both tools fail.
+          
+        - get_order_information:
+          Use this to retrieve information about a specific order.
+          It requires the order_id argument.
+        
+        - check_return_eligibility:
+          Use this to determine whether a product can be returned based
+          on the order information.
+          It requires the product_name, days_since_purchase, opened,
+          and defective arguments.  
     
         Choose the tool or tools that are relevant to the customer's question.
         Do not use a tool unnecessarily.
@@ -99,6 +111,8 @@ def answer_customer_with_trace(client, question):
             get_return_policy,
             get_product_information,
             search_product_catalog,
+            get_order_information,
+            check_return_eligibility,
         ]
     )
 

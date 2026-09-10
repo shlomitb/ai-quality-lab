@@ -1,4 +1,9 @@
-from src.tools import get_product_information, search_product_catalog
+from src.tools import (
+    get_product_information,
+    search_product_catalog,
+    get_order_information,
+    check_return_eligibility,
+    )
 
 
 def test_get_product_information_returns_error_for_unavailable_product():
@@ -29,5 +34,34 @@ def test_search_product_catalog_fails_for_unknown_product():
     assert result == {
         "result": {
             "error": "Product not found in catalog."
+        }
+    }
+
+
+def test_get_order_info_for_known_order():
+    result = get_order_information("12345")
+
+    assert result == {
+        "result": {
+            "order_id": "12345",
+            "product_name": "Example Product",
+            "days_since_purchase": 20,
+            "opened": True,
+            "defective": True,
+        }
+    }
+
+def test_check_return_eligibility_for_opened_defective_product():
+    result = check_return_eligibility(
+        product_name="Example Product",
+        days_since_purchase=20,
+        opened=True,
+        defective=True,
+    )
+
+    assert result == {
+        "result": {
+            "eligible": False,
+            "reason": "The product does not meet the return requirements.",
         }
     }
