@@ -1,0 +1,157 @@
+experiments/validate_step_efficiency.py
+
+We'll make two controlled agents.
+
+A controlled DeepEval experiment that compares two agent trajectories.
+
+Each test has tool calls, that are python code:
+get_return_policy()
+get_product_information("Example Product")
+
+We are calling these tools to simulate the agent/llm deciding to call these tools.
+
+The def (function) that calls these tools has the decorator @observe(type="agent")
+This is the part that we are testing here - this causes DeepEval to trace the tool calls, as if
+the agent/llm called these tools.
+We are testing the StepEfficiencyMetric to evaluate whether the trajectory contains unnecessary steps - and DeepEval uses the trace to check this.
+
+We are checking that DeepEval recognizes that the efficient agent correctly calls the 2 tools
+And then we are checking that DeepEval recognizes that the inefficient agent incorrectly calls the 3rd tool, that it catches this.
+
+This way we test that the StepEfficiencyMetric in DeepEval is working, doing its job.
+
+We are testing the steps that are in the trajectory.
+
+(Shorter:
+Controlled experiment to test whether DeepEval's StepEfficiencyMetric detects redundant tool calls in an agent trajectory.
+The tool sequence is manually defined, traced with @observe, and evaluated for efficiency.)
+
+
+
+1 - Efficient agent
+
+It needs both pieces of information, so it calls each tool once:
+
+get_return_policy()
+get_product_information("Example Product")
+
+
+2 - Inefficient agent
+
+It gets exactly the same information, but unnecessarily calls the return-policy tool a second time:
+
+
+get_return_policy()
+get_product_information("Example Product")
+get_return_policy()          ← unnecessary
+
+Both will produce the same final answer.
+
+That's important.
+
+We want:
+
+Same task
+Same outcome
+Different trajectory
+
+Then Step Efficiency has something meaningful to distinguish.
+
+
+--------------------
+
+running: test_inefficient_agent
+
+Metric: Step Efficiency
+
+Score:
+.75 (threshold=0.5, evaluation model=gemini-2.5-flash (Gemini), reason=The agent
+called the 'get_return_policy' tool twice, which was redundant as the necessary
+information was already retrieved in the first call., error=None)
+
+
+DeepEval successfully detected the deliberately redundant tool call:
+
+Step Efficiency = 0.75
+Threshold = 0.5
+Status = PASSED
+
+
+And its reason is very clear:
+
+The agent called get_return_policy twice, which was redundant because the necessary information was already retrieved in the first call.
+
+What this tells us
+
+Our two controlled trajectories were:
+
+Efficient:
+get_return_policy()
+get_product_information()
+→ Step Efficiency = 1.0
+
+and:
+
+Inefficient:
+get_return_policy()
+get_product_information()
+get_return_policy()   ← unnecessary
+→ Step Efficiency = 0.75
+
+So DeepEval did distinguish the trajectories correctly:
+
+1.0 > 0.75
+
+That gives us much more confidence that StepEfficiencyMetric is doing something meaningful.
+
+One important clarification about the numbers
+
+Don't interpret:
+
+0.75
+
+as:
+
+"The agent was 75% efficient."
+
+It's an LLM-judged metric score, not a literal percentage of efficiency.
+
+What matters here is the comparison:
+
+efficient trajectory   → 1.0
+redundant trajectory   → 0.75
+
+and the explanation correctly identifies the redundant call.
+
+And again:
+
+Overall Success Rate = 100%
+
+means the test passed, because:
+
+0.75 >= 0.5
+
+It doesn't mean the agent got a 100% efficiency score.
+
+This experiment also answered our earlier question
+
+You asked:
+
+"How do we know DeepEval is really reporting correctly?"
+
+We now have a small piece of evidence.
+
+We independently knew:
+
+efficient trajectory = better
+inefficient trajectory = worse
+
+and DeepEval reported:
+
+1.0 > 0.75
+
+with a sensible reason.
+
+That's a sanity check of the metric.
+
+It isn't enough to prove the metric is always correct, but it is much better than blindly trusting it.
