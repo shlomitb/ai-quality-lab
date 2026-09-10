@@ -1,0 +1,15 @@
+
+
+
+In:test_agent_tools_with_llm.py
+def test_agent_recovers_from_product_information_failure():
+
+DeepEval's current tracing model is specifically designed for this kind of trajectory:
+the trace contains the ordered execution, while individual tool calls are represented as spans.
+
+
+
+When you look at an agent trace, you need to distinguish:
+
+FunctionCall      → agent decided to invoke a tool
+FunctionResponse  → tool finished and returned something

@@ -2,7 +2,11 @@ from deepeval.tracing import observe, update_current_trace
 from google.genai import types
 
 from src.llm import ask_llm
-from src.tools import get_return_policy, get_product_information
+from src.tools import (
+    get_return_policy,
+    get_product_information,
+    search_product_catalog
+)
 
 
 def get_tool_calls(response):
@@ -71,6 +75,12 @@ def answer_customer_with_trace(client, question):
         - get_product_information:
           Use this to retrieve information about a specific product.
           It requires the product_name argument
+          
+        - search_product_catalog:
+          Use this as a fallback to retrieve information about a product
+          if get_product_information returns an error.
+        
+          Do not invent product information if both tools fail.
     
         Choose the tool or tools that are relevant to the customer's question.
         Do not use a tool unnecessarily.
@@ -88,6 +98,7 @@ def answer_customer_with_trace(client, question):
         tools=[
             get_return_policy,
             get_product_information,
+            search_product_catalog,
         ]
     )
 

@@ -18,8 +18,52 @@ def get_return_policy():
 
 @observe(type="tool")
 def get_product_information(product_name: str) -> dict:
+    if product_name == "Unavailable Product":
+        return {
+            "result": {
+                "error": "Product information service is temporarily unavailable."
+            }
+        }
+
     return {
-        "category": "physical",
-        "name": product_name,
-        "price": 49.99,
+        "result": {
+            "category": "physical",
+            "name": product_name,
+            "price": 49.99,
+        }
+    }
+
+
+@observe(type="tool")
+def search_product_catalog(product_name: str) -> dict:
+    """
+    For testing with specific product names.
+    Records this function call in the trace
+    A real fallback tool with controlled data
+    @observe(type="tool") means: When this function runs, DeepEval records it as a tool span.
+    """
+    products = {
+        "Example Product": {
+            "category": "physical",
+            "name": "Example Product",
+            "price": 49.99,
+        },
+        "Unavailable Product": {
+            "category": "physical",
+            "name": "Unavailable Product",
+            "price": 49.99,
+        },
+    }
+
+    product = products.get(product_name)
+
+    if product is None:
+        return {
+            "result": {
+                "error": "Product not found in catalog."
+            }
+        }
+
+    return {
+        "result": product
     }
