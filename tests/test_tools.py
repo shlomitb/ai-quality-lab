@@ -21,3 +21,13 @@ def test_search_product_catalog_finds_unavailable_product():
             "price": 49.99,
         }
     }
+
+
+def test_search_product_catalog_fails_for_unknown_product():
+    result = search_product_catalog("Unknown Product")
+
+    assert result == {
+        "result": {
+            "error": "Product not found in catalog."
+        }
+    }

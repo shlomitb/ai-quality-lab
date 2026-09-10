@@ -152,3 +152,52 @@ def test_agent_recovers_from_product_information_failure():
     ]
 
     assert "49.99" in response.text
+
+
+@pytest.mark.llm
+def test_agent_handles_both_product_information_tools_failing():
+    """
+    Run with -s if want to see the prints:
+    pytest -v -s --run-llm tests/test_agent_tools_with_llm.py -k both_product_information_tools_failing
+    """
+    client = create_client()
+
+    response = answer_customer_with_trace(
+        client=client,
+        question="What is the price of the Unknown Product?",
+    )
+
+    tool_call_details = get_tool_call_details(response)
+
+    #checks that the real LLM tried get_product_information and tehn  whe it failed tried search_product_catalog
+    #and in both it passed the  correct product name
+    assert tool_call_details == [
+        {
+            "name": "get_product_information",
+            "args": {
+                "product_name": "Unknown Product",
+            },
+        },
+        {
+            "name": "search_product_catalog",
+            "args": {
+                "product_name": "Unknown Product",
+            },
+        },
+    ]
+
+    # print("\nTOOL CALLS:")
+    # print(tool_call_details)
+
+    tool_results = get_tool_result_details(response)
+
+    # print("\nTOOL RESULTS:")
+    # print(tool_results)
+
+    assert len(tool_results) == 2
+
+    #checks that the agent did not invent the price when neither tool could provide it
+    assert "49.99" not in response.text
+
+    # print("\nFINAL RESPONSE:")
+    # print(response.text)
