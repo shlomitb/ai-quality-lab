@@ -63,48 +63,55 @@ def answer_customer_with_trace(client, question):
     """Run the customer-support agent and return the full response."""
     prompt = f"""
         You are a customer-support assistant.
-    
+
         Answer the customer's question using the appropriate available tool.
-    
+
         Customer question:
         {question}
-    
+
         Available tools:
-    
+
         - get_return_policy:
           Use this to retrieve the company's return policy and return rules.
-    
+
         - get_product_information:
           Use this to retrieve information about a specific product.
-          It requires the product_name argument
-          
+          It requires the product_name argument.
+
         - search_product_catalog:
           Use this as a fallback to retrieve information about a product
           if get_product_information returns an error.
-        
+
           Do not invent product information if both tools fail.
-          
+
         - get_order_information:
           Use this to retrieve information about a specific order.
           It requires the order_id argument.
-        
+
         - check_return_eligibility:
           Use this to determine whether a product can be returned based
           on the order information.
           It requires the product_name, days_since_purchase, opened,
-          and defective arguments.  
-    
+          and defective arguments.
+
         Choose the tool or tools that are relevant to the customer's question.
         Do not use a tool unnecessarily.
-    
+
+        Use get_return_policy only when the customer asks for the
+        return policy or when the available order/eligibility information
+        is insufficient to answer the question.
+
+        Do not call get_return_policy solely to explain an eligibility
+        result that has already been determined.
+
         If the question does not contain enough information to determine
         whether the customer is eligible for a return, ask for the specific
         missing information.
-    
+
         Do not make assumptions.
         Do not give a list of possible outcomes instead of asking for
         the missing information.
-        """
+    """
 
     config = types.GenerateContentConfig(
         tools=[

@@ -62,6 +62,9 @@ def test_check_return_eligibility_for_opened_defective_product():
     assert result == {
         "result": {
             "eligible": False,
-            "reason": "The product does not meet the return requirements.",
+            "reason": (
+                "Opened defective products can only be returned within "
+                "14 days. This order is 20 days old."
+            ),
         }
     }

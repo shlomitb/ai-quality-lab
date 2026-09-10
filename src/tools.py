@@ -130,6 +130,9 @@ def check_return_eligibility(
     return {
         "result": {
             "eligible": False,
-            "reason": "The product does not meet the return requirements.",
+            "reason": (
+                "Opened defective products can only be returned within "
+                "14 days. This order is 20 days old."
+            ),
         }
     }

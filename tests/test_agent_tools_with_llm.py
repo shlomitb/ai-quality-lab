@@ -268,3 +268,32 @@ def test_agent_gets_product_name_from_order():
             "order_id": "12345",
         },
     }
+
+
+@pytest.mark.llm
+def test_agent_correctly_handles_return_eligibility_result():
+    client = create_client()
+
+    response = answer_customer_with_trace(
+        client=client,
+        question="Can I return order 12345?",
+    )
+
+    tool_results = get_tool_result_details(response)
+
+    # print("\nTOOL RESULTS:")
+    # print(tool_results)
+    #
+    # print("\nFINAL RESPONSE:")
+    # print(response.text)
+
+    eligibility_result = tool_results[1]["response"]
+
+    assert eligibility_result["result"]["result"]["eligible"] is False
+
+    assert "49.99" not in response.text
+
+    assert "not eligible" in response.text.lower()
+    assert "20 days" in response.text.lower()
+    assert "14 days" in response.text.lower()
+
