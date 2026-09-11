@@ -337,3 +337,56 @@ def test_agent_updates_order_status():
 
     finally:
         orders["12345"]["status"] = "Open"
+
+
+
+@pytest.mark.llm
+def test_agent_recovers_and_continues_after_order_lookup_failure():
+
+    """
+    Checks that the agent successfully did all three things"
+    1. Recovered from the failure
+    It didn't stop after get_order_information() failed.
+    2. Used the recovery result
+    It got the order information from search_order_database().
+    3. Continued the workflow
+    It used that information to construct the arguments for check_return_eligibility().
+    This is a genuinely multi-step recovery workflow:
+    """
+    client = create_client()
+
+    response = answer_customer_with_trace(
+        client=client,
+        question="Can I return order 54321?",
+    )
+
+    tool_call_details = get_tool_call_details(response)
+
+    print("\nTOOL CALLS:")
+    print(tool_call_details)
+
+    assert tool_call_details[0] == {
+        "name": "get_order_information",
+        "args": {
+            "order_id": "54321",
+        },
+    }
+
+    assert tool_call_details[1] == {
+        "name": "search_order_database",
+        "args": {
+            "order_id": "54321",
+        },
+    }
+
+    assert tool_call_details[2] == {
+        "name": "check_return_eligibility",
+        "args": {
+            "product_name": "Example Product",
+            "days_since_purchase": 10,
+            "opened": True,
+            "defective": True,
+        },
+    }
+
+    assert "eligible" in response.text.lower() or "return" in response.text.lower()

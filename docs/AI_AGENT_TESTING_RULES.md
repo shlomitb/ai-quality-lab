@@ -653,3 +653,257 @@ A useful rule for agent testing:
 
 Whenever possible, verify important side effects independently.
 
+# New Rules — Failure Recovery and Multi-Step Workflows
+
+## 28. A tool failure is not automatically an agent failure
+
+A tool can fail and the agent can still have a successful trajectory.
+
+Example:
+
+```text
+get_order_information
+        ↓
+ERROR
+        ↓
+search_order_database
+        ↓
+SUCCESS
+```
+
+Evaluate whether the agent responded appropriately to the failure and recovered when possible.
+
+---
+
+## 29. Test recovery separately from safe failure
+
+When a tool fails, there are two important scenarios.
+
+**Recovery is possible:**
+
+```text
+tool fails
+→ appropriate fallback
+→ fallback succeeds
+→ continue task
+```
+
+**Recovery is not possible:**
+
+```text
+tool fails
+→ fallback fails
+→ agent stops safely
+→ truthful response
+→ no hallucination
+```
+
+Both behaviors should be tested.
+
+---
+
+## 30. Multi-step agents must carry information forward correctly
+
+In a multi-step workflow, a later tool call may depend on information returned by an earlier tool.
+
+Example:
+
+```text
+get_order_information("54321")
+        ↓
+product_name = Example Product
+days_since_purchase = 10
+opened = True
+defective = True
+        ↓
+check_return_eligibility(...)
+```
+
+The test should verify that the information from the first step is correctly used to construct the next tool call.
+
+---
+
+## 31. Test the chain, not only individual tools
+
+A tool can work perfectly in isolation while the agent still uses it incorrectly.
+
+Test both:
+
+```text
+Unit test
+→ Does the tool work?
+
+Agent integration test
+→ Does the agent use the tool correctly?
+
+Trajectory evaluation
+→ Does the complete workflow make sense?
+```
+
+---
+
+## 32. Verify the actual outcome, not just the agent's claim
+
+If an agent says:
+
+> "The order was updated."
+
+that is not proof.
+
+Whenever possible, verify the actual state independently:
+
+
+assert orders["12345"]["status"] == "Reviewed"
+
+The agent's final response tells us what the agent believes happened.
+
+The system state tells us what actually happened.
+
+---
+
+## 33. Tool output is part of agent design
+
+When an agent makes an unnecessary additional tool call, investigate the tool output before assuming the agent is the problem.
+
+For example:
+
+```text
+eligible = False
+reason = "Does not meet requirements."
+```
+
+may force the agent to retrieve additional information.
+
+A richer result:
+
+```text
+eligible = False
+reason = "Opened defective products can only be returned
+within 14 days. This order is 20 days old."
+```
+
+may allow the agent to complete the task directly.
+
+Agent quality depends on:
+
+```text
+prompt/instructions
++
+tool definitions
++
+tool arguments
++
+tool results
+```
+
+---
+
+## 34. Efficiency depends on context
+
+Do not define efficiency simply as "fewest tool calls."
+
+The correct question is:
+
+> Was each step justified by the task and the information available at that point?
+
+A three-step trajectory can be efficient when all three steps are necessary.
+
+A two-step trajectory can be inefficient if one step is redundant.
+
+---
+
+## 35. Deterministic tests and trajectory evaluation have different jobs
+
+Use deterministic assertions for precise requirements:
+
+```text
+correct tool
+correct arguments
+required facts
+actual state
+required final information
+```
+
+Use trajectory evaluation for broader questions:
+
+```text
+Was the task completed?
+Was the trajectory efficient?
+Was the recovery reasonable?
+```
+
+The strongest agent tests often combine both.
+
+---
+
+## 36. Agent testing is an iterative improvement loop
+
+A useful workflow is:
+
+```text
+Observe
+   ↓
+Test
+   ↓
+Evaluate
+   ↓
+Identify undesirable behavior
+   ↓
+Diagnose the cause
+   ↓
+Improve prompt/tool/agent design
+   ↓
+Retest
+   ↓
+Verify improvement
+```
+
+An evaluation score should be used to understand behavior, not simply to make the score go up.
+
+---
+
+## 37. Test the whole workflow from beginning to end
+
+For a multi-step agent, think in terms of:
+
+```text
+User task
+   ↓
+Tool 1
+   ↓
+Result 1
+   ↓
+Agent decision
+   ↓
+Tool 2
+   ↓
+Result 2
+   ↓
+Agent decision
+   ↓
+State change / final outcome
+   ↓
+Final response
+```
+
+Important quality properties can exist at every stage.
+
+---
+
+## 38. A successful final answer is not sufficient evidence
+
+An agent can produce a convincing final answer even when something went wrong earlier.
+
+Therefore, evaluate:
+
+```text
+trajectory
++
+tool results
++
+final response
++
+actual state
+```
+
+rather than relying only on the final text.

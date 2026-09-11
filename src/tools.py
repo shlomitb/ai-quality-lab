@@ -11,7 +11,15 @@ orders = {
         "opened": True,
         "defective": True,
         "status": "Open",
-    }
+    },
+    "54321": {
+        "order_id": "54321",
+        "product_name": "Example Product",
+        "days_since_purchase": 10,
+        "opened": True,
+        "defective": True,
+        "status": "Open",
+    },
 }
 
 @observe(type="tool")
@@ -92,16 +100,12 @@ def search_product_catalog(product_name: str) -> dict:
 
 @observe(type="tool")
 def get_order_information(order_id: str) -> dict:
-    orders = {
-        "12345": {
-            "order_id": "12345",
-            "product_name": "Example Product",
-            "days_since_purchase": 20,
-            "opened": True,
-            "defective": True,
-            "status": "Open",
+    if order_id == "54321":
+        return {
+            "result": {
+                "error": "Order information service is temporarily unavailable."
+            }
         }
-    }
 
     order = orders.get(order_id)
 
@@ -169,4 +173,19 @@ def check_return_eligibility(
                 "14 days. This order is 20 days old."
             ),
         }
+    }
+
+@observe(type="tool")
+def search_order_database(order_id: str) -> dict:
+    order = orders.get(order_id)
+
+    if order is None:
+        return {
+            "result": {
+                "error": "Order not found in database."
+            }
+        }
+
+    return {
+        "result": order
     }

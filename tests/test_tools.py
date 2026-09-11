@@ -3,11 +3,12 @@ from src.tools import (
     search_product_catalog,
     get_order_information,
     check_return_eligibility,
-     orders,
+    orders,
     update_order_status,
-
+    search_order_database,
     )
 
+#run with: pytest -v tests/test_tools.py
 
 def test_get_product_information_returns_error_for_unavailable_product():
     result = get_product_information("Unavailable Product")
@@ -90,3 +91,28 @@ def test_update_order_status():
 
     # Reset the shared test data
     orders["12345"]["status"] = "Open"
+
+
+def test_get_order_information_fails_for_unavailable_order():
+    result = get_order_information("54321")
+
+    assert result == {
+        "result": {
+            "error": "Order information service is temporarily unavailable."
+        }
+    }
+
+
+def test_search_order_database_finds_order():
+    result = search_order_database("54321")
+
+    assert result == {
+        "result": {
+            "order_id": "54321",
+            "product_name": "Example Product",
+            "days_since_purchase": 10,
+            "opened": True,
+            "defective": True,
+            "status": "Open",
+        }
+    }
