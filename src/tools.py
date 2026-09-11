@@ -22,6 +22,27 @@ orders = {
     },
 }
 
+
+tickets = {
+    "BUG-123": {
+        "ticket_id": "BUG-123",
+        "title": "Login button does not work",
+        "description": "Clicking the login button does nothing.",
+        "repository": "demo-app",
+        "status": "Open",
+    }
+}
+
+repositories = {
+    "demo-app": {
+        "name": "demo-app",
+        "language": "Python",
+        "path": "C:/Projects/demo-app",
+        "default_branch": "main",
+    }
+}
+
+
 @observe(type="tool")
 def get_return_policy():
     return """
@@ -188,4 +209,36 @@ def search_order_database(order_id: str) -> dict:
 
     return {
         "result": order
+    }
+
+
+@observe(type="tool")
+def get_ticket(ticket_id: str) -> dict:
+    ticket = tickets.get(ticket_id)
+
+    if ticket is None:
+        return {
+            "result": {
+                "error": "Ticket not found."
+            }
+        }
+
+    return {
+        "result": ticket
+    }
+
+
+@observe(type="tool")
+def get_repository(repository_name: str) -> dict:
+    repository = repositories.get(repository_name)
+
+    if repository is None:
+        return {
+            "result": {
+                "error": "Repository not found."
+            }
+        }
+
+    return {
+        "result": repository
     }

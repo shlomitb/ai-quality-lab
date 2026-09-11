@@ -6,7 +6,9 @@ from src.tools import (
     orders,
     update_order_status,
     search_order_database,
-    )
+    get_ticket,
+    get_repository,
+)
 
 #run with: pytest -v tests/test_tools.py
 
@@ -44,7 +46,7 @@ def test_search_product_catalog_fails_for_unknown_product():
     }
 
 
-def test_get_order_info_for_known_order():
+def test_get_order_info_for_known_order() -> None:
     result = get_order_information("12345")
 
     assert result == {
@@ -114,5 +116,51 @@ def test_search_order_database_finds_order():
             "opened": True,
             "defective": True,
             "status": "Open",
+        }
+    }
+
+
+
+def test_get_ticket_for_known_ticket():
+    result = get_ticket("BUG-123")
+
+    assert result == {
+        "result": {
+            "ticket_id": "BUG-123",
+            "title": "Login button does not work",
+            "description": "Clicking the login button does nothing.",
+            "repository": "demo-app",
+            "status": "Open",
+        }
+    }
+
+def test_get_ticket_for_unknown_ticket():
+    result = get_ticket("BUG-999")
+
+    assert result == {
+        "result": {
+            "error": "Ticket not found."
+        }
+    }
+
+def test_get_repository_for_known_repository():
+    result = get_repository("demo-app")
+
+    assert result == {
+        "result": {
+            "name": "demo-app",
+            "language": "Python",
+            "path": "C:/Projects/demo-app",
+            "default_branch": "main",
+        }
+    }
+
+
+def test_get_repository_for_unknown_repository():
+    result = get_repository("unknown-repo")
+
+    assert result == {
+        "result": {
+            "error": "Repository not found."
         }
     }

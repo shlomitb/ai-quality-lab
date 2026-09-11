@@ -10,6 +10,8 @@ from src.tools import (
     search_order_database,
     check_return_eligibility,
     update_order_status,
+    get_ticket,
+    get_repository,
 )
 
 
@@ -103,6 +105,15 @@ def answer_customer_with_trace(client, question):
         - search_order_database:
           Use this as a fallback to retrieve order information if
           get_order_information returns an error.
+          
+          
+        - get_ticket:
+          Use this to retrieve information about a specific ticket.
+          It requires the ticket_id argument.
+        
+        - get_repository:
+          Use this to retrieve information about a specific repository.
+          It requires the repository_name argument.
 
         Choose the tool or tools that are relevant to the customer's question.
         Do not use a tool unnecessarily.
@@ -117,6 +128,9 @@ def answer_customer_with_trace(client, question):
         If the question does not contain enough information to determine
         whether the customer is eligible for a return, ask for the specific
         missing information.
+        
+        When a tool returns information needed for a later step,
+        use that information rather than making assumptions.
 
         Do not make assumptions.
         Do not give a list of possible outcomes instead of asking for
@@ -132,6 +146,8 @@ def answer_customer_with_trace(client, question):
             search_order_database,
             check_return_eligibility,
             update_order_status,
+            get_ticket,
+            get_repository,
         ]
     )
 

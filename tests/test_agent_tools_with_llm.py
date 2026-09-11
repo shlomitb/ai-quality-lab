@@ -390,3 +390,37 @@ def test_agent_recovers_and_continues_after_order_lookup_failure():
     }
 
     assert "eligible" in response.text.lower() or "return" in response.text.lower()
+
+
+@pytest.mark.llm
+def test_agent_uses_ticket_result_to_get_repository():
+    client = create_client()
+
+    response = answer_customer_with_trace(
+        client=client,
+        question="What programming language is the repository for BUG-123 written in?",
+    )
+
+    # print("\nFINAL RESPONSE:")
+    # print(response.text)
+
+    tool_call_details = get_tool_call_details(response)
+
+    print("\nTOOL CALLS:")
+    print(tool_call_details)
+
+    assert tool_call_details[0] == {
+        "name": "get_ticket",
+        "args": {
+            "ticket_id": "BUG-123",
+        },
+    }
+
+    assert tool_call_details[1] == {
+        "name": "get_repository",
+        "args": {
+            "repository_name": "demo-app",
+        },
+    }
+
+    assert "python" in response.text.lower()

@@ -907,3 +907,32 @@ actual state
 ```
 
 rather than relying only on the final text.
+
+## 39. Verify information flow between agent steps
+
+In a multi-step agent, a later tool call may depend on information returned by an earlier tool.
+
+Test that the agent correctly carries information forward.
+
+Example:
+
+```text
+User asks about BUG-123
+        ↓
+get_ticket("BUG-123")
+        ↓
+repository = "demo-app"
+        ↓
+get_repository("demo-app")
+        ↓
+language = Python
+```
+
+The test should verify both:
+
+```text
+✅ the correct first tool was called
+✅ the information returned by the first tool was correctly used in the next tool's arguments
+```
+
+This tests the agent's ability to maintain and use context across a multi-step workflow.
