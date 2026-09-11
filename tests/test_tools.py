@@ -3,11 +3,16 @@ from src.tools import (
     search_product_catalog,
     get_order_information,
     check_return_eligibility,
+     orders,
+    update_order_status,
+
     )
 
 
 def test_get_product_information_returns_error_for_unavailable_product():
     result = get_product_information("Unavailable Product")
+
+    print(result)
 
     assert result == {
         "result": {
@@ -48,6 +53,7 @@ def test_get_order_info_for_known_order():
             "days_since_purchase": 20,
             "opened": True,
             "defective": True,
+            "status": "Open",
         }
     }
 
@@ -68,3 +74,19 @@ def test_check_return_eligibility_for_opened_defective_product():
             ),
         }
     }
+
+
+def test_update_order_status():
+    result = update_order_status("12345", "Reviewed")
+
+    assert result == {
+        "result": {
+            "order_id": "12345",
+            "status": "Reviewed",
+        }
+    }
+
+    assert orders["12345"]["status"] == "Reviewed"
+
+    # Reset the shared test data
+    orders["12345"]["status"] = "Open"

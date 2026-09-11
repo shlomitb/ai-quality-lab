@@ -8,6 +8,7 @@ from src.tools import (
     search_product_catalog,
     get_order_information,
     check_return_eligibility,
+    update_order_status,
 )
 
 
@@ -93,6 +94,10 @@ def answer_customer_with_trace(client, question):
           on the order information.
           It requires the product_name, days_since_purchase, opened,
           and defective arguments.
+          
+        - update_order_status:
+          Use this to update the status of a specific order.
+          It requires the order_id and status arguments.
 
         Choose the tool or tools that are relevant to the customer's question.
         Do not use a tool unnecessarily.
@@ -120,6 +125,7 @@ def answer_customer_with_trace(client, question):
             search_product_catalog,
             get_order_information,
             check_return_eligibility,
+            update_order_status,
         ]
     )
 

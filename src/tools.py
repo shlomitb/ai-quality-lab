@@ -2,6 +2,18 @@
 
 from deepeval.tracing import observe
 
+
+orders = {
+    "12345": {
+        "order_id": "12345",
+        "product_name": "Example Product",
+        "days_since_purchase": 20,
+        "opened": True,
+        "defective": True,
+        "status": "Open",
+    }
+}
+
 @observe(type="tool")
 def get_return_policy():
     return """
@@ -87,6 +99,7 @@ def get_order_information(order_id: str) -> dict:
             "days_since_purchase": 20,
             "opened": True,
             "defective": True,
+            "status": "Open",
         }
     }
 
@@ -101,6 +114,27 @@ def get_order_information(order_id: str) -> dict:
 
     return {
         "result": order
+    }
+
+
+@observe(type="tool")
+def update_order_status(order_id: str, status: str) -> dict:
+    order = orders.get(order_id)
+
+    if order is None:
+        return {
+            "result": {
+                "error": "Order not found."
+            }
+        }
+
+    order["status"] = status
+
+    return {
+        "result": {
+            "order_id": order_id,
+            "status": status,
+        }
     }
 
 

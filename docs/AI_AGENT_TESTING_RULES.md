@@ -8,7 +8,7 @@ Use normal Python/pytest assertions when the expected behavior is precise.
 
 Examples:
 
-```python
+
 assert tool_name == "get_product_information"
 assert order_id == "12345"
 assert "49.99" not in response.text
@@ -46,10 +46,10 @@ Then use deterministic assertions to check important requirements.
 
 ## 3. `@observe` records execution; it does not cause execution
 
-```python
+
 @observe(type="agent")
 def my_agent():
-```
+
 
 means:
 
@@ -61,9 +61,9 @@ The function runs because Python calls it.
 
 Similarly:
 
-```python
+
 @observe(type="tool")
-```
+
 
 records a tool call as a span in the trace.
 

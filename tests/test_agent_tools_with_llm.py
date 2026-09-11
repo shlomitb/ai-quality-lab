@@ -297,3 +297,43 @@ def test_agent_correctly_handles_return_eligibility_result():
     assert "20 days" in response.text.lower()
     assert "14 days" in response.text.lower()
 
+
+
+@pytest.mark.llm
+def test_agent_updates_order_status():
+    from src.tools import orders
+
+    orders["12345"]["status"] = "Open"
+
+    client = create_client()
+
+    try:
+        response = answer_customer_with_trace(
+            client=client,
+            question="Mark order 12345 as Reviewed.",
+        )
+
+        tool_call_details = get_tool_call_details(response)
+
+        print("\nTOOL CALLS:")
+        print(tool_call_details)
+
+        print("\nFINAL RESPONSE:")
+        print(response.text)
+
+        assert any(
+            call["name"] == "update_order_status"
+            and call["args"] == {
+                "order_id": "12345",
+                "status": "Reviewed",
+            }
+            for call in tool_call_details
+        )
+
+        assert orders["12345"]["status"] == "Reviewed"
+
+        assert "updated" in response.text.lower()
+        assert "reviewed" in response.text.lower()
+
+    finally:
+        orders["12345"]["status"] = "Open"
