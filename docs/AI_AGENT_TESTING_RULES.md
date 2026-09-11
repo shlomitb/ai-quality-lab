@@ -936,3 +936,34 @@ The test should verify both:
 ```
 
 This tests the agent's ability to maintain and use context across a multi-step workflow.
+
+## 40. Use deterministic checks for exact outcomes
+
+If the expected result is a specific, known fact, verify it directly rather than relying only on an LLM evaluator.
+
+For example:
+
+
+assert "python" in response.text.lower()
+
+This directly verifies the agent answered "Python."
+
+A DeepEval result such as:
+
+```text
+Task Completion = 1.0
+```
+
+provides a broader semantic judgment, but does not by itself prove the exact fact.
+
+Use both when appropriate:
+
+```text
+Deterministic assertion
+→ verifies the exact requirement
+
+DeepEval
+→ evaluates the broader quality of the trajectory
+```
+
+This combination provides stronger evidence than either approach alone.
