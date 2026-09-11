@@ -380,3 +380,276 @@ robust?
 ```
 
 Use the appropriate test for each layer rather than trying to test everything with one metric.
+
+
+# New Rules — Multi-Step Agents and State Validation
+
+## 17. Test multi-step dependencies
+
+In a real agent, a later tool call may depend on information returned by an earlier tool.
+
+Example:
+
+```text
+get_order_information("12345")
+        ↓
+returns product, purchase date, opened, defective
+        ↓
+check_return_eligibility(...)
+        ↓
+returns eligible = False
+```
+
+Test not only that the tools were called, but that information from the first result was correctly used as arguments to the next tool.
+
+---
+
+## 18. Don't require an exact trajectory unless it is a hard requirement
+
+An agent may have more than one valid way to complete a task.
+
+Prefer:
+
+
+assert tool_call_details[0] == expected_first_step
+assert tool_call_details[1] == expected_second_step
+
+
+when specific steps are required.
+
+Avoid:
+
+
+assert tool_call_details == [...]
+
+
+unless the entire sequence is genuinely required.
+
+Use trajectory evaluation when the question is:
+
+> Was the overall path reasonable and efficient?
+
+---
+
+## 19. Efficiency is contextual
+
+More tool calls do not automatically mean an inefficient agent.
+
+The important question is:
+
+> Was each action justified by the task and the information available at that point?
+
+For example:
+
+```text
+get_order_information
+→ check_return_eligibility
+→ get_return_policy
+```
+
+may be reasonable for a task requiring an eligibility decision plus explanation.
+
+But an unnecessary duplicate such as:
+
+```text
+get_return_policy
+→ get_product_information
+→ get_return_policy
+```
+
+is much easier to identify as redundant.
+
+`StepEfficiencyMetric` evaluates the usefulness of steps in context rather than simply counting them.
+
+---
+
+## 20. Tool output affects agent efficiency
+
+If a tool returns insufficient information, the agent may need additional tool calls.
+
+Poor output:
+
+```python
+{
+    "eligible": False,
+    "reason": "Does not meet requirements."
+}
+```
+
+Better output:
+
+```python
+{
+    "eligible": False,
+    "reason": (
+        "Opened defective products can only be returned within "
+        "14 days. This order is 20 days old."
+    )
+}
+```
+
+A well-designed tool result can allow the agent to finish without an unnecessary follow-up call.
+
+Therefore, when an agent takes an inefficient path, investigate both:
+
+```text
+agent instructions
++
+tool design / tool output
+```
+
+before changing the prompt.
+
+---
+
+## 21. Separate failure handling from recovery
+
+Failure handling means:
+
+```text
+tool fails
+→ agent does not hallucinate
+→ agent gives a truthful response
+```
+
+Recovery means:
+
+```text
+tool fails
+→ agent chooses an appropriate alternative
+→ alternative succeeds
+→ agent completes the task
+```
+
+Test these behaviors separately.
+
+---
+
+## 22. Verify actual state changes
+
+Never rely only on the agent's final statement.
+
+If the agent says:
+
+> "Order 12345 has been updated."
+
+verify the actual state:
+
+assert orders["12345"]["status"] == "Reviewed"
+
+
+The agent's response is evidence of what it believes happened.
+
+The actual system state is evidence of what really happened.
+
+---
+
+## 23. State validation is different from response validation
+
+Response validation asks:
+
+> Did the agent say the correct thing?
+
+State validation asks:
+
+> Did the system actually end up in the correct state?
+
+For a coding agent, examples of state validation include:
+
+```text
+file was actually modified
+tests actually pass
+ticket status actually changed
+database record was actually updated
+commit was actually created
+```
+
+State validation is often stronger than trusting the final response alone.
+
+---
+
+## 24. Combine deterministic tests with semantic evaluation
+
+Use deterministic assertions for facts that can be known exactly:
+
+```text
+correct tool
+correct arguments
+correct state
+required facts in final answer
+```
+
+Use DeepEval/LLM evaluation for broader questions:
+
+```text
+Was the task completed?
+Was the trajectory efficient?
+Was the recovery reasonable?
+```
+
+The strongest test strategy often combines both.
+
+---
+
+## 25. Evaluate the whole workflow, not just individual actions
+
+For a multi-step agent, think in layers:
+
+```text
+Task
+ ↓
+Tool 1
+ ↓
+Result 1
+ ↓
+Agent interpretation
+ ↓
+Tool 2
+ ↓
+Result 2
+ ↓
+Agent interpretation
+ ↓
+State change
+ ↓
+Final answer
+```
+
+A good evaluation strategy checks important properties at multiple points in this chain rather than relying on a single final score.
+
+---
+
+## 26. Agent quality is an iterative loop
+
+A useful workflow is:
+
+```text
+Observe
+ ↓
+Test
+ ↓
+Evaluate
+ ↓
+Identify undesirable behavior
+ ↓
+Diagnose the cause
+ ↓
+Improve tool/prompt/agent design
+ ↓
+Retest
+ ↓
+Verify the improvement
+```
+
+Do not change the agent simply to make an evaluation score higher. First understand why the behavior was considered undesirable.
+
+---
+
+## 27. An agent's claim is not proof
+
+A useful rule for agent testing:
+
+> **Trust the system state more than the agent's claim about the system state.**
+
+Whenever possible, verify important side effects independently.
+
