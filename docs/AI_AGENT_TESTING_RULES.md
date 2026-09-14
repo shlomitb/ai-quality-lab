@@ -967,3 +967,34 @@ DeepEval
 ```
 
 This combination provides stronger evidence than either approach alone.
+
+
+## 41. Evaluate behavior against the task, not a fixed workflow
+
+The correct agent trajectory depends on what the user asked for.
+
+For example:
+
+```text
+"Run the tests and report failures."
+→ get_ticket
+→ run_tests
+→ report result
+```
+
+But:
+
+```text
+"Investigate and fix the failing test."
+→ get_ticket
+→ run_tests
+→ inspect relevant code
+→ make a change
+→ run_tests again
+→ verify the fix
+```
+
+Do not assume that every task should produce the same sequence of tool calls.
+
+Evaluate whether the actions taken were appropriate for the specific task.
+

@@ -9,6 +9,7 @@ from src.tools import (
     get_ticket,
     get_repository,
     search_files,
+    run_tests,
 )
 
 #run with: pytest -v tests/test_tools.py
@@ -188,5 +189,42 @@ def test_search_files_returns_empty_matches_when_nothing_found():
     assert result == {
         "result": {
             "matches": []
+        }
+    }
+
+
+
+def test_run_tests_for_known_repository():
+    result = run_tests("demo-app")
+
+    assert result == {
+        "result": {
+            "status": "passed",
+            "tests_run": 1,
+            "tests_failed": 0,
+        }
+    }
+
+
+def test_run_tests_for_unknown_repository():
+    result = run_tests("unknown-repo")
+
+    assert result == {
+        "result": {
+            "error": "Repository not found."
+        }
+    }
+
+
+def test_get_ticket_for_failing_repository():
+    result = get_ticket("BUG-456")
+
+    assert result == {
+        "result": {
+            "ticket_id": "BUG-456",
+            "title": "Login button test is failing",
+            "description": "The login button test is failing and needs investigation.",
+            "repository": "demo-app_fail",
+            "status": "Open",
         }
     }

@@ -460,3 +460,72 @@ def test_agent_investigates_ticket_and_searches_files():
     assert "login" in tool_call_details[1]["args"]["search_term"].lower()
 
     assert "src/login.py" in response.text
+
+
+
+@pytest.mark.llm
+def test_agent_uses_ticket_repository_to_run_tests():
+    client = create_client()
+
+    response = answer_customer_with_trace(
+        client=client,
+        question="Investigate BUG-123 and run the tests for the repository.",
+    )
+
+    tool_call_details = get_tool_call_details(response)
+
+    print("\nTOOL CALLS:")
+    print(tool_call_details)
+
+    print("\nFINAL RESPONSE:")
+    print(response.text)
+
+    assert tool_call_details[0] == {
+        "name": "get_ticket",
+        "args": {
+            "ticket_id": "BUG-123",
+        },
+    }
+
+    assert tool_call_details[1]["name"] == "run_tests"
+    assert tool_call_details[1]["args"]["repository_name"] == "demo-app"
+
+    assert "passed" in response.text.lower()
+
+
+
+@pytest.mark.llm
+def test_agent_reports_test_failure():
+    client = create_client()
+
+    response = answer_customer_with_trace(
+        client=client,
+        question=(
+            "Investigate BUG-456 and run the tests for its repository. "
+            "Report any test failures."
+        ),
+    )
+
+    tool_call_details = get_tool_call_details(response)
+
+    print("\nTOOL CALLS:")
+    print(tool_call_details)
+
+    print("\nFINAL RESPONSE:")
+    print(response.text)
+
+    assert tool_call_details[0] == {
+        "name": "get_ticket",
+        "args": {
+            "ticket_id": "BUG-456",
+        },
+    }
+
+    assert tool_call_details[1] == {
+        "name": "run_tests",
+        "args": {
+            "repository_name": "demo-app_fail",
+        },
+    }
+
+    assert "test_login_button" in response.text

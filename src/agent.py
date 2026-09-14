@@ -13,6 +13,7 @@ from src.tools import (
     get_ticket,
     get_repository,
     search_files,
+    run_tests,
 )
 
 
@@ -118,6 +119,10 @@ def answer_customer_with_trace(client, question):
         - search_files:
           Use this to search files in a repository for a specific term.
           It requires the repository_name and search_term arguments.
+          
+          - run_tests:
+          Use this to run the test suite for a repository.
+          It requires the repository_name argument.
   
         Choose the tool or tools that are relevant to the customer's question.
         Do not use a tool unnecessarily.
@@ -132,6 +137,9 @@ def answer_customer_with_trace(client, question):
         When investigating a ticket, use information from the ticket
         and repository tools to determine which repository and search
         terms are relevant.
+        
+        When investigating a coding issue, use test results to determine
+        whether the current code is behaving correctly.
 
         If the question does not contain enough information to determine
         whether the customer is eligible for a return, ask for the specific
@@ -156,7 +164,8 @@ def answer_customer_with_trace(client, question):
             update_order_status,
             get_ticket,
             get_repository,
-            search_files
+            search_files,
+            run_tests
         ]
     )
 

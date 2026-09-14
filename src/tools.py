@@ -30,7 +30,14 @@ tickets = {
         "description": "Clicking the login button does nothing.",
         "repository": "demo-app",
         "status": "Open",
-    }
+    },
+    "BUG-456": {
+        "ticket_id": "BUG-456",
+        "title": "Login button test is failing",
+        "description": "The login button test is failing and needs investigation.",
+        "repository": "demo-app_fail",
+        "status": "Open",
+    },
 }
 
 repositories = {
@@ -295,5 +302,39 @@ def search_files(repository_name: str, search_term: str) -> dict:
     return {
         "result": {
             "matches": matches
+        }
+    }
+
+
+@observe(type="tool")
+def run_tests(repository_name: str) -> dict:
+    if repository_name == "demo-app":
+        return {
+            "result": {
+                "status": "passed",
+                "tests_run": 1,
+                "tests_failed": 0,
+            }
+        }
+
+    if repository_name == "demo-app_fail":
+        return {
+            "result": {
+                "status": "failed",
+                "tests_run": 3,
+                "tests_failed": 1,
+                "failures": [
+                    {
+                        "test": "test_login_button",
+                        "file": "tests/test_login.py",
+                        "message": "Expected login button to be enabled."
+                    }
+                ],
+            }
+        }
+
+    return {
+        "result": {
+            "error": "Repository not found."
         }
     }
