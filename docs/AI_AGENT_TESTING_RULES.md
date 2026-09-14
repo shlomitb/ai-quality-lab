@@ -998,3 +998,35 @@ Do not assume that every task should produce the same sequence of tool calls.
 
 Evaluate whether the actions taken were appropriate for the specific task.
 
+
+## 42. Successful does not always mean efficient
+
+An agent can successfully complete a task while taking an imperfect or unnecessary intermediate step.
+
+For example:
+
+```text
+run_tests
+→ failure
+→ search_files("login button")
+→ no results
+→ search_files("login")
+→ useful result
+→ fix
+→ tests pass
+```
+
+The task can still be fully successful, even though the first search was unproductive.
+
+Therefore evaluate both:
+
+```text
+Task Completion
+→ Did the agent ultimately succeed?
+
+Step Efficiency
+→ Did the agent avoid unnecessary or unproductive actions?
+```
+
+Do not treat every imperfect step as a complete agent failure. Consider whether the agent recovered appropriately.
+

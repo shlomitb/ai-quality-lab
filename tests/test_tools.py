@@ -10,6 +10,8 @@ from src.tools import (
     get_repository,
     search_files,
     run_tests,
+    bug_fixed,
+    apply_fix,
 )
 
 #run with: pytest -v tests/test_tools.py
@@ -228,3 +230,21 @@ def test_get_ticket_for_failing_repository():
             "status": "Open",
         }
     }
+
+
+def test_apply_fix_for_bug_456():
+    bug_fixed["BUG-456"] = False
+
+    result = apply_fix("BUG-456")
+
+    assert result == {
+        "result": {
+            "status": "fixed",
+            "ticket_id": "BUG-456",
+            "message": "The login button issue was fixed.",
+        }
+    }
+
+    assert bug_fixed["BUG-456"] is True
+
+    bug_fixed["BUG-456"] = False

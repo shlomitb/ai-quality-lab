@@ -529,3 +529,66 @@ def test_agent_reports_test_failure():
     }
 
     assert "test_login_button" in response.text
+
+
+@pytest.mark.llm
+def test_agent_fixes_failed_test_and_verifies():
+    from src.tools import bug_fixed
+
+    bug_fixed["BUG-456"] = False
+
+    client = create_client()
+
+    try:
+        response = answer_customer_with_trace(
+            client=client,
+            question=(
+                "Investigate BUG-456, fix the failing test, "
+                "and verify that the tests pass."
+            ),
+        )
+
+        tool_call_details = get_tool_call_details(response)
+
+        print("\nTOOL CALLS:")
+        print(tool_call_details)
+
+        print("\nFINAL RESPONSE:")
+        print(response.text)
+
+        assert tool_call_details[0] == {
+            "name": "get_ticket",
+            "args": {
+                "ticket_id": "BUG-456",
+            },
+        }
+
+        assert tool_call_details[1] == {
+            "name": "run_tests",
+            "args": {
+                "repository_name": "demo-app_fail",
+            },
+        }
+
+        assert any(
+            call["name"] == "apply_fix"
+            and call["args"] == {
+                "ticket_id": "BUG-456",
+            }
+            for call in tool_call_details
+        )
+
+        test_runs = [
+            call
+            for call in tool_call_details
+            if call["name"] == "run_tests"
+        ]
+
+        assert len(test_runs) >= 2
+
+        assert bug_fixed["BUG-456"] is True
+
+        assert "pass" in response.text.lower()
+
+    finally:
+        bug_fixed["BUG-456"] = False

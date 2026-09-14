@@ -49,6 +49,9 @@ repositories = {
     }
 }
 
+bug_fixed = {
+    "BUG-456": False
+}
 
 files = {
     "demo-app": {
@@ -67,7 +70,19 @@ files = {
         
         Simple login application.
         """,
-    }
+    },
+    "demo-app_fail": {
+        "src/login.py": """
+        def login(username, password):
+            if username and password:
+                return True
+            return False
+        """,
+        "tests/test_login.py": """
+        def test_login_button():
+            assert login("alice", "password") is True
+        """,
+     },
 }
 
 
@@ -318,6 +333,15 @@ def run_tests(repository_name: str) -> dict:
         }
 
     if repository_name == "demo-app_fail":
+        if bug_fixed["BUG-456"]:
+            return {
+                "result": {
+                    "status": "passed",
+                    "tests_run": 3,
+                    "tests_failed": 0,
+                }
+            }
+
         return {
             "result": {
                 "status": "failed",
@@ -327,7 +351,7 @@ def run_tests(repository_name: str) -> dict:
                     {
                         "test": "test_login_button",
                         "file": "tests/test_login.py",
-                        "message": "Expected login button to be enabled."
+                        "message": "Expected login button to be enabled.",
                     }
                 ],
             }
@@ -336,5 +360,25 @@ def run_tests(repository_name: str) -> dict:
     return {
         "result": {
             "error": "Repository not found."
+        }
+    }
+
+
+@observe(type="tool")
+def apply_fix(ticket_id: str) -> dict:
+    if ticket_id == "BUG-456":
+        bug_fixed["BUG-456"] = True
+
+        return {
+            "result": {
+                "status": "fixed",
+                "ticket_id": ticket_id,
+                "message": "The login button issue was fixed.",
+            }
+        }
+
+    return {
+        "result": {
+            "error": "No supported fix is available for this ticket."
         }
     }

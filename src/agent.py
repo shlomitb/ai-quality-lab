@@ -14,6 +14,7 @@ from src.tools import (
     get_repository,
     search_files,
     run_tests,
+    apply_fix,
 )
 
 
@@ -123,6 +124,10 @@ def answer_customer_with_trace(client, question):
           - run_tests:
           Use this to run the test suite for a repository.
           It requires the repository_name argument.
+          
+          - apply_fix:
+          Use this to apply the supported fix for a specific ticket.
+          It requires the ticket_id argument.
   
         Choose the tool or tools that are relevant to the customer's question.
         Do not use a tool unnecessarily.
@@ -140,6 +145,12 @@ def answer_customer_with_trace(client, question):
         
         When investigating a coding issue, use test results to determine
         whether the current code is behaving correctly.
+        
+        When a test fails while investigating a ticket, inspect the
+        failure information before applying a fix.
+        
+        After applying a fix, run the tests again to verify whether
+        the problem was resolved.
 
         If the question does not contain enough information to determine
         whether the customer is eligible for a return, ask for the specific
@@ -165,7 +176,8 @@ def answer_customer_with_trace(client, question):
             get_ticket,
             get_repository,
             search_files,
-            run_tests
+            run_tests,
+            apply_fix
         ]
     )
 
