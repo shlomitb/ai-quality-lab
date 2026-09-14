@@ -43,6 +43,27 @@ repositories = {
 }
 
 
+files = {
+    "demo-app": {
+        "src/login.py": """
+        def login(username, password):
+            if username and password:
+                return True
+            return False
+        """,
+                "tests/test_login.py": """
+        def test_login():
+            assert login("alice", "password") is True
+        """,
+                "README.md": """
+        # Demo App
+        
+        Simple login application.
+        """,
+    }
+}
+
+
 @observe(type="tool")
 def get_return_policy():
     return """
@@ -241,4 +262,38 @@ def get_repository(repository_name: str) -> dict:
 
     return {
         "result": repository
+    }
+
+
+@observe(type="tool")
+def search_files(repository_name: str, search_term: str) -> dict:
+    repository_files = files.get(repository_name)
+
+    if repository_files is None:
+        return {
+            "result": {
+                "error": "Repository not found."
+            }
+        }
+
+    matches = []
+
+    for file_path, content in repository_files.items():
+        if search_term.lower() in content.lower():
+            matches.append({
+                "file_path": file_path,
+                "content": content,
+            })
+
+    if not matches:
+        return {
+            "result": {
+                "matches": []
+            }
+        }
+
+    return {
+        "result": {
+            "matches": matches
+        }
     }

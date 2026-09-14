@@ -424,3 +424,39 @@ def test_agent_uses_ticket_result_to_get_repository():
     }
 
     assert "python" in response.text.lower()
+
+
+
+@pytest.mark.llm
+def test_agent_investigates_ticket_and_searches_files():
+    """
+    When run the llm - we want to see that it figures out on its own to run:
+    call get_ticket
+    then get_repository
+    then search_files
+    """
+    client = create_client()
+
+    response = answer_customer_with_trace(
+        client=client,
+        question="Investigate BUG-123 and find the file related to the login problem.",
+    )
+
+    tool_call_details = get_tool_call_details(response)
+
+    print("\nTOOL CALLS:")
+    print(tool_call_details)
+
+    assert tool_call_details[0] == {
+        "name": "get_ticket",
+        "args": {
+            "ticket_id": "BUG-123",
+        },
+    }
+
+    assert tool_call_details[1]["name"] == "search_files"
+
+    assert tool_call_details[1]["args"]["repository_name"] == "demo-app"
+    assert "login" in tool_call_details[1]["args"]["search_term"].lower()
+
+    assert "src/login.py" in response.text

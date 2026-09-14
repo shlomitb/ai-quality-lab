@@ -8,6 +8,7 @@ from src.tools import (
     search_order_database,
     get_ticket,
     get_repository,
+    search_files,
 )
 
 #run with: pytest -v tests/test_tools.py
@@ -162,5 +163,30 @@ def test_get_repository_for_unknown_repository():
     assert result == {
         "result": {
             "error": "Repository not found."
+        }
+    }
+
+
+def test_search_files_finds_matching_files():
+    result = search_files("demo-app", "login")
+
+    assert len(result["result"]["matches"]) == 3
+
+    file_paths = {
+        match["file_path"]
+        for match in result["result"]["matches"]
+    }
+
+    assert "src/login.py" in file_paths
+    assert ("tests/test_login.py" in
+            file_paths)
+    assert "README.md" in file_paths
+
+def test_search_files_returns_empty_matches_when_nothing_found():
+    result = search_files("demo-app", "database")
+
+    assert result == {
+        "result": {
+            "matches": []
         }
     }

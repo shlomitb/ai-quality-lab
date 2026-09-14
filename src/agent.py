@@ -12,6 +12,7 @@ from src.tools import (
     update_order_status,
     get_ticket,
     get_repository,
+    search_files,
 )
 
 
@@ -106,7 +107,6 @@ def answer_customer_with_trace(client, question):
           Use this as a fallback to retrieve order information if
           get_order_information returns an error.
           
-          
         - get_ticket:
           Use this to retrieve information about a specific ticket.
           It requires the ticket_id argument.
@@ -115,6 +115,10 @@ def answer_customer_with_trace(client, question):
           Use this to retrieve information about a specific repository.
           It requires the repository_name argument.
 
+        - search_files:
+          Use this to search files in a repository for a specific term.
+          It requires the repository_name and search_term arguments.
+  
         Choose the tool or tools that are relevant to the customer's question.
         Do not use a tool unnecessarily.
 
@@ -124,6 +128,10 @@ def answer_customer_with_trace(client, question):
 
         Do not call get_return_policy solely to explain an eligibility
         result that has already been determined.
+        
+        When investigating a ticket, use information from the ticket
+        and repository tools to determine which repository and search
+        terms are relevant.
 
         If the question does not contain enough information to determine
         whether the customer is eligible for a return, ask for the specific
@@ -148,6 +156,7 @@ def answer_customer_with_trace(client, question):
             update_order_status,
             get_ticket,
             get_repository,
+            search_files
         ]
     )
 
