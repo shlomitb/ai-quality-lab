@@ -1195,3 +1195,74 @@ This is different from a tool implementation error or a reasoning error.
 
 When evaluating an agent, consider runtime constraints as part of the system being tested.
 
+## 50. Agent quality includes resource efficiency
+
+A successful agent is not necessarily an efficient production agent.
+
+Consider:
+
+```text
+task completion
++
+correctness
++
+trajectory quality
++
+resource usage
+```
+
+Additional tool calls, large tool outputs, long prompts, and repeated context can increase token usage and cost.
+
+When diagnosing an inefficient agent, consider:
+
+```text
+unnecessary tool calls
+large or unnecessary tool outputs
+repeated searches
+repeated context
+unnecessarily long prompts
+model choice
+```
+
+The goal is not to minimize tokens at all costs.
+
+The goal is to minimize **unnecessary work while preserving correctness and reliability**.
+
+A more expensive step can be justified when it reduces errors, improves reliability, or is necessary to complete the task.
+
+
+## 51. Use progressive disclosure for large agent capabilities
+
+When an agent has many capabilities, avoid putting all detailed instructions into the context on every request.
+
+A progressive-disclosure design can use:
+
+```text
+Short capability/skill descriptions
+        ↓
+Agent decides what is relevant
+        ↓
+Load detailed instructions only when needed
+```
+
+This can reduce unnecessary context and token usage.
+
+A skill is typically a reusable procedure or workflow, while a tool is a callable capability.
+
+For example:
+
+```text
+Skill:
+"Investigate a software bug."
+
+Possible tools used by that skill:
+get_ticket
+run_tests
+read_file
+edit_file
+```
+
+The skill describes the procedure; the tools perform the individual actions.
+
+The goal is not to minimize context at all costs. Detailed instructions should be loaded when they improve reliability or are needed to perform the task correctly.
+

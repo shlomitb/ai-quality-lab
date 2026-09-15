@@ -1,15 +1,13 @@
 
-import os
-
 from dotenv import load_dotenv
 
 from deepeval import assert_test
 from deepeval.metrics import ToolCorrectnessMetric
-from deepeval.models import GeminiModel
 from deepeval.test_case import LLMTestCase, ToolCall
 
 from src.agent import answer_customer_with_trace, get_tool_calls
 from src.llm_client import create_client
+from tests.deepeval.helpers import create_gemini_model
 
 load_dotenv()
 
@@ -23,11 +21,7 @@ We should not "use DeepEval because it's available," but "use DeepEval when it p
 """
 
 
-gemini_model = GeminiModel(
-    model="gemini-2.5-flash",
-    api_key=os.environ["GEMINI_API_KEY"],
-    temperature=0,
-)
+gemini_model = create_gemini_model()
 
 metric = ToolCorrectnessMetric(
     threshold=0.5,

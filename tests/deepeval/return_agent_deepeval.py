@@ -1,7 +1,5 @@
-import os
 
 from dotenv import load_dotenv
-from deepeval.models import GeminiModel
 
 from deepeval import assert_test
 from deepeval.dataset import Golden
@@ -11,14 +9,11 @@ from deepeval.test_case import LLMTestCase, LLMTestCaseParams
 from src.agent import answer_customer
 from src.llm_client import create_client
 
+from tests.deepeval.helpers import create_gemini_model
 
 load_dotenv()
 
-gemini_model = GeminiModel(
-    model="gemini-2.5-flash",
-    api_key=os.environ["GEMINI_API_KEY"],
-    temperature=0,
-)
+gemini_model = create_gemini_model()
 
 client = create_client()
 

@@ -1,12 +1,16 @@
 
+from pathlib import Path
+
 from deepeval import assert_test
 from deepeval.dataset import Golden
 from deepeval.metrics import TaskCompletionMetric, StepEfficiencyMetric
 
 from src.agent import answer_customer_with_trace
 from src.llm_client import create_client
-from src.tools import bug_fixed
+
 from tests.deepeval.helpers import create_gemini_model
+
+#deepeval test run tests/deepeval/bug_fix_real_code_deepeval.py
 
 gemini_model = create_gemini_model()
 
@@ -17,8 +21,16 @@ TASK = (
 )
 
 
-def test_bug_fix_agent_trajectory():
-    bug_fixed["BUG-456"] = False
+def test_real_code_bug_fix_trajectory():
+    file_path = Path("demo_repo/src/login.py")
+
+    broken_content = """def login(username, password):
+        if username and password:
+            return False
+        return False
+    """
+
+    file_path.write_text(broken_content)
 
     golden = Golden(input=TASK)
 
@@ -31,8 +43,15 @@ def test_bug_fix_agent_trajectory():
         print("\nFINAL RESPONSE:")
         print(response.text)
 
-        assert bug_fixed["BUG-456"] is True
-        assert "pass" in response.text.lower()
+        # Direct verification of the real file state.
+        assert file_path.read_text() != broken_content
+
+        # Direct verification of the final test result.
+        from src.tools import run_tests
+
+        post_test_result = run_tests("demo-app_fail")
+
+        assert post_test_result["result"]["status"] == "passed"
 
         task_completion = TaskCompletionMetric(
             threshold=0.5,
@@ -51,4 +70,4 @@ def test_bug_fix_agent_trajectory():
         )
 
     finally:
-        bug_fixed["BUG-456"] = False
+        file_path.write_text(broken_content)

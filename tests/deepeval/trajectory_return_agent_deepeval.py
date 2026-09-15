@@ -1,19 +1,14 @@
-import os
 
 from deepeval import assert_test
 from deepeval.dataset import Golden
 from deepeval.metrics import TaskCompletionMetric, StepEfficiencyMetric
-from deepeval.models import GeminiModel
 
 from src.agent import answer_customer_with_trace
 from src.llm_client import create_client
+from tests.deepeval.helpers import create_gemini_model
 
 
-gemini_model = GeminiModel(
-    model="gemini-2.5-flash",
-    api_key=os.environ["GEMINI_API_KEY"],
-    temperature=0,
-)
+gemini_model = create_gemini_model()
 
 task_completion = TaskCompletionMetric(
     threshold=0.5,
