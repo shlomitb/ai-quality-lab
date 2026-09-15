@@ -7,6 +7,8 @@ from src.agent import (answer_customer_with_trace,
 
 from src.llm_client import create_client
 
+from src.tools import run_tests
+
 
 @pytest.mark.llm
 def test_agent_calls_return_policy_tool():
@@ -592,3 +594,79 @@ def test_agent_fixes_failed_test_and_verifies():
 
     finally:
         bug_fixed["BUG-456"] = False
+
+
+
+@pytest.mark.llm
+def test_agent_repairs_real_code_and_verifies():
+    from pathlib import Path
+
+    file_path = Path("demo_repo/src/login.py")
+
+    broken_content = """def login(username, password):
+        if username and password:
+            return False
+        return False
+    """
+
+    file_path.write_text(broken_content)
+
+    client = create_client()
+
+    try:
+        response = answer_customer_with_trace(
+            client=client,
+            question=(
+                "Investigate BUG-456, fix the failing test, "
+                "and verify that the tests pass."
+            ),
+        )
+
+        tool_call_details = get_tool_call_details(response)
+
+        print("\nTOOL CALLS:")
+        print(tool_call_details)
+
+        print("\nFINAL RESPONSE:")
+        print(response.text)
+
+        # The agent must actually modify a file.
+        assert any(
+            call["name"] == "edit_file"
+            for call in tool_call_details
+        )
+
+        # The agent must run tests at least twice:
+        # once to discover the failure and again after the edit.
+        test_runs = [
+            call
+            for call in tool_call_details
+            if call["name"] == "run_tests"
+        ]
+
+        assert len(test_runs) >= 2
+
+        # The actual file must have changed.
+        assert file_path.read_text() != broken_content
+
+        # The final test run must report success.
+        tool_results = get_tool_result_details(response)
+
+        test_results = [
+            result
+            for result in tool_results
+            if result["name"] == "run_tests"
+        ]
+
+        assert len(test_results) >= 2
+
+        final_test_result = test_results[-1]["response"]
+
+        assert final_test_result["result"]["result"]["status"] == "passed"
+
+        # The agent's final response should report success.
+        assert "pass" in response.text.lower()
+
+    finally:
+        file_path.write_text(broken_content)
+

@@ -1,3 +1,4 @@
+from pathlib import Path
 from src.tools import (
     get_product_information,
     search_product_catalog,
@@ -12,6 +13,8 @@ from src.tools import (
     run_tests,
     bug_fixed,
     apply_fix,
+    edit_file,
+    read_file,
 )
 
 #run with: pytest -v tests/test_tools.py
@@ -224,8 +227,11 @@ def test_get_ticket_for_failing_repository():
     assert result == {
         "result": {
             "ticket_id": "BUG-456",
-            "title": "Login button test is failing",
-            "description": "The login button test is failing and needs investigation.",
+            "title": "Login function returns False for valid credentials",
+            "description": (
+                "The login test is failing because valid username and "
+                "password combinations are not accepted."
+            ),
             "repository": "demo-app_fail",
             "status": "Open",
         }
@@ -248,3 +254,57 @@ def test_apply_fix_for_bug_456():
     assert bug_fixed["BUG-456"] is True
 
     bug_fixed["BUG-456"] = False
+
+
+
+def test_edit_file():
+    file_path = "demo_repo/src/login.py"
+
+    original_content = Path(file_path).read_text()
+
+    new_content = """def login(username, password):
+    if username and password:
+        return True
+    return False
+    """
+
+    try:
+        result = edit_file(
+            repository_name="demo-app_fail",
+            file_path="src/login.py",
+            new_content=new_content,
+        )
+
+        assert result == {
+            "result": {
+                "status": "updated",
+                "repository_name": "demo-app_fail",
+                "file_path": "src/login.py",
+            }
+        }
+
+        assert Path("demo_repo/src/login.py").read_text() == new_content
+
+    finally:
+        Path(file_path).write_text(original_content)
+
+
+def test_run_tests_expect_failure():
+    result = run_tests("demo-app_fail")
+
+    assert result["result"]["status"] == "failed"
+    assert "test_login_button" in result["result"]["output"]
+    assert result["result"]["source_file"] == "src/login.py"
+
+
+def test_read_file():
+    result = read_file(
+        repository_name="demo-app_fail",
+        file_path="src/login.py",
+    )
+
+    assert result["result"]["repository_name"] == "demo-app_fail"
+    assert result["result"]["file_path"] == "src/login.py"
+    assert "def login" in result["result"]["content"]
+
+

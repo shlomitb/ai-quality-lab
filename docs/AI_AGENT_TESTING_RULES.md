@@ -1030,3 +1030,168 @@ Step Efficiency
 
 Do not treat every imperfect step as a complete agent failure. Consider whether the agent recovered appropriately.
 
+
+## 43. Diagnose the cause of an agent failure before changing the test
+
+When an agent test fails, do not immediately weaken the assertion.
+
+First inspect:
+
+```text
+agent trajectory
+tool arguments
+tool results
+runtime errors
+final response
+actual system state
+```
+
+Ask whether the failure was caused by:
+
+```text
+agent behavior
+prompt/instructions
+tool design
+tool output
+test design
+runtime limitations
+```
+
+Fix the underlying cause whenever possible.
+
+---
+
+## 44. Tool contracts must be explicit
+
+Tools that operate on repository or file resources should include enough context to identify the target unambiguously.
+
+For example:
+
+
+edit_file(
+    repository_name="demo-app_fail",
+    file_path="src/login.py",
+    new_content="..."
+)
+
+
+is safer than:
+
+
+edit_file(
+    file_path="src/login.py",
+    new_content="..."
+)
+
+
+The tool should validate the resource and return a clear error when it cannot find it.
+
+---
+
+## 45. Give the agent enough information to make the next decision
+
+Tool results are part of the agent's working environment.
+
+A failure result should contain useful information such as:
+
+```text
+failing test
+test file
+source file, when known
+failure message
+```
+
+Poor tool output can cause unnecessary additional tool calls.
+
+---
+
+## 46. Require verification after side effects
+
+When an agent changes code or system state:
+
+```text
+action
+→ verify
+```
+
+For example:
+
+```text
+edit_file
+→ run_tests
+```
+
+Do not allow the agent to report success merely because the edit tool returned successfully.
+
+Whenever possible, verify the resulting state independently.
+
+---
+
+## 47. Don't test an exact implementation when the requirement is behavioral
+
+A coding agent may solve the same problem in several valid ways.
+
+Do not write a test such as:
+
+
+assert file_contents == my_preferred_solution
+
+
+unless the exact implementation is part of the requirement.
+
+Prefer testing:
+
+```text
+correct behavior
+tests pass
+correct file changed
+required outcome achieved
+
+
+---
+
+## 48. Agent investigation may contain imperfect steps
+
+An agent may make an unsuccessful but reasonable investigative attempt.
+
+For example:
+
+```text
+search_files("login button")
+→ no result
+
+search_files("login")
+→ useful result
+```
+
+This does not necessarily mean the agent failed.
+
+Distinguish:
+
+```text
+task failure
+vs.
+inefficient or imperfect intermediate behavior
+```
+
+Task completion and step efficiency measure different qualities.
+
+---
+
+## 49. Runtime limits are part of agent reliability
+
+An agent can fail because it reaches a runtime/tool-call limit before completing its task.
+
+For example:
+
+```text
+many exploratory tool calls
+→ maximum automatic calls reached
+→ no edit
+→ no final response
+```
+
+This is different from a tool implementation error or a reasoning error.
+
+When evaluating an agent, consider runtime constraints as part of the system being tested.
+

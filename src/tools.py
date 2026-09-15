@@ -1,7 +1,9 @@
 
 
 from deepeval.tracing import observe
-
+from pathlib import Path
+import subprocess
+import sys
 
 orders = {
     "12345": {
@@ -33,8 +35,11 @@ tickets = {
     },
     "BUG-456": {
         "ticket_id": "BUG-456",
-        "title": "Login button test is failing",
-        "description": "The login button test is failing and needs investigation.",
+        "title": "Login function returns False for valid credentials",
+        "description": (
+            "The login test is failing because valid username and "
+            "password combinations are not accepted."
+        ),
         "repository": "demo-app_fail",
         "status": "Open",
     },
@@ -333,27 +338,34 @@ def run_tests(repository_name: str) -> dict:
         }
 
     if repository_name == "demo-app_fail":
-        if bug_fixed["BUG-456"]:
+        repo_path = Path("demo_repo")
+
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "pytest",
+                "-q",
+            ],
+            cwd=repo_path,
+            capture_output=True,
+            text=True,
+        )
+
+        if result.returncode == 0:
             return {
                 "result": {
                     "status": "passed",
-                    "tests_run": 3,
-                    "tests_failed": 0,
+                    "output": result.stdout,
                 }
             }
 
         return {
             "result": {
                 "status": "failed",
-                "tests_run": 3,
-                "tests_failed": 1,
-                "failures": [
-                    {
-                        "test": "test_login_button",
-                        "file": "tests/test_login.py",
-                        "message": "Expected login button to be enabled.",
-                    }
-                ],
+                "output": result.stdout,
+                "error_output": result.stderr,
+                "source_file": "src/login.py",
             }
         }
 
@@ -362,6 +374,7 @@ def run_tests(repository_name: str) -> dict:
             "error": "Repository not found."
         }
     }
+
 
 
 @observe(type="tool")
@@ -382,3 +395,81 @@ def apply_fix(ticket_id: str) -> dict:
             "error": "No supported fix is available for this ticket."
         }
     }
+
+
+@observe(type="tool")
+def edit_file(
+        repository_name: str,
+        file_path: str,
+        new_content: str,
+    ) -> dict:
+
+    repository_paths = {
+        "demo-app": Path("demo_repo"),
+        "demo-app_fail": Path("demo_repo"),
+    }
+
+    repo_path = repository_paths.get(repository_name)
+
+    if repo_path is None:
+        return {
+            "result": {
+                "error": "Repository not found."
+            }
+        }
+
+    full_path = repo_path / file_path
+
+    if not full_path.exists():
+        return {
+            "result": {
+                "error": "File not found."
+            }
+        }
+
+    full_path.write_text(new_content)
+
+    return {
+        "result": {
+            "status": "updated",
+            "repository_name": repository_name,
+            "file_path": file_path,
+
+        }
+    }
+
+
+
+@observe(type="tool")
+def read_file(repository_name: str, file_path: str) -> dict:
+    repository_paths = {
+        "demo-app": Path("demo_repo"),
+        "demo-app_fail": Path("demo_repo"),
+    }
+
+    repo_path = repository_paths.get(repository_name)
+
+    if repo_path is None:
+        return {
+            "result": {
+                "error": "Repository not found."
+            }
+        }
+
+    full_path = repo_path / file_path
+
+    if not full_path.exists():
+        return {
+            "result": {
+                "error": "File not found."
+            }
+        }
+
+    return {
+        "result": {
+            "repository_name": repository_name,
+            "file_path": file_path,
+            "content": full_path.read_text(),
+        }
+    }
+

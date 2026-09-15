@@ -14,7 +14,8 @@ from src.tools import (
     get_repository,
     search_files,
     run_tests,
-    apply_fix,
+    edit_file,
+    read_file,
 )
 
 
@@ -68,100 +69,93 @@ def get_tool_result_details(response):
 @observe(type="agent")
 def answer_customer_with_trace(client, question):
     """Run the customer-support agent and return the full response."""
+
     prompt = f"""
-        You are a customer-support assistant.
+    You are a software-development assistant.
 
-        Answer the customer's question using the appropriate available tool.
+    Investigate and respond to the user's request using the appropriate
+    available tools.
 
-        Customer question:
-        {question}
+    User request:
+    {question}
 
-        Available tools:
+    Available tools:
 
-        - get_return_policy:
-          Use this to retrieve the company's return policy and return rules.
+    - get_ticket:
+      Use this to retrieve information about a specific ticket.
+      It requires the ticket_id argument.
 
-        - get_product_information:
-          Use this to retrieve information about a specific product.
-          It requires the product_name argument.
+    - get_repository:
+      Use this to retrieve information about a specific repository.
+      It requires the repository_name argument.
 
-        - search_product_catalog:
-          Use this as a fallback to retrieve information about a product
-          if get_product_information returns an error.
+    - search_files:
+      Use this to search files in a repository for a specific term.
+      It requires the repository_name and search_term arguments.
 
-          Do not invent product information if both tools fail.
+    - run_tests:
+      Use this to run the test suite for a repository.
+      It requires the repository_name argument.
 
-        - get_order_information:
-          Use this to retrieve information about a specific order.
-          It requires the order_id argument.
+    - edit_file:
+      Use this to modify the contents of an existing file in a repository.
+      It requires the repository_name, file_path, and new_content arguments.
+      Only modify files that are relevant to the current task.
+      
+    - read_file:
+      Use this to read the contents of a specific file in a repository.
+      It requires the repository_name and file_path arguments.
 
-        - check_return_eligibility:
-          Use this to determine whether a product can be returned based
-          on the order information.
-          It requires the product_name, days_since_purchase, opened,
-          and defective arguments.
-          
-        - update_order_status:
-          Use this to update the status of a specific order.
-          It requires the order_id and status arguments.
-          
-        - search_order_database:
-          Use this as a fallback to retrieve order information if
-          get_order_information returns an error.
-          
-        - get_ticket:
-          Use this to retrieve information about a specific ticket.
-          It requires the ticket_id argument.
+    General rules:
+
+    - Choose only the tools that are relevant to the user's request.
+    
+    - Do not use tools unnecessarily.
+    
+    - When a tool returns information needed for a later step, use that
+      information rather than making assumptions.
+      
+    - When investigating a ticket, use the ticket information to determine
+      which repository and search terms are relevant.
+      
+    - When investigating a coding issue, use test results and relevant
+      source code to understand the problem before making a change.
+      
+    - When a test fails, inspect the failure information before making
+      a code change.
+      
+    - When a test failure identifies a relevant source file,
+      use read_file to inspect that file before modifying it.
+      
+    - After run_tests reports a specific failing test and file,
+      use that failure information to investigate the identified file.
+      Do not repeatedly search for the same code using increasingly
+      similar search terms.
         
-        - get_repository:
-          Use this to retrieve information about a specific repository.
-          It requires the repository_name argument.
+    - Before using search_files, consider whether the relevant file
+      path is already known from the test failure.
+      
+    - After using edit_file to modify code, you MUST call run_tests again
+      before reporting that the problem is fixed.
+      
+    - Do not report that a bug is fixed unless the post-change test run
+      shows that the tests pass.
+      
+    - If the tests still fail after a change, continue investigating
+      and make another appropriate change when possible.
+      
+    - Do not claim that an action was completed unless the available
+      tool results provide evidence that it was completed.
+      
+    - Do not make assumptions when the available information is insufficient.
 
-        - search_files:
-          Use this to search files in a repository for a specific term.
-          It requires the repository_name and search_term arguments.
-          
-          - run_tests:
-          Use this to run the test suite for a repository.
-          It requires the repository_name argument.
-          
-          - apply_fix:
-          Use this to apply the supported fix for a specific ticket.
-          It requires the ticket_id argument.
-  
-        Choose the tool or tools that are relevant to the customer's question.
-        Do not use a tool unnecessarily.
+    Return-policy rules:
 
-        Use get_return_policy only when the customer asks for the
-        return policy or when the available order/eligibility information
-        is insufficient to answer the question.
-
-        Do not call get_return_policy solely to explain an eligibility
-        result that has already been determined.
-        
-        When investigating a ticket, use information from the ticket
-        and repository tools to determine which repository and search
-        terms are relevant.
-        
-        When investigating a coding issue, use test results to determine
-        whether the current code is behaving correctly.
-        
-        When a test fails while investigating a ticket, inspect the
-        failure information before applying a fix.
-        
-        After applying a fix, run the tests again to verify whether
-        the problem was resolved.
-
-        If the question does not contain enough information to determine
-        whether the customer is eligible for a return, ask for the specific
-        missing information.
-        
-        When a tool returns information needed for a later step,
-        use that information rather than making assumptions.
-
-        Do not make assumptions.
-        Do not give a list of possible outcomes instead of asking for
-        the missing information.
+    - Use get_return_policy only when the customer asks for the return
+      policy or when the available order/eligibility information is
+      insufficient to answer the question.
+    - Do not call get_return_policy solely to explain an eligibility
+      result that has already been determined.
     """
 
     config = types.GenerateContentConfig(
@@ -177,7 +171,8 @@ def answer_customer_with_trace(client, question):
             get_repository,
             search_files,
             run_tests,
-            apply_fix
+            edit_file,
+            read_file,
         ]
     )
 
@@ -204,5 +199,8 @@ def answer_customer(client, question):
     )
 
     return response.text
+
+
+
 
 
