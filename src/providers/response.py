@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-
+from typing import Any
 
 @dataclass
 class ToolCall:
@@ -32,3 +32,4 @@ class AgentResponse:
     final_text: str
     tool_calls: list[ToolCall] = field(default_factory=list)
     tool_results: list[ToolResult] = field(default_factory=list)
+    parsed: Any | None = None

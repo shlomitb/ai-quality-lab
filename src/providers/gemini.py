@@ -18,7 +18,16 @@ class GeminiProvider(LLMProvider):
         tool_calls = []
         tool_results = []
 
-        for content in response.automatic_function_calling_history or []:
+        function_calling_history = getattr(
+            response,
+            "automatic_function_calling_history",
+            None,
+        )
+
+        if not isinstance(function_calling_history, list):
+            function_calling_history = []
+
+        for content in function_calling_history:
             for part in content.parts or []:
 
                 if part.function_call is not None:
@@ -47,4 +56,5 @@ class GeminiProvider(LLMProvider):
             final_text=response.text or "",
             tool_calls=tool_calls,
             tool_results=tool_results,
+            parsed=response.parsed,
         )

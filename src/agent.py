@@ -47,9 +47,29 @@ def get_tool_result_details(response):
 @observe(type="agent")
 def answer_customer_with_trace(client, question):
     """Run the customer-support agent and return the full response."""
+    agents_instructions = load_agents_instructions()
+    skill_descriptions = load_skill_descriptions()
+
+    selected_skill = ""
+
+    if (
+            "bug" in question.lower()
+            or "fix" in question.lower()
+            or "failing test" in question.lower()
+    ):
+        selected_skill = load_skill("investigate-bug")
 
     prompt = f"""
     You are a software-development assistant.
+
+    Available skills:
+    {skill_descriptions}
+    
+    Use the selected skill instructions below as the procedure
+    for this task when a relevant skill has been selected.
+    
+    Selected skill instructions:
+    {selected_skill}
 
     Investigate and respond to the user's request using the appropriate
     available tools.
@@ -77,7 +97,7 @@ def answer_customer_with_trace(client, question):
 
     - edit_file:
       Use this to modify the contents of an existing file in a repository.
-      It requires the repository_name, file_path, and new_content arguments..
+      It requires the repository_name, file_path, and new_content arguments.
       
     - read_file:
       Use this to read the contents of a specific file in a repository.
@@ -91,24 +111,6 @@ def answer_customer_with_trace(client, question):
     
     - When a tool returns information needed for a later step, use that
       information rather than making assumptions.
-      
-    - When investigating a ticket, use the ticket information to determine
-      which repository and search terms are relevant.
-      
-    - When investigating a coding issue, use test results and relevant
-      source code to understand the problem before making a change.
-      
-    
-    - When a test failure identifies a relevant source file,
-      use read_file to inspect that file before modifying it.
-      
-    - After run_tests reports a specific failing test and file,
-      use that failure information to investigate the identified file.
-      Do not repeatedly search for the same code using increasingly
-      similar search terms.
-        
-    - Before using search_files, consider whether the relevant file
-      path is already known from the test failure.
       
     - Do not claim that an action was completed unless the available
       tool results provide evidence that it was completed.
@@ -159,7 +161,6 @@ def answer_customer_with_trace(client, question):
 
 
 def answer_customer(client, question):
-    agents_instructions = load_agents_instructions()
     response = answer_customer_with_trace(
         client=client,
         question=question
@@ -175,6 +176,24 @@ def load_agents_instructions() -> str:
         return ""
 
     return agents_file.read_text()
+
+
+def load_skill_descriptions() -> str:
+    skills_file = Path("skills/skills.md")
+
+    if not skills_file.exists():
+        return ""
+
+    return skills_file.read_text()
+
+
+def load_skill(skill_name: str) -> str:
+    skill_file = Path("skills") / skill_name / "SKILL.md"
+
+    if not skill_file.exists():
+        return ""
+
+    return skill_file.read_text()
 
 
 

@@ -1304,3 +1304,106 @@ Before changing the model or weakening a test, identify which layer caused the b
 
 Improving the tools and environment can sometimes produce a larger improvement in agent behavior than adding more prompt instructions.
 
+## 53. Separate provider-specific code from provider-neutral code
+
+When supporting multiple LLM providers, keep provider-specific API structures inside the provider implementation.
+
+For example:
+
+```text
+GeminiProvider
+→ can know Gemini's response format
+
+OpenAIProvider
+→ can know OpenAI's response format
+
+AgentResponse
+→ common format used by the agent and general tests
+```
+
+General agent code and tests should use the provider-neutral interface rather than accessing provider-specific response structures directly.
+
+This makes it possible to run the same behavioral tests against different providers.
+
+---
+
+## 54. Use regression tests when refactoring agent architecture
+
+When changing the internal architecture of an agent, preserve existing behavior with regression tests.
+
+For example:
+
+```text
+Before refactor:
+agent → Gemini → tools
+
+After refactor:
+agent → provider interface → GeminiProvider → AgentResponse → tools
+```
+
+A previously passing LLM test can verify that the refactor did not unintentionally change agent behavior.
+
+---
+
+## 55. Separate repository rules, skills, and tools
+
+Keep different kinds of instructions in the appropriate layer:
+
+```text
+AGENTS.md
+→ repository-specific rules and constraints
+
+SKILL.md
+→ procedure for performing a particular type of task
+
+Tool
+→ action the agent can actually perform
+
+Main agent prompt
+→ general agent behavior and tool descriptions
+```
+
+Do not duplicate detailed task procedures across all of these layers unless there is a specific reason.
+
+---
+
+## 56. Skills should support progressive disclosure
+
+When an agent has many capabilities, use short skill descriptions for discovery and load detailed instructions only when a skill is relevant.
+
+Conceptually:
+
+```text
+short skill description
+        ↓
+agent identifies relevant capability
+        ↓
+load detailed SKILL.md
+        ↓
+perform procedure using tools
+```
+
+This can reduce unnecessary context while keeping detailed instructions available when needed.
+
+Evaluate this architecture based on both reliability and resource usage rather than assuming that moving instructions into Skills automatically improves the agent.
+
+---
+
+## 57. Test architectural boundaries, not just individual functions
+
+When introducing abstractions such as providers, verify that each layer has the responsibility intended for it.
+
+For example:
+
+```text
+GeminiProvider
+→ handles Gemini-specific response parsing
+
+AgentResponse
+→ represents the common response structure
+
+agent.py
+→ uses the common structure
+```
+
+A good test suite should help detect when provider-specific implementation details leak into provider-neutral application code.
