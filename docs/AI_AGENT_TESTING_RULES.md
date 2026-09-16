@@ -1407,3 +1407,34 @@ agent.py
 ```
 
 A good test suite should help detect when provider-specific implementation details leak into provider-neutral application code.
+
+
+## 58. Make one targeted change when improving agent efficiency
+
+When an evaluation identifies a specific unnecessary or inefficient agent action:
+
+1. Identify the specific behavior causing the inefficiency.
+2. Make one targeted change to the relevant prompt, Skill, tool, or tool result.
+3. Rerun the same task.
+4. Compare the new agent trajectory with the previous one.
+
+Do not add multiple new instructions at once when a single targeted change can test the hypothesis.
+
+For example:
+
+```text
+Before:
+run_tests
+→ search_files("login")
+→ read_file("src/login.py")
+
+Change:
+Explicitly instruct the agent not to use search_files when
+the source file is already known.
+
+After:
+run_tests
+→ read_file("src/login.py")
+```
+
+The goal is to determine whether the targeted change actually improves agent behavior, rather than simply making the prompt longer.

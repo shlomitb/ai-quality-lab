@@ -1,8 +1,11 @@
+import json
+from pathlib import Path
 from deepeval.tracing import observe, update_current_trace
 from google.genai import types
 from pathlib import Path
 
 from src.llm import ask_llm
+from src.skills import select_skill
 from src.tools import (
     get_return_policy,
     get_product_information,
@@ -34,6 +37,27 @@ def get_tool_call_details(response):
     ]
 
 
+
+def load_skill_catalog() -> list[dict]:
+    skills_file = Path("skills/skills.json")
+
+    if not skills_file.exists():
+        return []
+
+    return json.loads(skills_file.read_text())["skills"]
+
+
+def select_skill(question: str) -> str:
+    question_lower = question.lower()
+
+    for skill in load_skill_catalog():
+        for keyword in skill["keywords"]:
+            if keyword in question_lower:
+                return skill["name"]
+
+    return ""
+
+
 def get_tool_result_details(response):
     return [
         {
@@ -46,28 +70,27 @@ def get_tool_result_details(response):
 
 @observe(type="agent")
 def answer_customer_with_trace(client, question):
-    """Run the customer-support agent and return the full response."""
+    """Run the software-development agent and return the full response."""
+
     agents_instructions = load_agents_instructions()
     skill_descriptions = load_skill_descriptions()
 
+    selected_skill_name = select_skill(question)
+
     selected_skill = ""
 
-    if (
-            "bug" in question.lower()
-            or "fix" in question.lower()
-            or "failing test" in question.lower()
-    ):
-        selected_skill = load_skill("investigate-bug")
+    if selected_skill_name:
+        selected_skill = load_skill(selected_skill_name)
 
     prompt = f"""
     You are a software-development assistant.
 
+    Repository instructions:
+    {agents_instructions}
+
     Available skills:
     {skill_descriptions}
-    
-    Use the selected skill instructions below as the procedure
-    for this task when a relevant skill has been selected.
-    
+
     Selected skill instructions:
     {selected_skill}
 
@@ -95,26 +118,22 @@ def answer_customer_with_trace(client, question):
       Use this to run the test suite for a repository.
       It requires the repository_name argument.
 
-    - edit_file:
-      Use this to modify the contents of an existing file in a repository.
-      It requires the repository_name, file_path, and new_content arguments.
-      
     - read_file:
       Use this to read the contents of a specific file in a repository.
       It requires the repository_name and file_path arguments.
 
+    - edit_file:
+      Use this to modify the contents of an existing file in a repository.
+      It requires the repository_name, file_path, and new_content arguments.
+
     General rules:
 
     - Choose only the tools that are relevant to the user's request.
-    
     - Do not use tools unnecessarily.
-    
     - When a tool returns information needed for a later step, use that
       information rather than making assumptions.
-      
     - Do not claim that an action was completed unless the available
       tool results provide evidence that it was completed.
-      
     - Do not make assumptions when the available information is insufficient.
 
     Return-policy rules:
