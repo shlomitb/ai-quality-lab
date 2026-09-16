@@ -5,23 +5,7 @@ from pathlib import Path
 
 from src.llm import ask_llm
 from src.skills import get_selected_skill
-from src.tool_catalog import get_tool_descriptions
-from src.tools import (
-    get_return_policy,
-    get_product_information,
-    search_product_catalog,
-    get_order_information,
-    search_order_database,
-    check_return_eligibility,
-    update_order_status,
-    get_ticket,
-    get_repository,
-    search_files,
-    run_tests,
-    edit_file,
-    read_file,
-)
-
+from src.tool_catalog import get_tools, get_tool_descriptions
 
 
 def get_tool_calls(response):
@@ -129,24 +113,17 @@ def get_tool_result_details(response):
 def answer_customer_with_trace(client, question):
     """Run the software-development agent and return the full response."""
 
+    selected_skill = get_selected_skill(question)
+
     prompt = build_prompt(question)
 
+    if selected_skill:
+        tools = get_tools(selected_skill.tools)
+    else:
+        tools = []
+
     config = types.GenerateContentConfig(
-        tools=[
-            get_return_policy,
-            get_product_information,
-            search_product_catalog,
-            get_order_information,
-            search_order_database,
-            check_return_eligibility,
-            update_order_status,
-            get_ticket,
-            get_repository,
-            search_files,
-            run_tests,
-            edit_file,
-            read_file,
-        ]
+        tools=tools
     )
 
     response = ask_llm(

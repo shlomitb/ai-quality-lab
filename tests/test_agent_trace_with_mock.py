@@ -5,7 +5,9 @@ from src.agent import (
     get_tool_result_details,
 )
 from src.providers.response import AgentResponse, ToolCall, ToolResult
+from unittest.mock import Mock, patch
 
+from src.agent import answer_customer_with_trace
 
 """
 Use mock AgentResponse objects to test the agent helper functions
@@ -125,4 +127,29 @@ def test_get_tool_result_details():
                 }
             },
         }
+    ]
+
+
+def test_agent_passes_selected_skill_tools_to_llm():
+    fake_response = Mock()
+    fake_response.final_text = "Bug fixed."
+
+    with patch("src.agent.ask_llm", return_value=fake_response) as mock_ask_llm:
+        answer_customer_with_trace(
+            client=Mock(),
+            question="Please investigate BUG-456 and fix the failing test.",
+        )
+
+    mock_ask_llm.assert_called_once()
+
+    call_kwargs = mock_ask_llm.call_args.kwargs
+    config = call_kwargs["config"]
+
+    tool_names = [tool.__name__ for tool in config.tools]
+
+    assert tool_names == [
+        "get_ticket",
+        "run_tests",
+        "read_file",
+        "edit_file",
     ]

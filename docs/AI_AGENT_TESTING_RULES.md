@@ -1438,3 +1438,51 @@ run_tests
 ```
 
 The goal is to determine whether the targeted change actually improves agent behavior, rather than simply making the prompt longer.
+
+## 59. Test the agent at multiple layers
+
+Use different types of tests for different responsibilities:
+
+```text
+Unit test
+→ Tests one function or small piece of logic in isolation.
+→ Example: select_skill() returns "investigate-bug" for a matching request.
+
+Mock test
+→ Tests how multiple parts of the agent connect, while replacing
+  external or expensive dependencies with controlled fake objects.
+→ Example: answer_customer_with_trace() passes the selected Skill's
+  tools into the LLM configuration.
+
+LLM integration test
+→ Tests the real agent with a real model and real tool execution.
+→ Example: the agent investigates BUG-456, edits the source code,
+  and verifies the fix with tests.
+
+DeepEval evaluation
+→ Evaluates the quality of the agent's behavior or output using
+  metrics such as task completion, correctness, or step efficiency.
+→ Example: DeepEval evaluates whether the BUG-456 task was actually
+  completed and whether the agent used unnecessary steps in its
+  trajectory.
+```
+
+A useful way to think about the layers is:
+
+```text
+Unit test
+→ Does this piece of code work?
+
+Mock test
+→ Do these pieces of the agent connect correctly?
+
+LLM integration test
+→ Does the real agent work with the real model and tools?
+
+DeepEval
+→ How good was the agent's behavior?
+```
+
+A failure at one layer does not necessarily indicate a failure at another layer.
+
+Use the lowest-cost test that can reliably verify the behavior being tested, and use LLM integration tests and DeepEval evaluations when correctness depends on the real model, real tool interaction, or qualitative agent behavior.
