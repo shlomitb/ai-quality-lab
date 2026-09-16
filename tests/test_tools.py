@@ -229,14 +229,13 @@ def test_get_ticket_for_failing_repository():
             "ticket_id": "BUG-456",
             "title": "Login function returns False for valid credentials",
             "description": (
-                "The login test is failing because valid username and "
-                "password combinations are not accepted."
+                "The login function incorrectly rejects valid credentials. "
+                "The failing test involves the login button."
             ),
             "repository": "demo-app_fail",
             "status": "Open",
         }
     }
-
 
 def test_apply_fix_for_bug_456():
     bug_fixed["BUG-456"] = False

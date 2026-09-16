@@ -1,28 +1,19 @@
-
 from src.config import AGENT_MODEL
+from src.providers.gemini import GeminiProvider
 
-"""
-This file should know how to construct the customer-support prompt and call Gemini.
-
-build customer-support prompt
-    call_llm()
-    return text
-"""
-
-
-#gemini-3.6-flash
-#gemini-3.5-flash
 
 def ask_llm(
     client,
     prompt,
     model=AGENT_MODEL,
-    config=None
+    config=None,
 ):
-    response = client.models.generate_content(
+    provider = GeminiProvider(
+        client=client,
         model=model,
-        contents=prompt,
-        config=config
     )
 
-    return response
+    return provider.generate(
+        prompt=prompt,
+        config=config,
+    )

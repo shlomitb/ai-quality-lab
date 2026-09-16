@@ -36,9 +36,13 @@ tickets = {
     "BUG-456": {
         "ticket_id": "BUG-456",
         "title": "Login function returns False for valid credentials",
+        # "description": (
+        #     "The login test is failing because valid username and "
+        #     "password combinations are not accepted."
+        # ),
         "description": (
-            "The login test is failing because valid username and "
-            "password combinations are not accepted."
+            "The login function incorrectly rejects valid credentials. "
+            "The failing test involves the login button."
         ),
         "repository": "demo-app_fail",
         "status": "Open",
