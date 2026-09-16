@@ -61,3 +61,46 @@ def test_unrelated_request_does_not_load_a_skill():
     assert "Selected skill instructions:" in prompt
     assert "Retrieve the relevant ticket" not in prompt
     assert "Review the code" not in prompt
+
+
+def test_bug_prompt_contains_only_bug_tools():
+    prompt = build_prompt(
+        "Please investigate BUG-456 and fix the failing test."
+    )
+
+    tools_section = prompt.split(
+        "Available tools for this task:",
+        1
+    )[1].split(
+        "General rules:",
+        1
+    )[0]
+
+    assert "get_ticket" in tools_section
+    assert "run_tests" in tools_section
+    assert "read_file" in tools_section
+    assert "edit_file" in tools_section
+
+    assert "search_files" not in tools_section
+    assert "get_repository" not in tools_section
+
+
+def test_review_prompt_contains_only_review_tools():
+    prompt = build_prompt(
+        "Please review this code for maintainability."
+    )
+
+    tools_section = prompt.split(
+        "Available tools for this task:",
+        1
+    )[1].split(
+        "General rules:",
+        1
+    )[0]
+
+    assert "search_files" in tools_section
+    assert "read_file" in tools_section
+
+    assert "get_ticket" not in tools_section
+    assert "run_tests" not in tools_section
+    assert "edit_file" not in tools_section

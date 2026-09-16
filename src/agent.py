@@ -102,7 +102,7 @@ def build_prompt(question: str) -> str:
           result that has already been determined.
         """
 
-    print(f"Selected skill: {selected_skill.name if selected_skill else 'None'}")
+    print(f"\nSelected skill: {selected_skill.name if selected_skill else 'None'}")
     print(f"Skill instructions characters: {len(selected_skill.instructions) if selected_skill else 0}")
     print(f"TOTAL PROMPT characters: {len(prompt)}")
 
@@ -111,8 +111,6 @@ def build_prompt(question: str) -> str:
     """
 
     print(f"Tool descriptions characters: {len(tool_descriptions)}")
-
-    print(f"TOTAL PROMPT characters: {len(prompt)}")
 
     return prompt
 
