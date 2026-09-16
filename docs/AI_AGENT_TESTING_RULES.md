@@ -1266,3 +1266,40 @@ The skill describes the procedure; the tools perform the individual actions.
 
 The goal is not to minimize context at all costs. Detailed instructions should be loaded when they improve reliability or are needed to perform the task correctly.
 
+
+## 52. Evaluate the whole agent system, not just the LLM
+
+When an agent behaves poorly, the problem may not be the model itself.
+
+Investigate all layers:
+
+```text
+prompt / instructions
++
+tool definitions
++
+tool inputs
++
+tool outputs
++
+agent decisions
++
+runtime environment
++
+evaluation/test design
+```
+
+For example, repeated searching may be caused by:
+
+```text
+unclear instructions
+insufficient tool output
+missing tool capability
+ambiguous file paths
+an unrealistic test environment
+```
+
+Before changing the model or weakening a test, identify which layer caused the behavior.
+
+Improving the tools and environment can sometimes produce a larger improvement in agent behavior than adding more prompt instructions.
+

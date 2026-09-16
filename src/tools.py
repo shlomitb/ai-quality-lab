@@ -343,13 +343,14 @@ def run_tests(repository_name: str) -> dict:
 
     if repository_name == "demo-app_fail":
         repo_path = Path("demo_repo")
-
+        #runs: python -m pytest -q .
         result = subprocess.run(
             [
                 sys.executable,
                 "-m",
                 "pytest",
                 "-q",
+                ".",
             ],
             cwd=repo_path,
             capture_output=True,

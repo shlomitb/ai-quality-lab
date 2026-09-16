@@ -51,6 +51,9 @@ def test_real_code_bug_fix_trajectory():
 
         post_test_result = run_tests("demo-app_fail")
 
+        print("\nPOST TEST RESULT:")
+        print(post_test_result)
+
         assert post_test_result["result"]["status"] == "passed"
 
         task_completion = TaskCompletionMetric(
