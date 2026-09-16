@@ -1,11 +1,11 @@
 import json
-from pathlib import Path
 from deepeval.tracing import observe, update_current_trace
 from google.genai import types
 from pathlib import Path
 
 from src.llm import ask_llm
-from src.skills import select_skill
+from src.skills import get_selected_skill
+from src.tool_catalog import get_tool_descriptions
 from src.tools import (
     get_return_policy,
     get_product_information,
@@ -23,6 +23,7 @@ from src.tools import (
 )
 
 
+
 def get_tool_calls(response):
     return [tool_call.name for tool_call in response.tool_calls]
 
@@ -36,8 +37,6 @@ def get_tool_call_details(response):
         for tool_call in response.tool_calls
     ]
 
-
-
 def load_skill_catalog() -> list[dict]:
     skills_file = Path("skills/skills.json")
 
@@ -47,15 +46,75 @@ def load_skill_catalog() -> list[dict]:
     return json.loads(skills_file.read_text())["skills"]
 
 
-def select_skill(question: str) -> str:
-    question_lower = question.lower()
+def build_prompt(question: str) -> str:
+    agents_instructions = load_agents_instructions()
+    skill_descriptions = load_skill_descriptions()
+    selected_skill = get_selected_skill(question)
 
-    for skill in load_skill_catalog():
-        for keyword in skill["keywords"]:
-            if keyword in question_lower:
-                return skill["name"]
+    if selected_skill:
+        selected_skill_instructions = selected_skill.instructions
+        tool_descriptions = get_tool_descriptions(selected_skill.tools)
+    else:
+        selected_skill_instructions = ""
+        tool_descriptions = ""
 
-    return ""
+    prompt = f"""
+        You are a software-development assistant.
+
+        Repository instructions:
+        {agents_instructions}
+
+        Available skills:
+        {skill_descriptions}
+        
+        Selected skill:
+        {selected_skill.name if selected_skill else "None"}
+        
+        Selected skill instructions:
+        {selected_skill_instructions}
+
+        Investigate and respond to the user's request using the appropriate
+        available tools.
+
+        User request:
+        {question}
+
+        Available tools for this task:
+
+        {tool_descriptions}
+
+        General rules:
+
+        - Choose only the tools that are relevant to the user's request.
+        - Do not use tools unnecessarily.
+        - When a tool returns information needed for a later step, use that
+          information rather than making assumptions.
+        - Do not claim that an action was completed unless the available
+          tool results provide evidence that it was completed.
+        - Do not make assumptions when the available information is insufficient.
+
+        Return-policy rules:
+
+        - Use get_return_policy only when the customer asks for the return
+          policy or when the available order/eligibility information is
+          insufficient to answer the question.
+        - Do not call get_return_policy solely to explain an eligibility
+          result that has already been determined.
+        """
+
+    print(f"Selected skill: {selected_skill.name if selected_skill else 'None'}")
+    print(f"Skill instructions characters: {len(selected_skill.instructions) if selected_skill else 0}")
+    print(f"TOTAL PROMPT characters: {len(prompt)}")
+
+    tool_descriptions = """
+    ... your current Available tools section ...
+    """
+
+    print(f"Tool descriptions characters: {len(tool_descriptions)}")
+
+    print(f"TOTAL PROMPT characters: {len(prompt)}")
+
+    return prompt
 
 
 def get_tool_result_details(response):
@@ -72,78 +131,7 @@ def get_tool_result_details(response):
 def answer_customer_with_trace(client, question):
     """Run the software-development agent and return the full response."""
 
-    agents_instructions = load_agents_instructions()
-    skill_descriptions = load_skill_descriptions()
-
-    selected_skill_name = select_skill(question)
-
-    selected_skill = ""
-
-    if selected_skill_name:
-        selected_skill = load_skill(selected_skill_name)
-
-    prompt = f"""
-    You are a software-development assistant.
-
-    Repository instructions:
-    {agents_instructions}
-
-    Available skills:
-    {skill_descriptions}
-
-    Selected skill instructions:
-    {selected_skill}
-
-    Investigate and respond to the user's request using the appropriate
-    available tools.
-
-    User request:
-    {question}
-
-    Available tools:
-
-    - get_ticket:
-      Use this to retrieve information about a specific ticket.
-      It requires the ticket_id argument.
-
-    - get_repository:
-      Use this to retrieve information about a specific repository.
-      It requires the repository_name argument.
-
-    - search_files:
-      Use this to search files in a repository for a specific term.
-      It requires the repository_name and search_term arguments.
-
-    - run_tests:
-      Use this to run the test suite for a repository.
-      It requires the repository_name argument.
-
-    - read_file:
-      Use this to read the contents of a specific file in a repository.
-      It requires the repository_name and file_path arguments.
-
-    - edit_file:
-      Use this to modify the contents of an existing file in a repository.
-      It requires the repository_name, file_path, and new_content arguments.
-
-    General rules:
-
-    - Choose only the tools that are relevant to the user's request.
-    - Do not use tools unnecessarily.
-    - When a tool returns information needed for a later step, use that
-      information rather than making assumptions.
-    - Do not claim that an action was completed unless the available
-      tool results provide evidence that it was completed.
-    - Do not make assumptions when the available information is insufficient.
-
-    Return-policy rules:
-
-    - Use get_return_policy only when the customer asks for the return
-      policy or when the available order/eligibility information is
-      insufficient to answer the question.
-    - Do not call get_return_policy solely to explain an eligibility
-      result that has already been determined.
-    """
+    prompt = build_prompt(question)
 
     config = types.GenerateContentConfig(
         tools=[
