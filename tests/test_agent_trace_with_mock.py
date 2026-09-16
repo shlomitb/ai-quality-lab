@@ -153,3 +153,33 @@ def test_agent_passes_selected_skill_tools_to_llm():
         "read_file",
         "edit_file",
     ]
+
+def test_agent_adds_run_tests_when_review_requests_it():
+    fake_response = Mock()
+    fake_response.final_text = "Review completed."
+
+    question = (
+        "Please review this code and run the tests to verify your findings."
+    )
+
+    with patch(
+            "src.agent.ask_llm",
+            return_value=fake_response,
+    ) as mock_ask_llm:
+        answer_customer_with_trace(
+            client=Mock(),
+            question=question,
+        )
+
+    mock_ask_llm.assert_called_once()
+
+    call_kwargs = mock_ask_llm.call_args.kwargs
+    config = call_kwargs["config"]
+
+    tool_names = [tool.__name__ for tool in config.tools]
+
+    assert tool_names == [
+        "search_files",
+        "read_file",
+        "run_tests",
+    ]

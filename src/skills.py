@@ -23,6 +23,24 @@ SKILL_TOOLS = {
     ],
 }
 
+EXTRA_TOOL_KEYWORDS = {
+    "run_tests": [
+        "run the tests",
+        "run tests",
+        "test it",
+        "verify with tests",
+    ],
+}
+
+SKILL_ESCALATION_TOOLS = {
+    "investigate-bug": [
+        "get_repository",
+    ],
+    "review-code": [
+        "run_tests",
+    ],
+}
+
 
 def load_skill_descriptions() -> str:
     skills_file = Path("skills/skills.md")
@@ -116,12 +134,21 @@ def get_selected_skill(question: str) -> SelectedSkill | None:
     if not skill_name:
         return None
 
+    tools = list(SKILL_TOOLS.get(skill_name, []))
+
+    question_lower = question.lower()
+
+    for tool_name, keywords in EXTRA_TOOL_KEYWORDS.items():
+        if any(keyword in question_lower for keyword in keywords):
+            if tool_name not in tools:
+                tools.append(tool_name)
+
     return SelectedSkill(
         name=skill_name,
         instructions=load_skill(skill_name),
-        tools=SKILL_TOOLS.get(skill_name, []),
-    )
 
+        tools=tools,
+    )
 
 def get_skill_info(question: str) -> tuple[str, int]:
     skill = get_selected_skill(question)
@@ -130,4 +157,10 @@ def get_skill_info(question: str) -> tuple[str, int]:
         return "", 0
 
     return skill.name, len(skill.instructions)
+
+
+def is_tool_escalation_allowed(skill_name: str,tool_name: str,) -> bool:
+    allowed_tools = SKILL_ESCALATION_TOOLS.get(skill_name, [])
+
+    return tool_name in allowed_tools
 

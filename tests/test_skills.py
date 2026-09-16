@@ -126,3 +126,41 @@ def test_get_selected_skill_when_none_matches():
 
     assert skill is None
 
+
+def test_review_skill_includes_run_tests_when_explicitly_requested():
+    skill = get_selected_skill(
+        "Please review this code and run the tests to verify your findings."
+    )
+
+    assert skill is not None
+    assert skill.name == "review-code"
+    assert "search_files" in skill.tools
+    assert "read_file" in skill.tools
+    assert "run_tests" in skill.tools
+
+
+def test_review_skill_can_escalate_to_run_tests():
+    from src.skills import is_tool_escalation_allowed
+
+    assert is_tool_escalation_allowed(
+        "review-code",
+        "run_tests",
+    )
+
+
+def test_review_skill_cannot_escalate_to_edit_file():
+    from src.skills import is_tool_escalation_allowed
+
+    assert not is_tool_escalation_allowed(
+        "review-code",
+        "edit_file",
+    )
+
+
+def test_unknown_tool_is_not_allowed():
+    from src.skills import is_tool_escalation_allowed
+
+    assert not is_tool_escalation_allowed(
+        "review-code",
+        "delete_database",
+    )
