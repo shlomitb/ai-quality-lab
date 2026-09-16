@@ -1,5 +1,6 @@
 from deepeval.tracing import observe, update_current_trace
 from google.genai import types
+from pathlib import Path
 
 from src.llm import ask_llm
 from src.tools import (
@@ -76,8 +77,7 @@ def answer_customer_with_trace(client, question):
 
     - edit_file:
       Use this to modify the contents of an existing file in a repository.
-      It requires the repository_name, file_path, and new_content arguments.
-      Only modify files that are relevant to the current task.
+      It requires the repository_name, file_path, and new_content arguments..
       
     - read_file:
       Use this to read the contents of a specific file in a repository.
@@ -98,9 +98,7 @@ def answer_customer_with_trace(client, question):
     - When investigating a coding issue, use test results and relevant
       source code to understand the problem before making a change.
       
-    - When a test fails, inspect the failure information before making
-      a code change.
-      
+    
     - When a test failure identifies a relevant source file,
       use read_file to inspect that file before modifying it.
       
@@ -111,15 +109,6 @@ def answer_customer_with_trace(client, question):
         
     - Before using search_files, consider whether the relevant file
       path is already known from the test failure.
-      
-    - After using edit_file to modify code, you MUST call run_tests again
-      before reporting that the problem is fixed.
-      
-    - Do not report that a bug is fixed unless the post-change test run
-      shows that the tests pass.
-      
-    - If the tests still fail after a change, continue investigating
-      and make another appropriate change when possible.
       
     - Do not claim that an action was completed unless the available
       tool results provide evidence that it was completed.
@@ -170,12 +159,23 @@ def answer_customer_with_trace(client, question):
 
 
 def answer_customer(client, question):
+    agents_instructions = load_agents_instructions()
     response = answer_customer_with_trace(
         client=client,
         question=question
     )
 
     return response.final_text
+
+
+def load_agents_instructions() -> str:
+    agents_file = Path("AGENTS.md")
+
+    if not agents_file.exists():
+        return ""
+
+    return agents_file.read_text()
+
 
 
 
