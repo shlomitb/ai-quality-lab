@@ -119,7 +119,7 @@ def test_agent_handles_product_information_failure():
         }
     ]
 
-    assert "49.99" not in response.text
+    assert "49.99" not in response.final_text
 
 
 @pytest.mark.llm
@@ -153,7 +153,7 @@ def test_agent_recovers_from_product_information_failure():
         },
     ]
 
-    assert "49.99" in response.text
+    assert "49.99" in response.final_text
 
 
 @pytest.mark.llm
@@ -199,10 +199,7 @@ def test_agent_handles_both_product_information_tools_failing():
     assert len(tool_results) == 2
 
     #checks that the agent did not invent the price when neither tool could provide it
-    assert "49.99" not in response.text
-
-    # print("\nFINAL RESPONSE:")
-    # print(response.text)
+    assert "49.99" not in response.final_text
 
 
 @pytest.mark.llm
@@ -285,19 +282,17 @@ def test_agent_correctly_handles_return_eligibility_result():
 
     # print("\nTOOL RESULTS:")
     # print(tool_results)
-    #
-    # print("\nFINAL RESPONSE:")
-    # print(response.text)
+
 
     eligibility_result = tool_results[1]["response"]
 
     assert eligibility_result["result"]["result"]["eligible"] is False
 
-    assert "49.99" not in response.text
+    assert "49.99" not in response.final_text
 
-    assert "not eligible" in response.text.lower()
-    assert "20 days" in response.text.lower()
-    assert "14 days" in response.text.lower()
+    assert "not eligible" in response.final_text.lower()
+    assert "20 days" in response.final_text.lower()
+    assert "14 days" in response.final_text.lower()
 
 
 
@@ -321,7 +316,7 @@ def test_agent_updates_order_status():
         print(tool_call_details)
 
         print("\nFINAL RESPONSE:")
-        print(response.text)
+        print(response.final_text)
 
         assert any(
             call["name"] == "update_order_status"
@@ -334,8 +329,8 @@ def test_agent_updates_order_status():
 
         assert orders["12345"]["status"] == "Reviewed"
 
-        assert "updated" in response.text.lower()
-        assert "reviewed" in response.text.lower()
+        assert "updated" in response.final_text.lower()
+        assert "reviewed" in response.final_text.lower()
 
     finally:
         orders["12345"]["status"] = "Open"
@@ -391,7 +386,7 @@ def test_agent_recovers_and_continues_after_order_lookup_failure():
         },
     }
 
-    assert "eligible" in response.text.lower() or "return" in response.text.lower()
+    assert "eligible" in response.final_text.lower() or "return" in response.final_text.lower()
 
 
 @pytest.mark.llm
@@ -404,7 +399,7 @@ def test_agent_uses_ticket_result_to_get_repository():
     )
 
     # print("\nFINAL RESPONSE:")
-    # print(response.text)
+    # print(response.final_text)
 
     tool_call_details = get_tool_call_details(response)
 
@@ -425,7 +420,7 @@ def test_agent_uses_ticket_result_to_get_repository():
         },
     }
 
-    assert "python" in response.text.lower()
+    assert "python" in response.final_text.lower()
 
 
 
@@ -461,7 +456,7 @@ def test_agent_investigates_ticket_and_searches_files():
     assert tool_call_details[1]["args"]["repository_name"] == "demo-app"
     assert "login" in tool_call_details[1]["args"]["search_term"].lower()
 
-    assert "src/login.py" in response.text
+    assert "src/login.py" in response.final_text
 
 
 
@@ -480,7 +475,7 @@ def test_agent_uses_ticket_repository_to_run_tests():
     print(tool_call_details)
 
     print("\nFINAL RESPONSE:")
-    print(response.text)
+    print(response.final_text)
 
     assert tool_call_details[0] == {
         "name": "get_ticket",
@@ -492,7 +487,7 @@ def test_agent_uses_ticket_repository_to_run_tests():
     assert tool_call_details[1]["name"] == "run_tests"
     assert tool_call_details[1]["args"]["repository_name"] == "demo-app"
 
-    assert "passed" in response.text.lower()
+    assert "passed" in response.final_text.lower()
 
 
 
@@ -514,7 +509,7 @@ def test_agent_reports_test_failure():
     print(tool_call_details)
 
     print("\nFINAL RESPONSE:")
-    print(response.text)
+    print(response.final_text)
 
     assert tool_call_details[0] == {
         "name": "get_ticket",
@@ -530,7 +525,7 @@ def test_agent_reports_test_failure():
         },
     }
 
-    assert "test_login_button" in response.text
+    assert "test_login_button" in response.final_text
 
 
 @pytest.mark.llm
@@ -556,7 +551,7 @@ def test_agent_fixes_failed_test_and_verifies():
         print(tool_call_details)
 
         print("\nFINAL RESPONSE:")
-        print(response.text)
+        print(response.final_text)
 
         assert tool_call_details[0] == {
             "name": "get_ticket",
@@ -590,7 +585,7 @@ def test_agent_fixes_failed_test_and_verifies():
 
         assert bug_fixed["BUG-456"] is True
 
-        assert "pass" in response.text.lower()
+        assert "pass" in response.final_text.lower()
 
     finally:
         bug_fixed["BUG-456"] = False
@@ -628,7 +623,7 @@ def test_agent_repairs_real_code_and_verifies():
         print(tool_call_details)
 
         print("\nFINAL RESPONSE:")
-        print(response.text)
+        print(response.final_text)
 
         # The agent must actually modify a file.
         assert any(
@@ -665,7 +660,7 @@ def test_agent_repairs_real_code_and_verifies():
         assert final_test_result["result"]["result"]["status"] == "passed"
 
         # The agent's final response should report success.
-        assert "pass" in response.text.lower()
+        assert "pass" in response.final_text.lower()
 
     finally:
         file_path.write_text(broken_content)

@@ -11,7 +11,7 @@ Examples:
 
 assert tool_name == "get_product_information"
 assert order_id == "12345"
-assert "49.99" not in response.text
+assert "49.99" not in response.final_text
 ```
 
 Don't use an LLM judge for something that can be checked exactly.
@@ -943,8 +943,9 @@ If the expected result is a specific, known fact, verify it directly rather than
 
 For example:
 
-
-assert "python" in response.text.lower()
+clear
+assert "python" in response.final_text.lower()
+```
 
 This directly verifies the agent answered "Python."
 

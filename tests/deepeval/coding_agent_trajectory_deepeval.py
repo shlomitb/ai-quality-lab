@@ -27,9 +27,9 @@ def test_coding_agent_trajectory():
     )
 
     print("\nFINAL RESPONSE:")
-    print(response.text)
+    print(response.final_text)
 
-    assert "python" in response.text.lower()
+    assert "python" in response.final_text.lower()
 
     task_completion = TaskCompletionMetric(
         threshold=0.5,

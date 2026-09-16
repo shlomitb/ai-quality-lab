@@ -41,7 +41,7 @@ def test_real_code_bug_fix_trajectory():
         )
 
         print("\nFINAL RESPONSE:")
-        print(response.text)
+        print(response.final_text)
 
         # Direct verification of the real file state.
         assert file_path.read_text() != broken_content

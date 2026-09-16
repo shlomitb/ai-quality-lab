@@ -47,7 +47,7 @@ def test_product_information_argument_correctness():
 
     test_case = LLMTestCase(
         input=question,
-        actual_output=response.text,
+        actual_output=response.final_text,
         tools_called=tools_called,
     )
 

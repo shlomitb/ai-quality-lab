@@ -29,10 +29,10 @@ def test_bug_fix_agent_trajectory():
         )
 
         print("\nFINAL RESPONSE:")
-        print(response.text)
+        print(response.final_text)
 
         assert bug_fixed["BUG-456"] is True
-        assert "pass" in response.text.lower()
+        assert "pass" in response.final_text.lower()
 
         task_completion = TaskCompletionMetric(
             threshold=0.5,

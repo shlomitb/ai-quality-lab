@@ -30,9 +30,9 @@ def test_file_search_agent_trajectory():
     )
 
     print("\nFINAL RESPONSE:")
-    print(response.text)
+    print(response.final_text)
 
-    assert "src/login.py" in response.text.lower()
+    assert "src/login.py" in response.final_text.lower()
 
     task_completion = TaskCompletionMetric(
         threshold=0.5,

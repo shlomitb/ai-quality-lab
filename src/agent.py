@@ -20,50 +20,27 @@ from src.tools import (
 
 
 def get_tool_calls(response):
-    """Return the names of tools called during the agent run."""
-    tool_calls = []
+    return [tool_call.name for tool_call in response.tool_calls]
 
-    for content in response.automatic_function_calling_history or []:
-        for part in content.parts or []:
-            if part.function_call is not None:
-                tool_calls.append(part.function_call.name)
-
-    return tool_calls
 
 def get_tool_call_details(response):
-    """Return tool names and arguments from the agent run."""
-    tool_calls = []
-
-    for content in response.automatic_function_calling_history or []:
-        for part in content.parts or []:
-            if part.function_call is not None:
-                tool_calls.append(
-                    {
-                        "name": part.function_call.name,
-                        "args": part.function_call.args,
-                    }
-                )
-
-    return tool_calls
+    return [
+        {
+            "name": tool_call.name,
+            "args": tool_call.args,
+        }
+        for tool_call in response.tool_calls
+    ]
 
 
 def get_tool_result_details(response):
-    """Return tool names and results from the agent run."""
-    tool_results = []
-
-    for content in response.automatic_function_calling_history or []:
-        for part in content.parts or []:
-            function_response = getattr(part, "function_response", None)
-
-            if function_response is not None:
-                tool_results.append(
-                    {
-                        "name": function_response.name,
-                        "response": function_response.response,
-                    }
-                )
-
-    return tool_results
+    return [
+        {
+            "name": tool_result.name,
+            "response": tool_result.response,
+        }
+        for tool_result in response.tool_results
+    ]
 
 
 @observe(type="agent")
@@ -184,7 +161,7 @@ def answer_customer_with_trace(client, question):
 
     update_current_trace(
         input=question,
-        output=response.text,
+        output=response.final_text,
     )
 
     return response
@@ -198,7 +175,7 @@ def answer_customer(client, question):
         question=question
     )
 
-    return response.text
+    return response.final_text
 
 
 

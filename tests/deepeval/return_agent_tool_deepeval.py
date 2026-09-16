@@ -53,7 +53,7 @@ def test_return_policy_tool_correctness():
 
     test_case = LLMTestCase(
         input=question,
-        actual_output=response.text,
+        actual_output=response.final_text,
         tools_called=actual_tools,
         expected_tools=expected_tools,
     )
