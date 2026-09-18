@@ -3,8 +3,10 @@ from src.agent import (
     get_tool_calls,
     get_tool_call_details,
     get_tool_result_details,
+    execute_tool_call
 )
 from src.providers.response import AgentResponse, ToolCall, ToolResult
+from src.skills import get_selected_skill
 from unittest.mock import Mock, patch
 
 from src.agent import answer_customer_with_trace
@@ -93,6 +95,7 @@ def test_get_tool_call_details_with_arguments():
             "args": {
                 "product_name": "Example Product"
             },
+            "call_id": None,
         }
     ]
 
@@ -126,6 +129,7 @@ def test_get_tool_result_details():
                     "price": 49.99,
                 }
             },
+            "call_id": None,
         }
     ]
 
@@ -152,7 +156,10 @@ def test_agent_passes_selected_skill_tools_to_llm():
         "run_tests",
         "read_file",
         "edit_file",
+        "request_tool_escalation",
     ]
+
+
 
 def test_agent_adds_run_tests_when_review_requests_it():
     fake_response = Mock()
@@ -182,4 +189,99 @@ def test_agent_adds_run_tests_when_review_requests_it():
         "search_files",
         "read_file",
         "run_tests",
+        "request_tool_escalation",
     ]
+
+
+def test_execute_tool_call_runs_available_tool():
+    from src.agent import execute_tool_call
+    from src.providers.response import ToolCall
+
+    tool = Mock()
+    tool.__name__ = "run_tests"
+    tool.return_value = {"status": "passed"}
+
+    tool_call = ToolCall(
+        name="run_tests",
+        args={
+            "repository_name": "demo-app"
+        },
+        call_id="call-123",
+    )
+
+    result = execute_tool_call(
+        tool_call=tool_call,
+        available_tools=[tool],
+        selected_skill=None,
+    )
+
+    tool.assert_called_once_with(
+        repository_name="demo-app"
+    )
+
+    assert result.name == "run_tests"
+    assert result.response == {
+        "result": {
+            "status": "passed"
+        }
+    }
+    assert result.call_id == "call-123"
+
+
+def test_execute_tool_call_authorizes_escalation():
+    from src.agent import execute_tool_call
+    from src.providers.response import ToolCall
+    from src.skills import get_selected_skill
+
+    skill = get_selected_skill(
+        "Please review this code."
+    )
+
+    assert skill is not None
+    assert "run_tests" not in skill.tools
+
+    tool_call = ToolCall(
+        name="request_tool_escalation",
+        args={
+            "tool_name": "run_tests"
+        },
+        call_id="call-456",
+    )
+
+    result = execute_tool_call(
+        tool_call=tool_call,
+        available_tools=[],
+        selected_skill=skill,
+    )
+
+    assert result.response["authorized"] is True
+    assert result.response["tool_name"] == "run_tests"
+    assert "run_tests" in skill.tools
+
+
+
+def test_execute_tool_call_denies_unauthorized_escalation():
+
+    skill = get_selected_skill(
+        "Please review this code."
+    )
+
+    assert skill is not None
+    assert "edit_file" not in skill.tools
+
+    tool_call = ToolCall(
+        name="request_tool_escalation",
+        args={
+            "tool_name": "edit_file"
+        },
+        call_id="call-789",
+    )
+
+    result = execute_tool_call(
+        tool_call=tool_call,
+        available_tools=[],
+        selected_skill=skill,
+    )
+
+    assert result.response["authorized"] is False
+    assert "edit_file" not in skill.tools

@@ -102,3 +102,12 @@ def test_review_skill_tools_are_correct():
         "search_files",
         "read_file",
     ]
+
+
+def test_escalation_tool_is_available():
+    from src.tool_catalog import get_tools
+
+    tools = get_tools(["request_tool_escalation"])
+
+    assert len(tools) == 1
+    assert tools[0].__name__ == "request_tool_escalation"

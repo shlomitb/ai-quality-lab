@@ -9,6 +9,18 @@ from src.tools import (
 )
 
 
+def request_tool_escalation(tool_name: str) -> dict:
+    """
+    Request access to an additional tool.
+
+    The application must authorize the request before the tool
+    becomes available.
+    """
+    return {
+        "requested_tool": tool_name,
+    }
+
+
 TOOLS = {
     "get_ticket": get_ticket,
     "get_repository": get_repository,
@@ -16,11 +28,8 @@ TOOLS = {
     "run_tests": run_tests,
     "edit_file": edit_file,
     "read_file": read_file,
+    "request_tool_escalation": request_tool_escalation,
 }
-
-
-
-
 
 
 TOOL_DESCRIPTIONS = {
@@ -53,7 +62,17 @@ TOOL_DESCRIPTIONS = {
     Use this to read the contents of a specific file in a repository.
     It requires the repository_name and file_path arguments.
     """,
+
+    "request_tool_escalation": """
+    Request access to an additional tool when the currently available
+    tools are insufficient.
+
+    The application will check whether the requested tool is authorized.
+    Do not assume the request will be approved.
+    It requires the tool_name argument.
+    """,
 }
+
 
 def get_tools(tool_names: list[str]) -> list:
     return [
@@ -75,8 +94,3 @@ def get_tool_descriptions(tool_names: list[str]) -> str:
             )
 
     return "\n\n".join(descriptions)
-
-
-get_tool_descriptions(
-    ["search_files", "read_file"]
-)

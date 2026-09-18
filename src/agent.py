@@ -1,12 +1,21 @@
-import json
+
 from deepeval.tracing import observe, update_current_trace
 from google.genai import types
 from pathlib import Path
 
 from src.llm import ask_llm
-from src.skills import get_selected_skill
-from src.tool_catalog import get_tools, get_tool_descriptions
+from src.providers.response import ToolCall,ToolResult
+from src.skills import (
+    get_selected_skill,
+    AUTHORIZED_ESCALATION_TOOLS,
+    request_tool_escalation as apply_tool_escalation,
+)
 
+from src.tool_catalog import (
+    get_tools,
+    get_tool_descriptions,
+    request_tool_escalation,
+)
 
 def get_tool_calls(response):
     return [tool_call.name for tool_call in response.tool_calls]
@@ -17,23 +26,18 @@ def get_tool_call_details(response):
         {
             "name": tool_call.name,
             "args": tool_call.args,
+            "call_id": tool_call.call_id,
         }
         for tool_call in response.tool_calls
     ]
 
-def load_skill_catalog() -> list[dict]:
-    skills_file = Path("skills/skills.json")
 
-    if not skills_file.exists():
-        return []
-
-    return json.loads(skills_file.read_text())["skills"]
-
-
-def build_prompt(question: str) -> str:
+def build_prompt(question: str, selected_skill=None) -> str:
     agents_instructions = load_agents_instructions()
     skill_descriptions = load_skill_descriptions()
-    selected_skill = get_selected_skill(question)
+
+    if selected_skill is None:
+        selected_skill = get_selected_skill(question)
 
     if selected_skill:
         selected_skill_instructions = selected_skill.instructions
@@ -50,10 +54,10 @@ def build_prompt(question: str) -> str:
 
         Available skills:
         {skill_descriptions}
-        
+
         Selected skill:
         {selected_skill.name if selected_skill else "None"}
-        
+
         Selected skill instructions:
         {selected_skill_instructions}
 
@@ -86,16 +90,6 @@ def build_prompt(question: str) -> str:
           result that has already been determined.
         """
 
-    print(f"\nSelected skill: {selected_skill.name if selected_skill else 'None'}")
-    print(f"Skill instructions characters: {len(selected_skill.instructions) if selected_skill else 0}")
-    print(f"TOTAL PROMPT characters: {len(prompt)}")
-
-    tool_descriptions = """
-    ... your current Available tools section ...
-    """
-
-    print(f"Tool descriptions characters: {len(tool_descriptions)}")
-
     return prompt
 
 
@@ -104,6 +98,7 @@ def get_tool_result_details(response):
         {
             "name": tool_result.name,
             "response": tool_result.response,
+            "call_id": tool_result.call_id,
         }
         for tool_result in response.tool_results
     ]
@@ -115,12 +110,19 @@ def answer_customer_with_trace(client, question):
 
     selected_skill = get_selected_skill(question)
 
-    prompt = build_prompt(question)
+    prompt = build_prompt(
+        question,
+        selected_skill,
+    )
 
     if selected_skill:
         tools = get_tools(selected_skill.tools)
+
+        if selected_skill.name in AUTHORIZED_ESCALATION_TOOLS:
+            tools.append(request_tool_escalation)
     else:
         tools = []
+
 
     config = types.GenerateContentConfig(
         tools=tools,
@@ -141,8 +143,6 @@ def answer_customer_with_trace(client, question):
     )
 
     return response
-
-
 
 
 def answer_customer(client, question):
@@ -181,7 +181,79 @@ def load_skill(skill_name: str) -> str:
     return skill_file.read_text()
 
 
+def execute_tool_call(tool_call, available_tools, selected_skill):
+    if tool_call.name == "request_tool_escalation":
+        requested_tool = tool_call.args.get("tool_name")
 
+        if not isinstance(requested_tool, str):
+            return ToolResult(
+                name="request_tool_escalation",
+                response={
+                    "error": "tool_name is required."
+                },
+                call_id=tool_call.call_id,
+            )
+
+        if selected_skill is None:
+            return ToolResult(
+                name="request_tool_escalation",
+                response={
+                    "tool_name": requested_tool,
+                    "authorized": False,
+                    "error": "No skill is selected.",
+                },
+                call_id=tool_call.call_id,
+            )
+
+        allowed = apply_tool_escalation(
+            selected_skill,
+            requested_tool,
+        )
+
+        return ToolResult(
+            name="request_tool_escalation",
+            response={
+                "tool_name": requested_tool,
+                "authorized": allowed,
+            },
+            call_id=tool_call.call_id,
+        )
+
+    tool_map = {
+        tool.__name__: tool
+        for tool in available_tools
+    }
+
+    tool = tool_map.get(tool_call.name)
+
+    if tool is None:
+        return ToolResult(
+            name=tool_call.name,
+            response={
+                "error": "Tool is not available."
+            },
+            call_id=tool_call.call_id,
+        )
+
+    try:
+        result = tool(**tool_call.args)
+
+        return ToolResult(
+            name=tool_call.name,
+            response={
+                "result": result,
+            },
+            call_id=tool_call.call_id,
+        )
+
+    except Exception as exc:
+        return ToolResult(
+            name=tool_call.name,
+            response={
+                "error": str(exc),
+            },
+            call_id=tool_call.call_id,
+        )
 
 
 
