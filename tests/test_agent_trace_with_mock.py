@@ -1,5 +1,6 @@
 
 from src.agent import (
+    answer_customer_with_trace,
     get_tool_calls,
     get_tool_call_details,
     get_tool_result_details,
@@ -9,7 +10,7 @@ from src.providers.response import AgentResponse, ToolCall, ToolResult
 from src.skills import get_selected_skill
 from unittest.mock import Mock, patch
 
-from src.agent import answer_customer_with_trace
+
 
 """
 Use mock AgentResponse objects to test the agent helper functions
@@ -299,3 +300,133 @@ def test_execute_tool_call_denies_unauthorized_escalation():
 
     assert result.response["authorized"] is False
     assert "edit_file" not in skill.tools
+
+
+def test_agent_handles_dynamic_tool_escalation():
+
+    first_response = AgentResponse(
+        final_text="",
+        tool_calls=[
+            ToolCall(
+                name="request_tool_escalation",
+                args={
+                    "tool_name": "run_tests"
+                },
+                call_id="call-1",
+            )
+        ],
+        tool_results=[],
+    )
+
+    second_response = AgentResponse(
+        final_text="",
+        tool_calls=[
+            ToolCall(
+                name="run_tests",
+                args={
+                    "repository_name": "demo-app"
+                },
+                call_id="call-2",
+            )
+        ],
+        tool_results=[],
+    )
+
+    final_response = AgentResponse(
+        final_text="The review is complete. The tests passed.",
+        tool_calls=[],
+        tool_results=[],
+    )
+
+    fake_provider = Mock()
+
+    fake_provider.generate.return_value = first_response
+
+    fake_provider.send_tool_results.side_effect = [
+        second_response,
+        final_response,
+    ]
+
+    fake_run_tests = Mock(
+        return_value={
+            "status": "passed"
+        }
+    )
+
+    fake_run_tests.__name__ = "run_tests"
+
+    with patch(
+        "src.agent.create_provider",
+        return_value=fake_provider,
+    ):
+        with patch.dict(
+                "src.tool_catalog.TOOLS",
+                {"run_tests": fake_run_tests},
+                clear=False,
+        ):
+            response = answer_customer_with_trace(
+                client=Mock(),
+                question="Please review this code.",
+            )
+
+    assert response.final_text == (
+        "The review is complete. The tests passed."
+    )
+
+    fake_provider.generate.assert_called_once()
+    assert fake_provider.send_tool_results.call_count == 2
+
+    fake_run_tests.assert_called_once_with(
+        repository_name="demo-app"
+    )
+
+    first_config = fake_provider.generate.call_args.kwargs["config"]
+
+    first_tool_names = [
+        tool.__name__
+        for tool in first_config.tools
+    ]
+
+    assert first_tool_names == [
+        "search_files",
+        "read_file",
+        "request_tool_escalation",
+    ]
+
+    first_send_results = (
+        fake_provider.send_tool_results.call_args_list[0]
+        .kwargs["tool_results"]
+    )
+
+    assert first_send_results[0].name == "request_tool_escalation"
+    assert first_send_results[0].response["tool_name"] == "run_tests"
+    assert first_send_results[0].response["authorized"] is True
+
+    second_config = (
+        fake_provider.send_tool_results.call_args_list[0]
+        .kwargs["config"]
+    )
+
+    second_tool_names = [
+        tool.__name__
+        for tool in second_config.tools
+    ]
+
+    assert second_tool_names == [
+        "search_files",
+        "read_file",
+        "run_tests",
+        "request_tool_escalation",
+    ]
+
+    second_send_results = (
+        fake_provider.send_tool_results.call_args_list[1]
+        .kwargs["tool_results"]
+    )
+
+    assert second_send_results[0].name == "run_tests"
+    assert second_send_results[0].response == {
+        "result": {
+            "status": "passed"
+        }
+    }

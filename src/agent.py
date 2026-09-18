@@ -4,7 +4,7 @@ from google.genai import types
 from pathlib import Path
 
 from src.llm import create_provider
-from src.providers.response import ToolCall,ToolResult
+from src.providers.response import ToolResult
 from src.skills import (
     get_selected_skill,
     AUTHORIZED_ESCALATION_TOOLS,
@@ -112,6 +112,17 @@ def get_tool_result_details(response):
     ]
 
 
+def get_available_tools(selected_skill):
+    if selected_skill is None:
+        return []
+
+    tools = get_tools(selected_skill.tools)
+
+    if selected_skill.name in AUTHORIZED_ESCALATION_TOOLS:
+        tools.append(request_tool_escalation)
+
+    return tools
+
 
 @observe(type="agent")
 def answer_customer_with_trace(client, question):
@@ -124,15 +135,11 @@ def answer_customer_with_trace(client, question):
         selected_skill,
     )
 
-    provider = create_provider(client=client)
+    provider = create_provider(
+        client=client,
+    )
 
-    if selected_skill:
-        tools = get_tools(selected_skill.tools)
-
-        if selected_skill.name in AUTHORIZED_ESCALATION_TOOLS:
-            tools.append(request_tool_escalation)
-    else:
-        tools = []
+    tools = get_available_tools(selected_skill)
 
     config = types.GenerateContentConfig(
         tools=tools,
@@ -154,21 +161,16 @@ def answer_customer_with_trace(client, question):
         tool_results = []
 
         for tool_call in response.tool_calls:
-            result = execute_tool_call(
+            tool_result = execute_tool_call(
                 tool_call=tool_call,
                 available_tools=tools,
                 selected_skill=selected_skill,
             )
 
-            tool_results.append(result)
+            tool_results.append(tool_result)
 
-        if selected_skill:
-            tools = get_tools(selected_skill.tools)
-
-            if selected_skill.name in AUTHORIZED_ESCALATION_TOOLS:
-                tools.append(request_tool_escalation)
-        else:
-            tools = []
+        # Escalation may have changed selected_skill.tools.
+        tools = get_available_tools(selected_skill)
 
         config = types.GenerateContentConfig(
             tools=tools,
