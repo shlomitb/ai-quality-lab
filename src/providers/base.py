@@ -7,3 +7,6 @@ class LLMProvider(ABC):
     @abstractmethod
     def generate(self, prompt, config=None):
         pass
+
+    def send_tool_results(self, tool_results, config=None):
+        raise NotImplementedError

@@ -10,6 +10,12 @@ class SelectedSkill:
     tools: list[str]
 
 
+@dataclass
+class ToolEscalationRequest:
+    skill_name: str
+    tool_name: str
+
+
 SKILL_TOOLS = {
     "investigate-bug": [
         "get_ticket",
@@ -32,7 +38,7 @@ EXTRA_TOOL_KEYWORDS = {
     ],
 }
 
-SKILL_ESCALATION_TOOLS = {
+AUTHORIZED_ESCALATION_TOOLS = {
     "investigate-bug": [
         "get_repository",
     ],
@@ -160,7 +166,28 @@ def get_skill_info(question: str) -> tuple[str, int]:
 
 
 def is_tool_escalation_allowed(skill_name: str,tool_name: str,) -> bool:
-    allowed_tools = SKILL_ESCALATION_TOOLS.get(skill_name, [])
+    allowed_tools = AUTHORIZED_ESCALATION_TOOLS.get(skill_name, [])
 
     return tool_name in allowed_tools
 
+
+def authorize_tool_escalation(request: ToolEscalationRequest,) -> bool:
+    return is_tool_escalation_allowed(
+        request.skill_name,
+        request.tool_name,
+    )
+
+
+def request_tool_escalation(skill: SelectedSkill,tool_name: str,) -> bool:
+    request = ToolEscalationRequest(
+        skill_name=skill.name,
+        tool_name=tool_name,
+    )
+
+    if not authorize_tool_escalation(request):
+        return False
+
+    if tool_name not in skill.tools:
+        skill.tools.append(tool_name)
+
+    return True

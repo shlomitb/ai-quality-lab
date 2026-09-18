@@ -123,7 +123,10 @@ def answer_customer_with_trace(client, question):
         tools = []
 
     config = types.GenerateContentConfig(
-        tools=tools
+        tools=tools,
+        automatic_function_calling=types.AutomaticFunctionCallingConfig(
+            disable=True
+        ),
     )
 
     response = ask_llm(

@@ -14,6 +14,7 @@ class ToolCall:
     """
     name: str
     args: dict
+    call_id: str | None = None
 
 
 @dataclass
@@ -25,6 +26,7 @@ class ToolResult:
     """
     name: str
     response: dict
+    call_id: str | None = None
 
 
 @dataclass
