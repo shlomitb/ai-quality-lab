@@ -430,3 +430,66 @@ def test_agent_handles_dynamic_tool_escalation():
             "status": "passed"
         }
     }
+
+
+def test_agent_denies_dynamic_unauthorized_escalation():
+
+    first_response = AgentResponse(
+        final_text="",
+        tool_calls=[
+            ToolCall(
+                name="request_tool_escalation",
+                args={
+                    "tool_name": "edit_file"
+                },
+                call_id="call-1",
+            )
+        ],
+        tool_results=[],
+    )
+
+    final_response = AgentResponse(
+        final_text="I cannot make that change because it is not authorized.",
+        tool_calls=[],
+        tool_results=[],
+    )
+
+    fake_provider = Mock()
+    fake_provider.generate.return_value = first_response
+    fake_provider.send_tool_results.return_value = final_response
+
+    with patch(
+        "src.agent.create_provider",
+        return_value=fake_provider,
+    ):
+        response = answer_customer_with_trace(
+            client=Mock(),
+            question="Please review this code.",
+        )
+
+    assert response.final_text == (
+        "I cannot make that change because it is not authorized."
+    )
+
+    fake_provider.generate.assert_called_once()
+    fake_provider.send_tool_results.assert_called_once()
+
+    send_results = (
+        fake_provider.send_tool_results.call_args.kwargs[
+            "tool_results"
+        ]
+    )
+
+    second_config = (
+        fake_provider.send_tool_results.call_args.kwargs["config"]
+    )
+
+    second_tool_names = [
+        tool.__name__
+        for tool in second_config.tools
+    ]
+
+    assert "edit_file" not in second_tool_names
+    assert send_results[0].name == "request_tool_escalation"
+    assert send_results[0].response["tool_name"] == "edit_file"
+    assert send_results[0].response["authorized"] is False
