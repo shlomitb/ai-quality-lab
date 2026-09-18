@@ -3,7 +3,7 @@ from deepeval.tracing import observe, update_current_trace
 from google.genai import types
 from pathlib import Path
 
-from src.llm import ask_llm
+from src.llm import create_provider
 from src.providers.response import ToolCall,ToolResult
 from src.skills import (
     get_selected_skill,
@@ -16,6 +16,8 @@ from src.tool_catalog import (
     get_tool_descriptions,
     request_tool_escalation,
 )
+
+MAX_AGENT_TURNS = 10
 
 def get_tool_calls(response):
     return [tool_call.name for tool_call in response.tool_calls]
@@ -41,7 +43,13 @@ def build_prompt(question: str, selected_skill=None) -> str:
 
     if selected_skill:
         selected_skill_instructions = selected_skill.instructions
-        tool_descriptions = get_tool_descriptions(selected_skill.tools)
+
+        prompt_tool_names = list(selected_skill.tools)
+
+        if selected_skill.name in AUTHORIZED_ESCALATION_TOOLS:
+            prompt_tool_names.append("request_tool_escalation")
+
+        tool_descriptions = get_tool_descriptions(prompt_tool_names)
     else:
         selected_skill_instructions = ""
         tool_descriptions = ""
@@ -104,6 +112,7 @@ def get_tool_result_details(response):
     ]
 
 
+
 @observe(type="agent")
 def answer_customer_with_trace(client, question):
     """Run the software-development agent and return the full response."""
@@ -115,6 +124,8 @@ def answer_customer_with_trace(client, question):
         selected_skill,
     )
 
+    provider = create_provider(client=client)
+
     if selected_skill:
         tools = get_tools(selected_skill.tools)
 
@@ -123,7 +134,6 @@ def answer_customer_with_trace(client, question):
     else:
         tools = []
 
-
     config = types.GenerateContentConfig(
         tools=tools,
         automatic_function_calling=types.AutomaticFunctionCallingConfig(
@@ -131,11 +141,46 @@ def answer_customer_with_trace(client, question):
         ),
     )
 
-    response = ask_llm(
-        client=client,
+    response = provider.generate(
         prompt=prompt,
-        config=config
+        config=config,
     )
+
+    for _ in range(MAX_AGENT_TURNS):
+
+        if not response.tool_calls:
+            break
+
+        tool_results = []
+
+        for tool_call in response.tool_calls:
+            result = execute_tool_call(
+                tool_call=tool_call,
+                available_tools=tools,
+                selected_skill=selected_skill,
+            )
+
+            tool_results.append(result)
+
+        if selected_skill:
+            tools = get_tools(selected_skill.tools)
+
+            if selected_skill.name in AUTHORIZED_ESCALATION_TOOLS:
+                tools.append(request_tool_escalation)
+        else:
+            tools = []
+
+        config = types.GenerateContentConfig(
+            tools=tools,
+            automatic_function_calling=types.AutomaticFunctionCallingConfig(
+                disable=True
+            ),
+        )
+
+        response = provider.send_tool_results(
+            tool_results=tool_results,
+            config=config,
+        )
 
     update_current_trace(
         input=question,

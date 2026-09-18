@@ -104,3 +104,27 @@ def test_review_prompt_contains_only_review_tools():
     assert "get_ticket" not in tools_section
     assert "run_tests" not in tools_section
     assert "edit_file" not in tools_section
+
+
+def test_review_prompt_includes_escalation_tool():
+    prompt = build_prompt(
+        "Please review this code."
+    )
+
+    tools_section = prompt.split(
+        "Available tools for this task:",
+        1
+    )[1].split(
+        "General rules:",
+        1
+    )[0]
+
+    assert "request_tool_escalation" in tools_section
+
+
+def test_escalation_tool_description_is_in_prompt():
+    prompt = build_prompt(
+        "Please review this code."
+    )
+
+    assert "The application will check whether the requested tool is authorized." in prompt

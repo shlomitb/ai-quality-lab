@@ -22,21 +22,31 @@ class GeminiProvider(LLMProvider):
             config=config,
         )
 
-        self.conversation = [
-            user_content,
-            response.candidates[0].content,
-        ]
+        candidates = getattr(response, "candidates", None)
+
+        if isinstance(candidates, list) and candidates:
+            self.conversation = [
+                user_content,
+                candidates[0].content,
+            ]
+        else:
+            self.conversation = [
+                user_content,
+            ]
 
         tool_calls = []
 
-        for function_call in response.function_calls or []:
-            tool_calls.append(
-                ToolCall(
-                    name=function_call.name,
-                    args=dict(function_call.args or {}),
-                    call_id=getattr(function_call, "id", None),
+        function_calls = getattr(response, "function_calls", None)
+
+        if isinstance(function_calls, list):
+            for function_call in function_calls:
+                tool_calls.append(
+                    ToolCall(
+                        name=function_call.name,
+                        args=dict(function_call.args or {}),
+                        call_id=getattr(function_call, "id", None),
+                    )
                 )
-            )
 
         return AgentResponse(
             final_text=response.text or "",

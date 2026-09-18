@@ -137,16 +137,24 @@ def test_get_tool_result_details():
 def test_agent_passes_selected_skill_tools_to_llm():
     fake_response = Mock()
     fake_response.final_text = "Bug fixed."
+    fake_response.tool_calls = []
+    fake_response.tool_results = []
 
-    with patch("src.agent.ask_llm", return_value=fake_response) as mock_ask_llm:
+    fake_provider = Mock()
+    fake_provider.generate.return_value = fake_response
+
+    with patch(
+        "src.agent.create_provider",
+        return_value=fake_provider,
+    ):
         answer_customer_with_trace(
             client=Mock(),
             question="Please investigate BUG-456 and fix the failing test.",
         )
 
-    mock_ask_llm.assert_called_once()
+    fake_provider.generate.assert_called_once()
 
-    call_kwargs = mock_ask_llm.call_args.kwargs
+    call_kwargs = fake_provider.generate.call_args.kwargs
     config = call_kwargs["config"]
 
     tool_names = [tool.__name__ for tool in config.tools]
@@ -164,23 +172,29 @@ def test_agent_passes_selected_skill_tools_to_llm():
 def test_agent_adds_run_tests_when_review_requests_it():
     fake_response = Mock()
     fake_response.final_text = "Review completed."
+    fake_response.tool_calls = []
+    fake_response.tool_results = []
+
+    fake_provider = Mock()
+    fake_provider.generate.return_value = fake_response
 
     question = (
-        "Please review this code and run the tests to verify your findings."
+        "Please review this code and run the tests "
+        "to verify your findings."
     )
 
     with patch(
-            "src.agent.ask_llm",
-            return_value=fake_response,
-    ) as mock_ask_llm:
+            "src.agent.create_provider",
+            return_value=fake_provider,
+    ):
         answer_customer_with_trace(
             client=Mock(),
             question=question,
         )
 
-    mock_ask_llm.assert_called_once()
+    fake_provider.generate.assert_called_once()
 
-    call_kwargs = mock_ask_llm.call_args.kwargs
+    call_kwargs = fake_provider.generate.call_args.kwargs
     config = call_kwargs["config"]
 
     tool_names = [tool.__name__ for tool in config.tools]
