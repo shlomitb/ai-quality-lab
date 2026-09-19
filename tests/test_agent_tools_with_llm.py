@@ -7,8 +7,6 @@ from src.agent import (answer_customer_with_trace,
 
 from src.llm_client import create_client
 
-from src.tools import run_tests
-
 
 @pytest.mark.llm
 def test_agent_calls_return_policy_tool():
@@ -665,3 +663,34 @@ def test_agent_repairs_real_code_and_verifies():
     finally:
         file_path.write_text(broken_content)
 
+
+@pytest.mark.llm
+def test_agent_dynamically_escalates_to_run_tests():
+    question = (
+        "Review the login implementation in demo-app_fail. "
+        "Determine whether the implementation satisfies the repository's "
+        "expected behavior. Source inspection alone is not sufficient; "
+        "validate your conclusion using the repository's verification mechanism."
+    )
+
+    client = create_client()
+
+    response = answer_customer_with_trace(
+        client=client,
+        question=question,
+    )
+
+    tool_calls = get_tool_call_details(response)
+
+    print("\nTOOL CALLS:")
+    print(tool_calls)
+
+    print("\nFINAL RESPONSE:")
+    print(response.final_text)
+
+    tool_names = [call["name"] for call in tool_calls]
+
+    assert "request_tool_escalation" in tool_names
+    assert "run_tests" in tool_names
+    assert tool_names.index("request_tool_escalation") < tool_names.index("run_tests")
+    assert tool_names.count("run_tests") == 1

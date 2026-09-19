@@ -4,7 +4,7 @@ from google.genai import types
 from pathlib import Path
 
 from src.llm import create_provider
-from src.providers.response import ToolResult
+from src.providers.response import AgentResponse, ToolCall, ToolResult
 from src.skills import (
     get_selected_skill,
     AUTHORIZED_ESCALATION_TOOLS,
@@ -127,7 +127,6 @@ def get_available_tools(selected_skill):
 @observe(type="agent")
 def answer_customer_with_trace(client, question):
     """Run the software-development agent and return the full response."""
-
     selected_skill = get_selected_skill(question)
 
     prompt = build_prompt(
@@ -153,6 +152,10 @@ def answer_customer_with_trace(client, question):
         config=config,
     )
 
+    # Keep the complete trajectory across all model turns.
+    all_tool_calls = list(response.tool_calls)
+    all_tool_results = []
+
     for _ in range(MAX_AGENT_TURNS):
 
         if not response.tool_calls:
@@ -169,6 +172,8 @@ def answer_customer_with_trace(client, question):
 
             tool_results.append(tool_result)
 
+        all_tool_results.extend(tool_results)
+
         # Escalation may have changed selected_skill.tools.
         tools = get_available_tools(selected_skill)
 
@@ -184,12 +189,22 @@ def answer_customer_with_trace(client, question):
             config=config,
         )
 
-    update_current_trace(
-        input=question,
-        output=response.final_text,
+        # Keep tool calls from this later model turn too.
+        all_tool_calls.extend(response.tool_calls)
+
+    final_response = AgentResponse(
+        final_text=response.final_text,
+        tool_calls=all_tool_calls,
+        tool_results=all_tool_results,
+        parsed=response.parsed,
     )
 
-    return response
+    update_current_trace(
+        input=question,
+        output=final_response.final_text,
+    )
+
+    return final_response
 
 
 def answer_customer(client, question):
@@ -228,6 +243,7 @@ def load_skill(skill_name: str) -> str:
     return skill_file.read_text()
 
 
+@observe(type="tool")
 def execute_tool_call(tool_call, available_tools, selected_skill):
     if tool_call.name == "request_tool_escalation":
         requested_tool = tool_call.args.get("tool_name")

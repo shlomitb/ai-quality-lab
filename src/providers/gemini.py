@@ -2,6 +2,7 @@ from google.genai import types
 from src.config import AGENT_MODEL
 from src.providers.base import LLMProvider
 from src.providers.response import AgentResponse, ToolCall, ToolResult
+from deepeval.tracing import observe
 
 
 class GeminiProvider(LLMProvider):
@@ -10,6 +11,7 @@ class GeminiProvider(LLMProvider):
         self.model = model
         self.conversation = []
 
+    @observe(type="llm")
     def generate(self, prompt, config=None):
         user_content = types.Content(
             role="user",
@@ -55,6 +57,7 @@ class GeminiProvider(LLMProvider):
             parsed=response.parsed,
         )
 
+    @observe(type="llm")
     def send_tool_results(self, tool_results, config=None):
         function_response_parts = []
 

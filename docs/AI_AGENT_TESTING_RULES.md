@@ -1486,3 +1486,116 @@ DeepEval
 A failure at one layer does not necessarily indicate a failure at another layer.
 
 Use the lowest-cost test that can reliably verify the behavior being tested, and use LLM integration tests and DeepEval evaluations when correctness depends on the real model, real tool interaction, or qualitative agent behavior.
+
+
+## DeepEval: Behavioral and Trajectory Evaluation
+
+DeepEval is used in this project to evaluate the **behavior of the complete AI agent**, not just individual functions or the final text response.
+
+### What DeepEval adds
+
+The project uses two DeepEval trajectory metrics:
+
+* **Task Completion** — Did the agent accomplish the requested task?
+* **Step Efficiency** — Did the agent complete the task without unnecessary or redundant steps?
+
+These metrics evaluate the agent's **complete ordered trajectory**, including LLM calls, tool calls, and intermediate actions. DeepEval requires tracing in order to evaluate this trajectory.
+
+### Example: Dynamic Tool Escalation
+
+The dynamic-escalation test asks the agent to review the intentionally broken `demo-app_fail` repository and validate its conclusion using the repository's verification mechanism.
+
+The expected trajectory is approximately:
+
+```text
+search_files
+    ↓
+read_file
+    ↓
+read_file
+    ↓
+request_tool_escalation("run_tests")
+    ↓
+run_tests
+    ↓
+final response
+```
+
+The escalation request is handled inside `execute_tool_call`, so the DeepEval trace displays that span as `execute_tool_call` rather than as a separate nested `request_tool_escalation` tool span.
+
+### Why this is different from pytest tests
+
+The deterministic pytest tests verify that the **escalation mechanism itself is correct**:
+
+* authorized tools can be requested and added
+* unauthorized tools are rejected
+* the authorized tool becomes available on the next agent turn
+
+The real LLM integration test verifies that a real model can actually use this mechanism during a real agent run.
+
+DeepEval then evaluates the resulting **behavior and trajectory**:
+
+```text
+Unit tests
+    → Does the individual code work?
+
+Mock tests
+    → Do the components work together?
+
+Real LLM integration tests
+    → Does the agent work with the real model and tools?
+
+DeepEval trajectory evaluation
+    → Did the agent complete the task effectively and efficiently?
+```
+
+### Inspecting a DeepEval run
+
+The pytest output normally reports only whether the test passed or failed. DeepEval stores the evaluation trace separately.
+
+After running the test, the trace can be inspected with:
+
+```bash
+deepeval inspect
+```
+
+The inspection view shows:
+
+* the agent execution tree
+* LLM spans
+* tool spans
+* the order of actions
+* metric scores
+* the LLM judge's reason for each metric score
+
+For example:
+
+```text
+Task Completion: 1.00 / 0.80   PASS
+Step Efficiency: 1.00 / 0.80   PASS
+```
+
+This makes it possible to investigate not only **whether** an evaluation passed, but also **how the agent behaved during the run**.
+
+### Important limitation
+
+DeepEval's trajectory metrics are LLM-as-a-judge evaluations. Their scores and explanations can therefore vary somewhat between runs.
+
+For this reason, deterministic security and correctness requirements remain pytest assertions, while DeepEval is used for higher-level behavioral evaluation.
+
+### Current DeepEval test
+
+The dynamic-escalation evaluation is implemented in:
+
+```text
+tests/deepeval/test_dynamic_escalation_deepeval.py
+```
+
+It uses:
+
+```text
+TaskCompletionMetric
+StepEfficiencyMetric
+```
+
+with a configured threshold of `0.8`.
