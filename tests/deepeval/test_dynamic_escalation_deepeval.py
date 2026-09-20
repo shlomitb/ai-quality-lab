@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 
 from deepeval import assert_test
 from deepeval.dataset import EvaluationDataset, Golden
-from deepeval.evaluate import AsyncConfig
+from deepeval.evaluate import AsyncConfig, DisplayConfig
 from deepeval.metrics import (
     TaskCompletionMetric,
     StepEfficiencyMetric,
@@ -61,8 +61,13 @@ def test_dynamic_escalation_agent():
     ]
 
     for golden in dataset.evals_iterator(
-        metrics=metrics,
-        async_config=AsyncConfig(run_async=False),
+            metrics=metrics,
+            async_config=AsyncConfig(run_async=False),
+            display_config=DisplayConfig(
+                results_folder="./reports/deepeval",
+                file_type="md",
+                file_output_dir="./reports/deepeval",
+            ),
     ):
         answer_customer(
             client=client,

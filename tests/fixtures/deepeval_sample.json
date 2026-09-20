@@ -1,0 +1,86 @@
+{
+  "testCases": [
+    {
+      "name": "test_dynamic_escalation_agent",
+      "input": "Review the login implementation in demo-app_fail. Determine whether the implementation satisfies the repository's expected behavior. Source inspection alone is not sufficient; validate your conclusion using the repository's verification mechanism.",
+      "actualOutput": "The login implementation in `demo-app_fail` does not satisfy the repository's expected behavior.",
+      "success": true,
+      "metricsData": [
+        {
+          "name": "Task Completion",
+          "threshold": 0.8,
+          "success": true,
+          "score": 1.0,
+          "reason": "The system successfully reviewed the implementation and validated the conclusion using the repository's test verification mechanism.",
+          "evaluationModel": "gemini-3.5-flash-lite (Gemini)",
+          "evaluationCost": 0.0051,
+          "inputTokenCount": 15510,
+          "outputTokenCount": 189
+        },
+        {
+          "name": "Step Efficiency",
+          "threshold": 0.8,
+          "success": true,
+          "score": 1.0,
+          "reason": "The agent used the necessary tools without redundant actions.",
+          "evaluationModel": "gemini-3.5-flash-lite (Gemini)",
+          "evaluationCost": 0.0094,
+          "inputTokenCount": 30605,
+          "outputTokenCount": 99
+        }
+      ],
+      "runDuration": 7.1,
+      "evaluationCost": 0.0145,
+      "trace": {
+        "agentSpans": [
+          {
+            "name": "answer_customer_with_trace",
+            "status": "SUCCESS",
+            "output": {
+              "tool_calls": [
+                {
+                  "name": "search_files",
+                  "args": {
+                    "search_term": "login",
+                    "repository_name": "demo-app_fail"
+                  },
+                  "call_id": "call-001"
+                },
+                {
+                  "name": "read_file",
+                  "args": {
+                    "repository_name": "demo-app_fail",
+                    "file_path": "src/login.py"
+                  },
+                  "call_id": "call-002"
+                },
+                {
+                  "name": "read_file",
+                  "args": {
+                    "repository_name": "demo-app_fail",
+                    "file_path": "tests/test_login.py"
+                  },
+                  "call_id": "call-003"
+                },
+                {
+                  "name": "request_tool_escalation",
+                  "args": {
+                    "tool_name": "run_tests"
+                  },
+                  "call_id": "call-004"
+                },
+                {
+                  "name": "run_tests",
+                  "args": {
+                    "repository_name": "demo-app_fail"
+                  },
+                  "call_id": "call-005"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
