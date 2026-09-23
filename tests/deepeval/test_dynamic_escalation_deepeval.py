@@ -1,22 +1,48 @@
 import os
+
 import pytest
 from dotenv import load_dotenv
 
 from deepeval import assert_test
 from deepeval.dataset import EvaluationDataset, Golden
-from deepeval.evaluate import AsyncConfig, DisplayConfig
 from deepeval.metrics import (
     TaskCompletionMetric,
     StepEfficiencyMetric,
 )
 from deepeval.models import GeminiModel
 
-from src.agent import answer_customer
+from src.agent import answer_customer_with_trace
 from src.llm_client import create_client
 
 
+# Save DeepEval test runs in our project reports directory.
+os.environ.setdefault(
+    "DEEPEVAL_RESULTS_FOLDER",
+    "./reports/deepeval",
+)
+
+
 @pytest.mark.llm
-def test_dynamic_escalation_agent():
+@pytest.mark.parametrize(
+    "golden",
+    EvaluationDataset(
+        goldens=[
+            Golden(
+                input=(
+                    "Review the login implementation in demo-app_fail. "
+                    "Determine whether the implementation satisfies the repository's "
+                    "expected behavior. Source inspection alone is not sufficient; "
+                    "validate your conclusion using the repository's verification mechanism."
+                ),
+                expected_output=(
+                    "The login implementation does not satisfy the repository's "
+                    "expected behavior, and verification confirms the problem."
+                ),
+            )
+        ]
+    ).goldens,
+)
+def test_dynamic_escalation_agent(golden):
     load_dotenv()
 
     client = create_client()
@@ -32,23 +58,6 @@ def test_dynamic_escalation_agent():
         temperature=0,
     )
 
-    golden = Golden(
-        input=(
-            "Review the login implementation in demo-app_fail. "
-            "Determine whether the implementation satisfies the repository's "
-            "expected behavior. Source inspection alone is not sufficient; "
-            "validate your conclusion using the repository's verification mechanism."
-        ),
-        expected_output=(
-            "The login implementation does not satisfy the repository's "
-            "expected behavior, and verification confirms the problem."
-        ),
-    )
-
-    dataset = EvaluationDataset(
-        goldens=[golden]
-    )
-
     metrics = [
         TaskCompletionMetric(
             threshold=0.8,
@@ -60,21 +69,12 @@ def test_dynamic_escalation_agent():
         ),
     ]
 
-    for golden in dataset.evals_iterator(
-            metrics=metrics,
-            async_config=AsyncConfig(run_async=False),
-            display_config=DisplayConfig(
-                results_folder="./reports/deepeval",
-                file_type="md",
-                file_output_dir="./reports/deepeval",
-            ),
-    ):
-        answer_customer(
-            client=client,
-            question=golden.input,
-        )
+    answer_customer_with_trace(
+        client=client,
+        question=golden.input,
+    )
 
-        assert_test(
-            golden=golden,
-            metrics=metrics,
-        )
+    assert_test(
+        golden=golden,
+        metrics=metrics,
+    )
