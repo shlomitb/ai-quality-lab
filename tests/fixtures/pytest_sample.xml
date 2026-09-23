@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+    <testsuite name="pytest" tests="5" failures="1" skipped="1" errors="0" time="1.25">
+        <testcase classname="tests.test_example" name="test_passes" time="0.10" />
+        <testcase classname="tests.test_example" name="test_another_passes" time="0.20" />
+        <testcase classname="tests.test_example" name="test_fails" time="0.30">
+            <failure message="AssertionError">assert False</failure>
+        </testcase>
+        <testcase classname="tests.test_example" name="test_skipped" time="0.05">
+            <skipped message="not implemented" />
+        </testcase>
+        <testcase classname="tests.test_example" name="test_passes_again" time="0.60" />
+    </testsuite>
+</testsuites>
