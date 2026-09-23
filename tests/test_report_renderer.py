@@ -3,6 +3,8 @@ from src.reporting.models import (
     DeepEvalTestResult,
     PytestSummary,
     QualityReport,
+    QualityReportComparison,
+    MetricChange,
 )
 from src.reporting.report_renderer import render_markdown
 from src.reporting.report_renderer import write_markdown_report
@@ -98,3 +100,55 @@ def test_write_markdown_report(tmp_path):
 
     assert "# AI Quality Report" in content
     assert "test-run-001" in content
+
+
+def test_render_markdown_includes_comparison():
+    previous = QualityReport(
+        run_id="run-001",
+        timestamp="2026-09-22T10:00:00",
+    )
+
+    current = QualityReport(
+        run_id="run-002",
+        timestamp="2026-09-23T10:00:00",
+    )
+
+    comparison = QualityReportComparison(
+        previous_run_id=previous.run_id,
+        current_run_id=current.run_id,
+        pytest_changes={
+            "passed": 2,
+            "failed": -1,
+            "skipped": 1,
+        },
+        deepeval_metrics=[
+            MetricChange(
+                name="Task Completion",
+                previous=1.0,
+                current=0.9,
+                change=-0.1,
+            ),
+            MetricChange(
+                name="Step Efficiency",
+                previous=0.8,
+                current=0.9,
+                change=0.1,
+            ),
+        ],
+        regressions=["Task Completion"],
+        improvements=["Step Efficiency", "pytest failures"],
+    )
+
+    current.comparison = comparison
+
+    markdown = render_markdown(current)
+
+    assert "## Comparison With Previous Run" in markdown
+    assert "run-001" in markdown
+    assert "Task Completion" in markdown
+    assert "1.00" in markdown
+    assert "0.90" in markdown
+    assert "Step Efficiency" in markdown
+    assert "### Regressions" in markdown
+    assert "### Improvements" in markdown
+    assert "pytest failures" in markdown

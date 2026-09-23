@@ -36,6 +36,25 @@ class DeepEvalTestResult:
 
 
 @dataclass
+class MetricChange:
+    name: str
+    previous: float
+    current: float
+    change: float
+
+
+@dataclass
+class QualityReportComparison:
+    previous_run_id: str
+    current_run_id: str
+
+    pytest_changes: dict[str, int] = field(default_factory=dict)
+    deepeval_metrics: list[MetricChange] = field(default_factory=list)
+
+    regressions: list[str] = field(default_factory=list)
+    improvements: list[str] = field(default_factory=list)
+
+@dataclass
 class QualityReport:
     run_id: str
     timestamp: str
@@ -46,3 +65,7 @@ class QualityReport:
     security_results: dict[str, bool] = field(default_factory=dict)
     performance: dict[str, float] = field(default_factory=dict)
     notes: list[str] = field(default_factory=list)
+
+    comparison: QualityReportComparison | None = None
+
+

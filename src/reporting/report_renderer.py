@@ -2,6 +2,7 @@ from pathlib import Path
 
 from .models import QualityReport
 
+#report_renderer is only responsible for presentation.
 
 def render_markdown(report: QualityReport) -> str:
     """
@@ -192,6 +193,92 @@ def render_markdown(report: QualityReport) -> str:
             )
 
         lines.append("")
+
+    # ---------------------------------------------------------
+    # Comparison
+    # ---------------------------------------------------------
+
+    if report.comparison is not None:
+        comparison = report.comparison
+
+        lines.extend(
+            [
+                "## Comparison With Previous Run",
+                "",
+                f"- **Previous run:** "
+                f"{comparison.previous_run_id}",
+                f"- **Current run:** "
+                f"{comparison.current_run_id}",
+                "",
+            ]
+        )
+
+        if comparison.pytest_changes:
+            lines.extend(
+                [
+                    "### Pytest Changes",
+                    "",
+                    "| Metric | Change |",
+                    "|---|---:|",
+                ]
+            )
+
+            for name, change in comparison.pytest_changes.items():
+                lines.append(
+                    f"| {name} | {change:+d} |"
+                )
+
+            lines.append("")
+
+        if comparison.deepeval_metrics:
+            lines.extend(
+                [
+                    "### DeepEval Changes",
+                    "",
+                    "| Metric | Previous | Current | Change |",
+                    "|---|---:|---:|---:|",
+                ]
+            )
+
+            for metric in comparison.deepeval_metrics:
+                lines.append(
+                    f"| {metric.name} | "
+                    f"{metric.previous:.2f} | "
+                    f"{metric.current:.2f} | "
+                    f"{metric.change:+.2f} |"
+                )
+
+            lines.append("")
+
+        if comparison.regressions:
+            lines.extend(
+                [
+                    "### Regressions",
+                    "",
+                ]
+            )
+
+            for regression in comparison.regressions:
+                lines.append(
+                    f"- {regression}"
+                )
+
+            lines.append("")
+
+        if comparison.improvements:
+            lines.extend(
+                [
+                    "### Improvements",
+                    "",
+                ]
+            )
+
+            for improvement in comparison.improvements:
+                lines.append(
+                    f"- {improvement}"
+                )
+
+            lines.append("")
 
     return "\n".join(lines)
 
