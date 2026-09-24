@@ -1,4 +1,13 @@
-from src.skills import select_skill, get_skill_instructions, get_selected_skill, request_tool_escalation
+from src.skills import (
+    TOOL_ACCESS_POLICY,
+    select_skill,
+    get_skill_instructions,
+    get_selected_skill,
+    request_tool_access,
+    get_initial_tools,
+    get_requestable_tools,
+    is_tool_authorized
+)
 
 
 def test_select_skill_for_bug():
@@ -127,7 +136,7 @@ def test_get_selected_skill_when_none_matches():
     assert skill is None
 
 
-def test_review_skill_includes_run_tests_when_explicitly_requested():
+def test_review_skill_does_not_initially_include_requestable_tool():
     skill = get_selected_skill(
         "Please review this code and run the tests to verify your findings."
     )
@@ -136,68 +145,81 @@ def test_review_skill_includes_run_tests_when_explicitly_requested():
     assert skill.name == "review-code"
     assert "search_files" in skill.tools
     assert "read_file" in skill.tools
-    assert "run_tests" in skill.tools
+    assert "run_tests" not in skill.tools
 
 
 def test_review_skill_can_escalate_to_run_tests():
-    from src.skills import is_tool_escalation_allowed
+    from src.skills import is_tool_access_allowed
 
-    assert is_tool_escalation_allowed(
+    assert is_tool_access_allowed(
         "review-code",
         "run_tests",
     )
 
 
 def test_review_skill_cannot_escalate_to_edit_file():
-    from src.skills import is_tool_escalation_allowed
+    from src.skills import is_tool_access_allowed
 
-    assert not is_tool_escalation_allowed(
+    assert not is_tool_access_allowed(
         "review-code",
         "edit_file",
     )
 
 
-def test_unknown_tool_is_not_allowed():
-    from src.skills import is_tool_escalation_allowed
+def test_review_code_tool_access_policy():
+    policy = TOOL_ACCESS_POLICY["review-code"]
 
-    assert not is_tool_escalation_allowed(
+    assert policy["initial_tools"] == [
+        "search_files",
+        "read_file",
+    ]
+
+    assert policy["requestable_tools"] == [
+        "run_tests",
+    ]
+
+
+def test_unknown_tool_is_not_allowed():
+    from src.skills import is_tool_access_allowed
+
+    assert not is_tool_access_allowed(
         "review-code",
         "delete_database",
     )
 
 
-def test_authorize_allowed_tool_escalation():
+def test_authorize_allowed_tool_access():
     from src.skills import (
-        ToolEscalationRequest,
-        authorize_tool_escalation,
+        ToolAccessRequest,
+        authorize_tool_access,
     )
 
-    request = ToolEscalationRequest(
+    request = ToolAccessRequest(
         skill_name="review-code",
         tool_name="run_tests",
     )
 
-    assert authorize_tool_escalation(request)
+    assert authorize_tool_access(request)
 
 
-def test_authorize_denied_tool_escalation():
+def test_authorize_denied_tool_access():
     from src.skills import (
-        ToolEscalationRequest,
-        authorize_tool_escalation,
+        ToolAccessRequest,
+        authorize_tool_access,
     )
 
-    request = ToolEscalationRequest(
+    request = ToolAccessRequest(
         skill_name="review-code",
         tool_name="edit_file",
     )
 
-    assert not authorize_tool_escalation(request)
+    assert not authorize_tool_access(request)
 
 
-def test_request_tool_escalation_adds_allowed_tool():
+def test_request_tool_access_adds_allowed_tool():
     from src.skills import (
         get_selected_skill,
-        request_tool_escalation,
+        request_tool_access,
     )
 
     skill = get_selected_skill(
@@ -207,7 +229,7 @@ def test_request_tool_escalation_adds_allowed_tool():
     assert skill is not None
     assert "run_tests" not in skill.tools
 
-    allowed = request_tool_escalation(
+    allowed = request_tool_access(
         skill,
         "run_tests",
     )
@@ -216,10 +238,10 @@ def test_request_tool_escalation_adds_allowed_tool():
     assert "run_tests" in skill.tools
 
 
-def test_request_tool_escalation_rejects_unauthorized_tool():
+def test_request_tool_access_rejects_unauthorized_tool():
     from src.skills import (
         get_selected_skill,
-        request_tool_escalation,
+        request_tool_access,
     )
 
     skill = get_selected_skill(
@@ -229,7 +251,7 @@ def test_request_tool_escalation_rejects_unauthorized_tool():
     assert skill is not None
     assert "edit_file" not in skill.tools
 
-    allowed = request_tool_escalation(
+    allowed = request_tool_access(
         skill,
         "edit_file",
     )
@@ -238,35 +260,37 @@ def test_request_tool_escalation_rejects_unauthorized_tool():
     assert "edit_file" not in skill.tools
 
 
-def test_request_tool_escalation_adds_authorized_tool():
-    skill = get_selected_skill(
-        "Please review this code."
-    )
+def test_review_code_initial_tools():
+    assert get_initial_tools("review-code") == [
+        "search_files",
+        "read_file",
+    ]
 
-    assert skill is not None
-    assert "run_tests" not in skill.tools
 
-    allowed = request_tool_escalation(
-        skill,
+def test_review_code_requestable_tools():
+    assert get_requestable_tools("review-code") == [
+        "run_tests",
+    ]
+
+
+def test_requestable_tool_is_authorized():
+    assert is_tool_authorized(
+        "review-code",
         "run_tests",
     )
 
-    assert allowed
-    assert "run_tests" in skill.tools
 
-
-def test_request_tool_escalation_does_not_add_unauthorized_tool():
-    skill = get_selected_skill(
-        "Please review this code."
-    )
-
-    assert skill is not None
-    assert "edit_file" not in skill.tools
-
-    allowed = request_tool_escalation(
-        skill,
+def test_unlisted_tool_is_not_authorized():
+    assert not is_tool_authorized(
+        "review-code",
         "edit_file",
     )
 
-    assert not allowed
-    assert "edit_file" not in skill.tools
+
+
+def test_select_skill_chooses_skill_with_most_keyword_matches():
+    skill = select_skill(
+        "Please review the code and investigate this bug and error."
+    )
+
+    assert skill == "investigate-bug"

@@ -35,7 +35,7 @@ def test_build_quality_report():
     assert len(report.deepeval) == 1
 
     deep_eval = report.deepeval[0]
-    assert deep_eval.name == "test_dynamic_escalation_agent"
+    assert deep_eval.name == "test_dynamic_tool_access_agent"
     assert deep_eval.success is True
     assert len(deep_eval.metrics) == 2
     assert deep_eval.trajectory[-1] == "run_tests"

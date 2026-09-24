@@ -165,12 +165,12 @@ def test_agent_passes_selected_skill_tools_to_llm():
         "run_tests",
         "read_file",
         "edit_file",
-        "request_tool_escalation",
+        "request_tool_access",
     ]
 
 
 
-def test_agent_adds_run_tests_when_review_requests_it():
+def test_agent_does_not_initially_add_requestable_tool():
     fake_response = Mock()
     fake_response.final_text = "Review completed."
     fake_response.tool_calls = []
@@ -203,8 +203,7 @@ def test_agent_adds_run_tests_when_review_requests_it():
     assert tool_names == [
         "search_files",
         "read_file",
-        "run_tests",
-        "request_tool_escalation",
+        "request_tool_access",
     ]
 
 
@@ -256,7 +255,7 @@ def test_execute_tool_call_authorizes_escalation():
     assert "run_tests" not in skill.tools
 
     tool_call = ToolCall(
-        name="request_tool_escalation",
+        name="request_tool_access",
         args={
             "tool_name": "run_tests"
         },
@@ -285,7 +284,7 @@ def test_execute_tool_call_denies_unauthorized_escalation():
     assert "edit_file" not in skill.tools
 
     tool_call = ToolCall(
-        name="request_tool_escalation",
+        name="request_tool_access",
         args={
             "tool_name": "edit_file"
         },
@@ -308,7 +307,7 @@ def test_agent_handles_dynamic_tool_escalation():
         final_text="",
         tool_calls=[
             ToolCall(
-                name="request_tool_escalation",
+                name="request_tool_access",
                 args={
                     "tool_name": "run_tests"
                 },
@@ -390,7 +389,7 @@ def test_agent_handles_dynamic_tool_escalation():
     assert first_tool_names == [
         "search_files",
         "read_file",
-        "request_tool_escalation",
+        "request_tool_access",
     ]
 
     first_send_results = (
@@ -398,7 +397,7 @@ def test_agent_handles_dynamic_tool_escalation():
         .kwargs["tool_results"]
     )
 
-    assert first_send_results[0].name == "request_tool_escalation"
+    assert first_send_results[0].name == "request_tool_access"
     assert first_send_results[0].response["tool_name"] == "run_tests"
     assert first_send_results[0].response["authorized"] is True
 
@@ -416,7 +415,7 @@ def test_agent_handles_dynamic_tool_escalation():
         "search_files",
         "read_file",
         "run_tests",
-        "request_tool_escalation",
+        "request_tool_access",
     ]
 
     second_send_results = (
@@ -438,7 +437,7 @@ def test_agent_denies_dynamic_unauthorized_escalation():
         final_text="",
         tool_calls=[
             ToolCall(
-                name="request_tool_escalation",
+                name="request_tool_access",
                 args={
                     "tool_name": "edit_file"
                 },
@@ -490,6 +489,6 @@ def test_agent_denies_dynamic_unauthorized_escalation():
     ]
 
     assert "edit_file" not in second_tool_names
-    assert send_results[0].name == "request_tool_escalation"
+    assert send_results[0].name == "request_tool_access"
     assert send_results[0].response["tool_name"] == "edit_file"
     assert send_results[0].response["authorized"] is False

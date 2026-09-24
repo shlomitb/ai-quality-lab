@@ -226,7 +226,7 @@ The agent trajectory is also preserved, for example:
 search_files
 read_file
 read_file
-request_tool_escalation(run_tests)
+request_tool_access(run_tests)
 run_tests
 ```
 

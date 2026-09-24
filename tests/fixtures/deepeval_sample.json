@@ -1,7 +1,7 @@
 {
   "testCases": [
     {
-      "name": "test_dynamic_escalation_agent",
+      "name": "test_dynamic_tool_access_agent",
       "input": "Review the login implementation in demo-app_fail. Determine whether the implementation satisfies the repository's expected behavior. Source inspection alone is not sufficient; validate your conclusion using the repository's verification mechanism.",
       "actualOutput": "The login implementation in `demo-app_fail` does not satisfy the repository's expected behavior.",
       "success": true,
@@ -63,7 +63,7 @@
                   "call_id": "call-003"
                 },
                 {
-                  "name": "request_tool_escalation",
+                  "name": "request_tool_access",
                   "args": {
                     "tool_name": "run_tests"
                   },

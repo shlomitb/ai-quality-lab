@@ -24,7 +24,7 @@ def test_render_markdown():
         ),
         deepeval=[
             DeepEvalTestResult(
-                name="test_dynamic_escalation_agent",
+                name="test_dynamic_tool_access_agent",
                 success=True,
                 actual_output="The agent completed the review.",
                 duration_seconds=30.2,
@@ -57,7 +57,7 @@ def test_render_markdown():
                     "search_files",
                     "read_file",
                     "read_file",
-                    "request_tool_escalation(run_tests)",
+                    "request_tool_access(run_tests)",
                     "run_tests",
                 ],
             )
@@ -74,13 +74,13 @@ def test_render_markdown():
     assert "**Failed:** 2" in markdown
 
     assert "## DeepEval" in markdown
-    assert "test_dynamic_escalation_agent" in markdown
+    assert "test_dynamic_tool_access_agent" in markdown
     assert "Task Completion" in markdown
     assert "Step Efficiency" in markdown
 
     assert "search_files" in markdown
     assert "read_file" in markdown
-    assert "request_tool_escalation(run_tests)" in markdown
+    assert "request_tool_access(run_tests)" in markdown
     assert "run_tests" in markdown
 
 

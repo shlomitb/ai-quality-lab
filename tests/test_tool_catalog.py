@@ -107,7 +107,7 @@ def test_review_skill_tools_are_correct():
 def test_escalation_tool_is_available():
     from src.tool_catalog import get_tools
 
-    tools = get_tools(["request_tool_escalation"])
+    tools = get_tools(["request_tool_access"])
 
     assert len(tools) == 1
-    assert tools[0].__name__ == "request_tool_escalation"
+    assert tools[0].__name__ == "request_tool_access"

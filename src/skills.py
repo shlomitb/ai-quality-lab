@@ -11,41 +11,52 @@ class SelectedSkill:
 
 
 @dataclass
-class ToolEscalationRequest:
+class ToolAccessRequest:
     skill_name: str
     tool_name: str
 
 
-SKILL_TOOLS = {
-    "investigate-bug": [
-        "get_ticket",
-        "run_tests",
-        "read_file",
-        "edit_file",
-    ],
-    "review-code": [
-        "search_files",
-        "read_file",
-    ],
+TOOL_ACCESS_POLICY = {
+    "investigate-bug": {
+        "initial_tools": [
+            "get_ticket",
+            "run_tests",
+            "read_file",
+            "edit_file",
+        ],
+        "requestable_tools": [
+            "get_repository",
+        ],
+    },
+    "review-code": {
+        "initial_tools": [
+            "search_files",
+            "read_file",
+        ],
+        "requestable_tools": [
+            "run_tests",
+        ],
+    },
 }
 
-EXTRA_TOOL_KEYWORDS = {
-    "run_tests": [
-        "run the tests",
-        "run tests",
-        "test it",
-        "verify with tests",
-    ],
-}
 
-AUTHORIZED_ESCALATION_TOOLS = {
-    "investigate-bug": [
-        "get_repository",
-    ],
-    "review-code": [
-        "run_tests",
-    ],
-}
+def get_initial_tools(skill_name: str) -> list[str]:
+    policy = TOOL_ACCESS_POLICY.get(skill_name, {})
+    return list(policy.get("initial_tools", []))
+
+
+def get_requestable_tools(skill_name: str) -> list[str]:
+    policy = TOOL_ACCESS_POLICY.get(skill_name, {})
+    return list(policy.get("requestable_tools", []))
+
+
+def is_tool_authorized(skill_name: str, tool_name: str) -> bool:
+    policy = TOOL_ACCESS_POLICY.get(skill_name, {})
+
+    return (
+        tool_name in policy.get("initial_tools", [])
+        or tool_name in policy.get("requestable_tools", [])
+    )
 
 
 def load_skill_descriptions() -> str:
@@ -81,6 +92,7 @@ def select_skill(question: str) -> str:
 
     best_skill = ""
     best_score = 0
+    tie = False
 
     for skill_name, keywords in skills.items():
         score = sum(
@@ -89,32 +101,18 @@ def select_skill(question: str) -> str:
             if keyword in question_lower
         )
 
-        best_skill = ""
-        best_score = 0
-        tie = False
+        if score > best_score:
+            best_skill = skill_name
+            best_score = score
+            tie = False
 
-        for skill_name, keywords in skills.items():
-            score = sum(
-                1
-                for keyword in keywords
-                if keyword in question_lower
-            )
+        elif score == best_score and score > 0:
+            tie = True
 
-            if score > best_score:
-                best_skill = skill_name
-                best_score = score
-                tie = False
-
-            elif score == best_score and score > 0:
-                tie = True
-
-        if tie:
-            return ""
-
-        return best_skill
+    if tie:
+        return ""
 
     return best_skill
-
 
 def get_skill_instructions(question: str) -> str:
     skill_name = select_skill(question)
@@ -140,14 +138,7 @@ def get_selected_skill(question: str) -> SelectedSkill | None:
     if not skill_name:
         return None
 
-    tools = list(SKILL_TOOLS.get(skill_name, []))
-
-    question_lower = question.lower()
-
-    for tool_name, keywords in EXTRA_TOOL_KEYWORDS.items():
-        if any(keyword in question_lower for keyword in keywords):
-            if tool_name not in tools:
-                tools.append(tool_name)
+    tools =  get_initial_tools(skill_name)
 
     return SelectedSkill(
         name=skill_name,
@@ -165,26 +156,25 @@ def get_skill_info(question: str) -> tuple[str, int]:
     return skill.name, len(skill.instructions)
 
 
-def is_tool_escalation_allowed(skill_name: str,tool_name: str,) -> bool:
-    allowed_tools = AUTHORIZED_ESCALATION_TOOLS.get(skill_name, [])
-
+def is_tool_access_allowed(skill_name: str, tool_name: str, ) -> bool:
+    allowed_tools = get_requestable_tools(skill_name)
     return tool_name in allowed_tools
 
 
-def authorize_tool_escalation(request: ToolEscalationRequest,) -> bool:
-    return is_tool_escalation_allowed(
+def authorize_tool_access(request: ToolAccessRequest, ) -> bool:
+    return is_tool_access_allowed(
         request.skill_name,
         request.tool_name,
     )
 
 
-def request_tool_escalation(skill: SelectedSkill,tool_name: str,) -> bool:
-    request = ToolEscalationRequest(
+def request_tool_access(skill: SelectedSkill, tool_name: str, ) -> bool:
+    request = ToolAccessRequest(
         skill_name=skill.name,
         tool_name=tool_name,
     )
 
-    if not authorize_tool_escalation(request):
+    if not authorize_tool_access(request):
         return False
 
     if tool_name not in skill.tools:

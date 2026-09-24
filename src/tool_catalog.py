@@ -9,7 +9,7 @@ from src.tools import (
 )
 
 
-def request_tool_escalation(tool_name: str) -> dict:
+def request_tool_access(tool_name: str) -> dict:
     """
     Request access to an additional tool.
 
@@ -28,7 +28,7 @@ TOOLS = {
     "run_tests": run_tests,
     "edit_file": edit_file,
     "read_file": read_file,
-    "request_tool_escalation": request_tool_escalation,
+    "request_tool_access": request_tool_access,
 }
 
 
@@ -63,7 +63,7 @@ TOOL_DESCRIPTIONS = {
     It requires the repository_name and file_path arguments.
     """,
 
-    "request_tool_escalation": """
+    "request_tool_access": """
     Request access to an additional tool when the currently available
     tools are insufficient.
 

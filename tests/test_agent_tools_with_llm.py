@@ -690,7 +690,7 @@ def test_agent_dynamically_escalates_to_run_tests():
 
     tool_names = [call["name"] for call in tool_calls]
 
-    assert "request_tool_escalation" in tool_names
+    assert "request_tool_access" in tool_names
     assert "run_tests" in tool_names
-    assert tool_names.index("request_tool_escalation") < tool_names.index("run_tests")
+    assert tool_names.index("request_tool_access") < tool_names.index("run_tests")
     assert tool_names.count("run_tests") == 1

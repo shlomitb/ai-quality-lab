@@ -53,14 +53,14 @@ def load_deepeval_results(
             for tool_call in tool_calls:
                 name = tool_call.get("name")
 
-                if name == "request_tool_escalation":
+                if name == "request_tool_access":
                     tool_name = (
                         tool_call.get("args", {})
                         .get("tool_name")
                     )
 
                     trajectory.append(
-                        f"request_tool_escalation({tool_name})"
+                        f"request_tool_access({tool_name})"
                     )
                 else:
                     trajectory.append(name)

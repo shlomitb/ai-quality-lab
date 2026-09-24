@@ -4,17 +4,18 @@ from google.genai import types
 from pathlib import Path
 
 from src.llm import create_provider
-from src.providers.response import AgentResponse, ToolCall, ToolResult
+from src.providers.response import AgentResponse, ToolResult
+
 from src.skills import (
     get_selected_skill,
-    AUTHORIZED_ESCALATION_TOOLS,
-    request_tool_escalation as apply_tool_escalation,
+    request_tool_access as authorize_tool_access_request,
+    get_requestable_tools,
 )
 
 from src.tool_catalog import (
     get_tools,
     get_tool_descriptions,
-    request_tool_escalation,
+    request_tool_access,
 )
 
 MAX_AGENT_TURNS = 10
@@ -46,8 +47,8 @@ def build_prompt(question: str, selected_skill=None) -> str:
 
         prompt_tool_names = list(selected_skill.tools)
 
-        if selected_skill.name in AUTHORIZED_ESCALATION_TOOLS:
-            prompt_tool_names.append("request_tool_escalation")
+        if get_requestable_tools(selected_skill.name):
+            prompt_tool_names.append("request_tool_access")
 
         tool_descriptions = get_tool_descriptions(prompt_tool_names)
     else:
@@ -118,8 +119,8 @@ def get_authorized_tools(selected_skill):
 
     tools = get_tools(selected_skill.tools)
 
-    if selected_skill.name in AUTHORIZED_ESCALATION_TOOLS:
-        tools.append(request_tool_escalation)
+    if get_requestable_tools(selected_skill.name):
+        tools.append(request_tool_access)
 
     return tools
 
@@ -174,7 +175,7 @@ def answer_customer_with_trace(client, question):
 
         all_tool_results.extend(tool_results)
 
-        # Escalation may have changed selected_skill.tools.
+        # Tool access may have changed the available tools.
         tools = get_authorized_tools(selected_skill)
 
         config = types.GenerateContentConfig(
@@ -245,12 +246,12 @@ def load_skill(skill_name: str) -> str:
 
 @observe(type="tool")
 def execute_tool_call(tool_call, available_tools, selected_skill):
-    if tool_call.name == "request_tool_escalation":
+    if tool_call.name == "request_tool_access":
         requested_tool = tool_call.args.get("tool_name")
 
         if not isinstance(requested_tool, str):
             return ToolResult(
-                name="request_tool_escalation",
+                name="request_tool_access",
                 response={
                     "error": "tool_name is required."
                 },
@@ -259,7 +260,7 @@ def execute_tool_call(tool_call, available_tools, selected_skill):
 
         if selected_skill is None:
             return ToolResult(
-                name="request_tool_escalation",
+                name="request_tool_access",
                 response={
                     "tool_name": requested_tool,
                     "authorized": False,
@@ -268,13 +269,13 @@ def execute_tool_call(tool_call, available_tools, selected_skill):
                 call_id=tool_call.call_id,
             )
 
-        allowed = apply_tool_escalation(
+        allowed = authorize_tool_access_request(
             selected_skill,
             requested_tool,
         )
 
         return ToolResult(
-            name="request_tool_escalation",
+            name="request_tool_access",
             response={
                 "tool_name": requested_tool,
                 "authorized": allowed,

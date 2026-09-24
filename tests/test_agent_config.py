@@ -106,7 +106,7 @@ def test_review_prompt_contains_only_review_tools():
     assert "edit_file" not in tools_section
 
 
-def test_review_prompt_includes_escalation_tool():
+def test_review_prompt_includes_access_tool():
     prompt = build_prompt(
         "Please review this code."
     )
@@ -119,10 +119,10 @@ def test_review_prompt_includes_escalation_tool():
         1
     )[0]
 
-    assert "request_tool_escalation" in tools_section
+    assert "request_tool_access" in tools_section
 
 
-def test_escalation_tool_description_is_in_prompt():
+def test_access_tool_description_is_in_prompt():
     prompt = build_prompt(
         "Please review this code."
     )

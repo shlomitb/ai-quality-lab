@@ -42,7 +42,7 @@ os.environ.setdefault(
         ]
     ).goldens,
 )
-def test_dynamic_escalation_agent(golden):
+def test_dynamic_access_agent(golden):
     load_dotenv()
 
     client = create_client()

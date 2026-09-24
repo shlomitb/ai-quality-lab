@@ -20,14 +20,14 @@ def test_load_deepeval_results():
 
     result = results[0]
 
-    assert result.name == "test_dynamic_escalation_agent"
+    assert result.name == "test_dynamic_tool_access_agent"
     assert result.success is True
 
     assert result.trajectory == [
         "search_files",
         "read_file",
         "read_file",
-        "request_tool_escalation(run_tests)",
+        "request_tool_access(run_tests)",
         "run_tests",
     ]
 
