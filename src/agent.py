@@ -112,7 +112,7 @@ def get_tool_result_details(response):
     ]
 
 
-def get_available_tools(selected_skill):
+def get_authorized_tools(selected_skill):
     if selected_skill is None:
         return []
 
@@ -138,7 +138,7 @@ def answer_customer_with_trace(client, question):
         client=client,
     )
 
-    tools = get_available_tools(selected_skill)
+    tools = get_authorized_tools(selected_skill)
 
     config = types.GenerateContentConfig(
         tools=tools,
@@ -175,7 +175,7 @@ def answer_customer_with_trace(client, question):
         all_tool_results.extend(tool_results)
 
         # Escalation may have changed selected_skill.tools.
-        tools = get_available_tools(selected_skill)
+        tools = get_authorized_tools(selected_skill)
 
         config = types.GenerateContentConfig(
             tools=tools,
