@@ -7,6 +7,7 @@ from src.reporting.deepeval_report import load_deepeval_results
 
 FIXTURE = (
     Path(__file__).parent
+    / ".."
     / "fixtures"
     / "deepeval_sample.json"
 )

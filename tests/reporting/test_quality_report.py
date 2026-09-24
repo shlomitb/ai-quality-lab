@@ -5,7 +5,7 @@ from src.reporting.pytest_report import load_pytest_summary
 from src.reporting.report import build_quality_report
 
 
-FIXTURES = Path(__file__).parent / "fixtures"
+FIXTURES = Path(__file__).parent / ".."/ "fixtures"
 PYTEST_FIXTURE = FIXTURES / "pytest_sample.xml"
 DEEPEVAL_FIXTURE = FIXTURES / "deepeval_sample.json"
 

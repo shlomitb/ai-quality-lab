@@ -3,7 +3,7 @@ from pathlib import Path
 from src.reporting.pytest_report import load_pytest_summary
 
 
-FIXTURE = Path(__file__).parent / "fixtures" / "pytest_sample.xml"
+FIXTURE = Path(__file__).parent / ".." / "fixtures" / "pytest_sample.xml"
 
 
 def test_load_pytest_summary():

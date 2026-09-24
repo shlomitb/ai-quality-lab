@@ -11,7 +11,7 @@ from .serialization import load_quality_report, save_quality_report
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
-PYTEST_REPORT = PROJECT_ROOT / "reports" / "pytest" / "junit.xml"
+PYTEST_REPORT = PROJECT_ROOT / ".." / "reports" / "pytest" / "junit.xml"
 
 DEEPEVAL_REPORT_DIR = (
     PROJECT_ROOT / "reports" / "deepeval"
