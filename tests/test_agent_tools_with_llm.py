@@ -8,6 +8,10 @@ from src.agent import (answer_customer_with_trace,
 from src.llm_client import create_client
 
 
+#run with  --run-llm  at the end:
+# pytest -v --run-llm tests/test_agent_tools_with_llm.py --run-llm
+
+
 @pytest.mark.llm
 def test_agent_calls_return_policy_tool():
     """Verify that the agent selects the return-policy tool."""
