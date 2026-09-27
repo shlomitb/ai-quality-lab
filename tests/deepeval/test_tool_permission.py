@@ -7,6 +7,12 @@ from src.agent import answer_customer_with_trace
 from src.llm_client import create_client
 from src.providers.response import ToolCall as AgentToolCall
 
+
+
+"""
+DeepEval evaluation of observed trajectories
+"""
+
 def to_deepeval_tool_calls(tool_calls):
     return [
         DeepEvalToolCall(name=tool_call.name)
