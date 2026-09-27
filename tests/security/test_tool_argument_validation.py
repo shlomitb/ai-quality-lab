@@ -1,4 +1,55 @@
+from pathlib import Path
+
+from src.agent import execute_tool_call
+from src.providers.response import ToolCall
+from src.skills import SelectedSkill
+from src.tools import read_file, REPOSITORY_PATHS
 
 """
 Unsafe arguments — e.g. path traversal
 """
+
+
+def test_read_file_blocks_path_traversal():
+    """
+    The security rule we want is:
+    After resolving the requested path, the file still must still be inside the repository directory.
+    a real, deterministic path-traversal security test
+    """
+    repo_path = REPOSITORY_PATHS["demo-app"].resolve()
+    secret_file = repo_path.parent / "secret.txt"
+
+    try:
+        secret_file.write_text("TOP SECRET")
+
+        selected_skill = SelectedSkill(
+            name="review-code",
+            instructions="",
+            tools=["read_file"],
+        )
+
+        tool_call = ToolCall(
+            name="read_file",
+            args={
+                "repository_name": "demo-app",
+                "file_path": "../secret.txt",
+            },
+            call_id="test-path-traversal",
+        )
+
+        result = execute_tool_call(
+            tool_call=tool_call,
+            available_tools=[read_file],
+            selected_skill=selected_skill,
+        )
+        # print("\n========== DEBUG ==========")
+        # print("result =", result)
+        # print("result.response =", result.response)
+        # print("===========================")
+
+
+        assert result.response["result"]["error"] == "Invalid file path."
+
+    finally:
+        if secret_file.exists():
+            secret_file.unlink()
