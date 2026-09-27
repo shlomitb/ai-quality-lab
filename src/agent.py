@@ -5,6 +5,7 @@ from pathlib import Path
 
 from src.llm import create_provider
 from src.providers.response import AgentResponse, ToolResult
+from src.security import sanitize_tool_result
 
 from src.skills import (
     get_selected_skill,
@@ -339,11 +340,14 @@ def execute_authorized_tool(tool_call, available_tools):
     try:
         result = tool(**tool_call.args)
 
+        safe_result = sanitize_tool_result(
+            tool_call.name,
+            result,
+        )
+
         return ToolResult(
             name=tool_call.name,
-            response={
-                "result": result,
-            },
+            response={"result": safe_result},
             call_id=tool_call.call_id,
         )
 
@@ -358,4 +362,22 @@ def execute_authorized_tool(tool_call, available_tools):
 
 
 
+def filter_sensitive_information(response):
+    sensitive_values = {
+        "INTERNAL-ONLY-12345",
+    }
 
+    filtered_text = response.final_text
+
+    for sensitive_value in sensitive_values:
+        filtered_text = filtered_text.replace(
+            sensitive_value,
+            "[REDACTED]",
+        )
+
+    return AgentResponse(
+        final_text=filtered_text,
+        tool_calls=response.tool_calls,
+        tool_results=response.tool_results,
+        parsed=response.parsed,
+    )

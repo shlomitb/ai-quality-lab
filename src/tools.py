@@ -5,6 +5,9 @@ from pathlib import Path
 import subprocess
 import sys
 
+
+RUN_TESTS_TIMEOUT = 30
+
 orders = {
     "12345": {
         "order_id": "12345",
@@ -357,18 +360,26 @@ def run_tests(repository_name: str) -> dict:
     if repository_name == "demo-app_fail":
         repo_path = Path("demo_repo")
         #runs: python -m pytest -q .
-        result = subprocess.run(
-            [
-                sys.executable,
-                "-m",
-                "pytest",
-                "-q",
-                ".",
-            ],
-            cwd=repo_path,
-            capture_output=True,
-            text=True,
-        )
+        try:
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "pytest",
+                    "-q",
+                    ".",
+                ],
+                cwd=repo_path,
+                capture_output=True,
+                text=True,
+                timeout=RUN_TESTS_TIMEOUT,
+            )
+        except subprocess.TimeoutExpired:
+            return {
+                "result": {
+                    "error": "Test execution timed out."
+                }
+            }
 
         if result.returncode == 0:
             return {

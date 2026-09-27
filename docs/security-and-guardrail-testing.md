@@ -517,3 +517,170 @@ This should be considered the first layer of filesystem argument validation, not
 
 Additional validation may be needed as new tools and capabilities are added.
 
+Sensitive-Information Protection
+Sensitive-field policy: Sensitive fields are explicitly classified through SENSITIVE_FIELDS, rather than relying on the LLM to recognize them.
+Sanitization: sanitize_ticket() removes protected fields while preserving non-sensitive ticket information.
+Tool-result boundary: Sanitization occurs after the tool retrieves the data but before the result is passed back to the agent/LLM.
+Why this boundary matters: The LLM cannot intentionally or accidentally disclose information it never receives.
+Data integrity: Sanitization creates a safe copy and does not modify the underlying ticket data.
+Current limitation: This protects fields that are explicitly classified. It does not yet detect sensitive information embedded inside ordinary fields, such as a password appearing inside a description.
+Planned extension: Add detection/evaluation for unclassified sensitive information, including deterministic patterns and LLM-based evaluation.
+
+I'd also add a small security-flow diagram:
+
+Tool retrieves data
+       ↓
+Raw tool result
+       ↓
+Sensitive-field sanitization
+       ↓
+Safe tool result
+       ↓
+Agent / LLM
+       ↓
+Final response
+I would also update the security matrix
+
+If your existing matrix has rows such as Tool Permission, Prompt Injection, Argument Validation, and Resource Limits, add:
+
+Security area	Current protection	Test status
+Sensitive-information leakage	Protected-field policy + tool-result sanitization	Deterministic tests passing
+Unclassified sensitive information	Not yet implemented	Planned
+
+That last distinction is important: we shouldn't claim we've solved sensitive-information leakage generally. We've implemented protection against classified sensitive fields.
+
+
+## Sensitive Information Protection
+
+Sensitive-information protection prevents the agent from receiving information that it does not need to perform its task.
+
+The project uses a **protected-field policy** to identify fields that should not be exposed to the agent.
+
+### Protected-Field Policy
+
+Sensitive fields are explicitly classified in the security policy:
+
+```python
+SENSITIVE_FIELDS = {
+    "internal_notes",
+}
+```
+
+This approach classifies sensitive information by **field**, rather than by a specific value.
+
+For example, the actual contents of an internal note may change, but the `internal_notes` field remains protected.
+
+### Sanitization
+
+The `sanitize_ticket()` function removes protected fields from a ticket before the ticket is passed to the agent:
+
+```text
+Raw ticket
+    |
+    v
+sanitize_ticket()
+    |
+    v
+Safe ticket
+```
+
+The sanitization creates a safe copy of the ticket. It does not modify the original ticket data.
+
+This is important because protecting information for one consumer should not alter the underlying source data.
+
+### Tool-to-Agent Security Boundary
+
+The most important part of the implementation is **where sanitization occurs**.
+
+The ticket is retrieved normally by `get_ticket()`. The retrieval function is responsible for retrieving the data; it does not decide which information the agent is allowed to receive.
+
+After the tool executes, the result passes through the security layer:
+
+```text
+Tool retrieves data
+       |
+       v
+Raw tool result
+       |
+       v
+Sensitive-field sanitization
+       |
+       v
+Safe tool result
+       |
+       v
+Agent / LLM
+       |
+       v
+Final response
+```
+
+This means the sensitive information is removed **before the result reaches the LLM**.
+
+This is stronger than filtering only the final response. If sensitive information were passed to the LLM first, the model could potentially be manipulated into revealing it through a prompt injection or other unexpected behavior.
+
+The security principle is:
+
+> **Do not rely on the LLM to protect information it never needed to see.**
+
+### Tests
+
+The security tests verify several properties:
+
+1. `internal_notes` is classified as a sensitive field.
+2. `sanitize_ticket()` removes sensitive fields.
+3. Normal ticket information remains available after sanitization.
+4. Sensitive information does not cross the tool-to-agent boundary.
+5. Sanitization does not modify the original ticket data.
+
+The tests therefore verify both **confidentiality** and **data integrity**.
+
+### Current Scope and Limitation
+
+The current implementation protects information that has been explicitly classified as sensitive.
+
+For example:
+
+```text
+internal_notes → protected
+```
+
+However, it does not yet detect sensitive information that appears inside an otherwise ordinary field.
+
+For example:
+
+```text
+description:
+"Customer's temporary password is Temp#4729"
+```
+
+There is no field named `password` in this example, so the protected-field policy alone would not detect the disclosure.
+
+This is an intentional limitation of the current deterministic approach.
+
+### Planned Extension
+
+Future security testing will address **unclassified sensitive information**, using additional techniques such as:
+
+* deterministic detection of known sensitive patterns or secrets
+* sensitive-value detection
+* LLM-based evaluation of potential information leakage
+* testing the accuracy of the evaluator itself
+
+This will extend the current protection from **known protected fields** to more general sensitive-information leakage detection.
+
+### Security Principle
+
+Sensitive-information protection uses defense in depth:
+
+```text
+Protected-field policy
+        +
+Deterministic sanitization
+        +
+Tool-to-agent security boundary
+        +
+Future leakage detection/evaluation
+```
+
+The current implementation focuses on preventing sensitive fields from reaching the LLM in the first place.
