@@ -10,6 +10,7 @@ from src.skills import (
     get_selected_skill,
     request_tool_access as authorize_tool_access_request,
     get_requestable_tools,
+    is_tool_authorized,
 )
 
 from src.tool_catalog import (
@@ -247,42 +248,78 @@ def load_skill(skill_name: str) -> str:
 @observe(type="tool")
 def execute_tool_call(tool_call, available_tools, selected_skill):
     if tool_call.name == "request_tool_access":
-        requested_tool = tool_call.args.get("tool_name")
-
-        if not isinstance(requested_tool, str):
-            return ToolResult(
-                name="request_tool_access",
-                response={
-                    "error": "tool_name is required."
-                },
-                call_id=tool_call.call_id,
-            )
-
-        if selected_skill is None:
-            return ToolResult(
-                name="request_tool_access",
-                response={
-                    "tool_name": requested_tool,
-                    "authorized": False,
-                    "error": "No skill is selected.",
-                },
-                call_id=tool_call.call_id,
-            )
-
-        allowed = authorize_tool_access_request(
+        return handle_tool_access_request(
+            tool_call,
             selected_skill,
-            requested_tool,
         )
 
+    if not is_tool_authorized_for_skill(
+        tool_call.name,
+        selected_skill,
+    ):
         return ToolResult(
-            name="request_tool_access",
+            name=tool_call.name,
             response={
-                "tool_name": requested_tool,
-                "authorized": allowed,
+                "error": "Tool is not authorized.",
             },
             call_id=tool_call.call_id,
         )
 
+    return execute_authorized_tool(
+        tool_call,
+        available_tools,
+    )
+
+
+def handle_tool_access_request(tool_call, selected_skill):
+    requested_tool = tool_call.args.get("tool_name")
+
+    if not isinstance(requested_tool, str):
+        return ToolResult(
+            name="request_tool_access",
+            response={
+                "error": "tool_name is required.",
+            },
+            call_id=tool_call.call_id,
+        )
+
+    if selected_skill is None:
+        return ToolResult(
+            name="request_tool_access",
+            response={
+                "tool_name": requested_tool,
+                "authorized": False,
+                "error": "No skill is selected.",
+            },
+            call_id=tool_call.call_id,
+        )
+
+    allowed = authorize_tool_access_request(
+        selected_skill,
+        requested_tool,
+    )
+
+    return ToolResult(
+        name="request_tool_access",
+        response={
+            "tool_name": requested_tool,
+            "authorized": allowed,
+        },
+        call_id=tool_call.call_id,
+    )
+
+
+def is_tool_authorized_for_skill(tool_name, selected_skill):
+    if selected_skill is None:
+        return False
+
+    return is_tool_authorized(
+        selected_skill.name,
+        tool_name,
+    )
+
+
+def execute_authorized_tool(tool_call, available_tools):
     tool_map = {
         tool.__name__: tool
         for tool in available_tools
@@ -294,7 +331,7 @@ def execute_tool_call(tool_call, available_tools, selected_skill):
         return ToolResult(
             name=tool_call.name,
             response={
-                "error": "Tool is not available."
+                "error": "Tool is not available.",
             },
             call_id=tool_call.call_id,
         )
@@ -318,6 +355,7 @@ def execute_tool_call(tool_call, available_tools, selected_skill):
             },
             call_id=tool_call.call_id,
         )
+
 
 
 

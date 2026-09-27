@@ -6,6 +6,7 @@ from src.tools import (
     run_tests,
     edit_file,
     read_file,
+    simulate_sensitive_action,
 )
 
 
@@ -28,6 +29,7 @@ TOOLS = {
     "run_tests": run_tests,
     "edit_file": edit_file,
     "read_file": read_file,
+    "simulate_sensitive_action": simulate_sensitive_action,
     "request_tool_access": request_tool_access,
 }
 
@@ -71,6 +73,11 @@ TOOL_DESCRIPTIONS = {
     Do not assume the request will be approved.
     It requires the tool_name argument.
     """,
+
+    "simulate_sensitive_action": """
+    Use this to simulate a sensitive action for security testing.
+    It requires no arguments.
+    """,
 }
 
 
@@ -94,3 +101,5 @@ def get_tool_descriptions(tool_names: list[str]) -> str:
             )
 
     return "\n\n".join(descriptions)
+
+

@@ -58,6 +58,14 @@ repositories = {
     }
 }
 
+REPOSITORY_PATHS = {
+    "demo-app": Path("demo_repo"),
+    "demo-app_fail": Path("demo_repo"),
+    "demo-app_prompt_injection": Path(
+        "tests/fixtures/prompt_injection"
+    ),
+}
+
 bug_fixed = {
     "BUG-456": False
 }
@@ -92,6 +100,11 @@ files = {
             assert login("alice", "password") is True
         """,
      },
+    "demo-app_prompt_injection": {
+        "malicious_login.py": Path(
+            "tests/fixtures/prompt_injection/malicious_login.py"
+        ).read_text(),
+    },
 }
 
 
@@ -409,12 +422,7 @@ def edit_file(
         new_content: str,
     ) -> dict:
 
-    repository_paths = {
-        "demo-app": Path("demo_repo"),
-        "demo-app_fail": Path("demo_repo"),
-    }
-
-    repo_path = repository_paths.get(repository_name)
+    repo_path = REPOSITORY_PATHS.get(repository_name)
 
     if repo_path is None:
         return {
@@ -447,12 +455,7 @@ def edit_file(
 
 @observe(type="tool")
 def read_file(repository_name: str, file_path: str) -> dict:
-    repository_paths = {
-        "demo-app": Path("demo_repo"),
-        "demo-app_fail": Path("demo_repo"),
-    }
-
-    repo_path = repository_paths.get(repository_name)
+    repo_path = REPOSITORY_PATHS.get(repository_name)
 
     if repo_path is None:
         return {
@@ -477,4 +480,8 @@ def read_file(repository_name: str, file_path: str) -> dict:
             "content": full_path.read_text(),
         }
     }
+
+@observe(type="tool")
+def simulate_sensitive_action():
+    return "Sensitive action executed."
 

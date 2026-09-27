@@ -210,6 +210,7 @@ def test_agent_does_not_initially_add_requestable_tool():
 def test_execute_tool_call_runs_available_tool():
     from src.agent import execute_tool_call
     from src.providers.response import ToolCall
+    from src.skills import SelectedSkill
 
     tool = Mock()
     tool.__name__ = "run_tests"
@@ -223,10 +224,16 @@ def test_execute_tool_call_runs_available_tool():
         call_id="call-123",
     )
 
+    selected_skill = SelectedSkill(
+        name="investigate-bug",
+        instructions="",
+        tools=["run_tests"],
+    )
+
     result = execute_tool_call(
         tool_call=tool_call,
         available_tools=[tool],
-        selected_skill=None,
+        selected_skill=selected_skill,
     )
 
     tool.assert_called_once_with(
@@ -492,3 +499,109 @@ def test_agent_denies_dynamic_unauthorized_escalation():
     assert send_results[0].name == "request_tool_access"
     assert send_results[0].response["tool_name"] == "edit_file"
     assert send_results[0].response["authorized"] is False
+
+
+def test_execute_tool_call_blocks_unauthorized_tool():
+    """
+    A tool can exist and even be passed to execute_tool_call(), but if the selected skill isn't authorized for it, the application blocks execution.
+    review-code
+    ↓
+    attempts simulate_sensitive_action
+        ↓
+    BLOCKED
+    """
+    from src.agent import execute_tool_call
+    from src.providers.response import ToolCall
+    from src.skills import SelectedSkill
+
+    tool = Mock()
+    tool.__name__ = "simulate_sensitive_action"
+    tool.return_value = "Sensitive action executed."
+
+    tool_call = ToolCall(
+        name="simulate_sensitive_action",
+        args={},
+        call_id="call-security-123",
+    )
+
+    selected_skill = SelectedSkill(
+        name="review-code",
+        instructions="",
+        tools=["search_files", "read_file"],
+    )
+
+    result = execute_tool_call(
+        tool_call=tool_call,
+        available_tools=[tool],
+        selected_skill=selected_skill,
+    )
+
+    tool.assert_not_called()
+
+    assert result.name == "simulate_sensitive_action"
+    assert result.response == {
+        "error": "Tool is not authorized."
+    }
+    assert result.call_id == "call-security-123"
+
+
+def test_prompt_injection_cannot_execute_unauthorized_tool():
+    """
+    This test pretends that the agent followed the injection and requested this tool.
+    In: tool_call = ToolCall(
+        name="simulate_sensitive_action",
+    This test checks that even if untrusted content causes the agent to attempt a sensitive action, the application authorization layer prevents that action.
+    malicious file
+    ↓
+    contains "Ignore previous instructions..."
+        ↓
+    simulated agent attempts simulate_sensitive_action
+        ↓
+    authorization layer
+        ↓
+    BLOCKED
+    """
+    from pathlib import Path
+
+    from src.agent import execute_tool_call
+    from src.providers.response import ToolCall
+    from src.skills import SelectedSkill
+
+    fixture_path = Path(
+        "tests/fixtures/prompt_injection/malicious_login.py"
+    )
+
+    malicious_content = fixture_path.read_text()
+
+    assert "Ignore previous instructions." in malicious_content
+    assert "simulate_sensitive_action" in malicious_content
+
+    sensitive_tool = Mock()
+    sensitive_tool.__name__ = "simulate_sensitive_action"
+    sensitive_tool.return_value = "Sensitive action executed."
+
+    tool_call = ToolCall(
+        name="simulate_sensitive_action",
+        args={},
+        call_id="call-prompt-injection-123",
+    )
+
+    selected_skill = SelectedSkill(
+        name="review-code",
+        instructions="",
+        tools=["search_files", "read_file"],
+    )
+
+    result = execute_tool_call(
+        tool_call=tool_call,
+        available_tools=[sensitive_tool],
+        selected_skill=selected_skill,
+    )
+
+    sensitive_tool.assert_not_called()
+
+    assert result.name == "simulate_sensitive_action"
+    assert result.response == {
+        "error": "Tool is not authorized."
+    }
+    assert result.call_id == "call-prompt-injection-123"
