@@ -361,3 +361,159 @@ An important terminology distinction was identified during development:
 ### "Resist"
 
 The model does
+
+
+## Tool Argument Validation
+
+Tool authorization answers the question:
+
+> Is the agent allowed to use this tool?
+
+That is only the first security layer.
+
+An authorized tool can still be dangerous if the arguments supplied to it are unsafe. Therefore, tools that interact with the filesystem must validate their arguments before performing the requested operation.
+
+### Repository boundary
+
+The `read_file` and `edit_file` tools are intended to operate only within the configured repository.
+
+For example, this should be allowed:
+
+```text
+demo-app/login.py
+demo-app/src/auth.py
+```
+
+But this should be rejected:
+
+```text
+demo-app/../secret.txt
+demo-app/../../.env
+```
+
+The second group attempts to escape the repository using path traversal.
+
+### Why this check belongs inside the tool
+
+The LLM is not a security boundary.
+
+Even if the agent is authorized to call `read_file`, the tool itself must not blindly trust the path supplied by the model.
+
+The security layers are therefore:
+
+```text
+Agent requests a tool
+        ↓
+Tool authorization
+"Is this tool allowed?"
+        ↓
+Argument validation
+"Are these arguments safe?"
+        ↓
+Tool execution
+```
+
+This provides defense in depth.
+
+### Implementation
+
+Both `read_file` and `edit_file` resolve the repository path and the requested path before checking the boundary:
+
+```python
+repo_path = repo_path.resolve()
+full_path = (repo_path / file_path).resolve()
+
+if not full_path.is_relative_to(repo_path):
+    return {"error": "Invalid file path."}
+```
+
+`Path.resolve()` is important because the check needs to evaluate the resulting filesystem location rather than simply looking at the original string containing `..`. Python's `pathlib` documentation describes `is_relative_to()` as checking whether one path is relative to another; resolving the path first also handles `..` components and filesystem links before the boundary check.
+
+### Tests
+
+The security tests demonstrate the behavior rather than simply testing the implementation details.
+
+#### `read_file`
+
+The test creates a temporary file outside `demo-app` and attempts:
+
+```text
+read_file(
+    repository_name="demo-app",
+    file_path="../secret.txt"
+)
+```
+
+Before the security check was implemented, the tool successfully returned the contents of the outside file.
+
+After the security check was implemented, the tool returns:
+
+```text
+Invalid file path.
+```
+
+and the outside file is not exposed.
+
+#### `edit_file`
+
+The same boundary is tested for writing.
+
+The test creates a file outside `demo-app` containing:
+
+```text
+ORIGINAL CONTENT
+```
+
+and attempts:
+
+```text
+edit_file(
+    repository_name="demo-app",
+    file_path="../secret.txt",
+    new_content="MALICIOUS CHANGE"
+)
+```
+
+The tool rejects the request with:
+
+```text
+Invalid file path.
+```
+
+and the test verifies that the outside file still contains:
+
+```text
+ORIGINAL CONTENT
+```
+
+This second assertion is important because it verifies the security outcome: an unauthorized filesystem modification did not occur.
+
+### Security principle
+
+Tool permission and argument validation protect against different failure modes:
+
+```text
+Tool permission
+    ↓
+"Can the agent call this tool?"
+
+Argument validation
+    ↓
+"Can the agent use this tool safely with these arguments?"
+```
+
+Both controls are necessary.
+
+A restricted tool set does not by itself make an agent secure. Each tool should enforce the security boundaries appropriate to the operation it performs.
+
+### Current scope
+
+The current implementation protects the repository boundary for:
+
+* `read_file`
+* `edit_file`
+
+This should be considered the first layer of filesystem argument validation, not a complete solution for every possible filesystem security issue.
+
+Additional validation may be needed as new tools and capabilities are added.
+

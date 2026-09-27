@@ -425,20 +425,16 @@ def edit_file(
     repo_path = REPOSITORY_PATHS.get(repository_name)
 
     if repo_path is None:
-        return {
-            "result": {
-                "error": "Repository not found."
-            }
-        }
+        return {"result": {"error": "Repository not found."}}
 
-    full_path = repo_path / file_path
+    repo_path = repo_path.resolve()
+    full_path = (repo_path / file_path).resolve()
+
+    if not full_path.is_relative_to(repo_path):
+        return {"error": "Invalid file path."}
 
     if not full_path.exists():
-        return {
-            "result": {
-                "error": "File not found."
-            }
-        }
+        return {"result": {"error": "File not found."}}
 
     full_path.write_text(new_content)
 
