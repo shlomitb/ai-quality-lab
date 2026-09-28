@@ -5,29 +5,27 @@ from src.reporting.models import PytestSummary, QualityReport
 from src.reporting.serialization import load_quality_report, save_quality_report
 
 
-FIXTURES = Path(__file__).parent / "fixtures"
+FIXTURES = Path(__file__).parent.parent / "fixtures"
 PYTEST_FIXTURE = FIXTURES / "pytest_sample.xml"
 DEEPEVAL_FIXTURE = FIXTURES / "deepeval_sample.json"
 
 
 def configure_test_paths(monkeypatch, tmp_path):
     pytest_report = tmp_path / "pytest" / "junit.xml"
-    deepeval_report_dir = tmp_path / "deepeval"
+    deepeval_report = (
+        tmp_path / "deepeval" / ".latest_test_run.json"
+    )
     summary_dir = tmp_path / "summary"
     history_dir = summary_dir / "history"
     output_report = summary_dir / "ai_quality_report.md"
 
     pytest_report.parent.mkdir(parents=True)
-    deepeval_report_dir.mkdir(parents=True)
+    deepeval_report.parent.mkdir(parents=True)
     history_dir.mkdir(parents=True)
 
     pytest_report.write_text(
         PYTEST_FIXTURE.read_text(encoding="utf-8"),
         encoding="utf-8",
-    )
-
-    deepeval_report = (
-        deepeval_report_dir / "test_run_20260923_120000.json"
     )
 
     deepeval_report.write_text(
@@ -40,21 +38,25 @@ def configure_test_paths(monkeypatch, tmp_path):
         "PYTEST_REPORT",
         pytest_report,
     )
+
     monkeypatch.setattr(
         generator,
-        "DEEPEVAL_REPORT_DIR",
-        deepeval_report_dir,
+        "DEEPEVAL_REPORT",
+        deepeval_report,
     )
+
     monkeypatch.setattr(
         generator,
         "SUMMARY_DIR",
         summary_dir,
     )
+
     monkeypatch.setattr(
         generator,
         "HISTORY_DIR",
         history_dir,
     )
+
     monkeypatch.setattr(
         generator,
         "OUTPUT_REPORT",

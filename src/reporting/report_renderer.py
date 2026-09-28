@@ -281,6 +281,7 @@ def render_markdown(report: QualityReport) -> str:
     lines = _render_run_information(report)
     lines.extend(_render_pytest(report))
     lines.extend(_render_deepeval(report))
+    lines.extend(_render_judge(report))
     lines.extend(_render_security(report))
     lines.extend(_render_performance(report))
     lines.extend(_render_notes(report))
@@ -310,3 +311,53 @@ def write_markdown_report(
         markdown,
         encoding="utf-8",
     )
+
+
+def _render_judge(report: QualityReport) -> list[str]:
+    if not report.judge:
+        return []
+
+    lines = [
+        "## Judge",
+        "",
+    ]
+
+    for test_result in report.judge:
+        status = "PASS" if test_result.success else "FAIL"
+
+        lines.extend(
+            [
+                f"### {test_result.name}",
+                "",
+                f"- **Status:** {status}",
+                f"- **Test Type:** {test_result.test_type}",
+                f"- **Expected:** {test_result.expected}",
+                f"- **Actual:** {test_result.actual}",
+                f"- **Judge Correct:** "
+                f"{'YES' if test_result.success else 'NO'}",
+                "",
+                f"**Reason:** {test_result.reason}",
+                "",
+            ]
+        )
+
+    total = len(report.judge)
+    correct = sum(
+        1 for result in report.judge
+        if result.success
+    )
+
+    accuracy = correct / total if total else 0.0
+
+    lines.extend(
+        [
+            "### Judge Summary",
+            "",
+            f"- **Total cases:** {total}",
+            f"- **Correct:** {correct}/{total}",
+            f"- **Accuracy:** {accuracy:.1%}",
+            "",
+        ]
+    )
+
+    return lines

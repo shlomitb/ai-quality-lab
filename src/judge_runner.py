@@ -3,6 +3,8 @@ from pathlib import Path
 
 from src.evaluator import evaluate_response
 from src.llm_client import create_client
+from src.reporting.judge_report import save_judge_results
+from src.reporting.models import JudgeTestResult
 from src.tools import get_return_policy
 
 
@@ -27,6 +29,14 @@ DATA_FILE = (
     / "judge_test_cases.json"
 )
 
+JUDGE_REPORT_DIR = (
+    Path(__file__).resolve().parent.parent
+    / "reports"
+    / "judge"
+)
+
+JUDGE_REPORT = JUDGE_REPORT_DIR / "judge_results.json"
+
 
 def load_judge_test_cases():
     with open(DATA_FILE) as file:
@@ -42,7 +52,7 @@ def main():
 
     policy = get_return_policy()
 
-    correct = 0
+    results = []
 
     for case in cases:
 
@@ -57,8 +67,18 @@ def main():
         actual = evaluation.result
         expected = case["expected_judge_evaluation"]
 
-        if actual == expected:
-            correct += 1
+        success = actual == expected
+
+        results.append(
+            JudgeTestResult(
+                name=case["id"],
+                test_type=case["test_type"],
+                expected=expected,
+                actual=actual,
+                success=success,
+                reason=evaluation.reason,
+            )
+        )
 
         print("\n" + "=" * 60)
         print(f"ID: {case['id']}")
@@ -68,14 +88,20 @@ def main():
         print(f"EXPECTED JUDGE: {expected}")
         print(f"ACTUAL JUDGE:   {actual}")
 
-        if actual == expected:
+        if success:
             print("JUDGE CORRECT: YES")
         else:
             print("JUDGE CORRECT: NO")
 
         print(f"REASON: {evaluation.reason}")
 
-    total = len(cases)
+    total = len(results)
+    correct = sum(result.success for result in results)
+
+    save_judge_results(
+        results=results,
+        output_path=JUDGE_REPORT,
+    )
 
     print("\n" + "=" * 60)
     print("JUDGE EVALUATION REPORT")
@@ -83,6 +109,8 @@ def main():
     print(f"Total cases:      {total}")
     print(f"Judge correct:    {correct}/{total}")
     print(f"Judge accuracy:   {correct / total:.1%}")
+
+    return results
 
 
 if __name__ == "__main__":

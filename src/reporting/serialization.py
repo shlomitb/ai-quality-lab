@@ -5,6 +5,7 @@ from pathlib import Path
 from .models import (
     DeepEvalMetricResult,
     DeepEvalTestResult,
+    JudgeTestResult,
     MetricChange,
     PytestSummary,
     QualityReport,
@@ -69,6 +70,13 @@ def load_quality_report(
             )
         )
 
+    judge_results = []
+
+    for judge_data in data.get("judge", []):
+        judge_results.append(
+            JudgeTestResult(**judge_data)
+        )
+
     comparison_data = data.get("comparison")
 
     comparison = None
@@ -95,6 +103,7 @@ def load_quality_report(
         timestamp=data["timestamp"],
         pytest=pytest_summary,
         deepeval=deepeval_results,
+        judge=judge_results,
         security_results=data.get("security_results", {}),
         performance=data.get("performance", {}),
         notes=data.get("notes", []),

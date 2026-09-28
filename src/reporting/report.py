@@ -1,5 +1,6 @@
 from .models import (
     DeepEvalTestResult,
+    JudgeTestResult,
     PytestSummary,
     QualityReport,
     QualityReportComparison,
@@ -11,17 +12,15 @@ def build_quality_report(
     timestamp: str,
     pytest_summary: PytestSummary | None = None,
     deepeval_results: list[DeepEvalTestResult] | None = None,
+    judge: list[JudgeTestResult] | None = None,
     comparison: QualityReportComparison | None = None,
 ) -> QualityReport:
-    """
-    Combine normalized pytest and DeepEval results
-    into one project-level quality report.
-    """
 
     return QualityReport(
         run_id=run_id,
         timestamp=timestamp,
         pytest=pytest_summary,
         deepeval=deepeval_results or [],
+        judge=judge or [],
         comparison=comparison,
     )

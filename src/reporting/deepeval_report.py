@@ -23,7 +23,14 @@ def load_deepeval_results(
 
     results = []
 
-    for test_case in data.get("testCases", []):
+    test_run_data = data.get("testRunData")
+
+    if test_run_data is not None:
+        test_cases = test_run_data.get("testCases", [])
+    else:
+        test_cases = data.get("testCases", [])
+
+    for test_case in test_cases:
         metrics = []
 
         for metric in test_case.get("metricsData", []):

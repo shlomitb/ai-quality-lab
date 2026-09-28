@@ -55,17 +55,27 @@ class QualityReportComparison:
     improvements: list[str] = field(default_factory=list)
 
 @dataclass
+class JudgeTestResult:
+    name: str
+    test_type: str
+    expected: str
+    actual: str
+    success: bool
+    reason: str
+
+@dataclass
 class QualityReport:
     run_id: str
     timestamp: str
 
     pytest: PytestSummary | None = None
     deepeval: list[DeepEvalTestResult] = field(default_factory=list)
-
+    judge: list[JudgeTestResult] = field(default_factory=list)
     security_results: dict[str, bool] = field(default_factory=dict)
     performance: dict[str, float] = field(default_factory=dict)
     notes: list[str] = field(default_factory=list)
 
     comparison: QualityReportComparison | None = None
+
 
 
