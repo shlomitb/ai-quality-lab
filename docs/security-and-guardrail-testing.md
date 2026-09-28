@@ -684,3 +684,105 @@ Future leakage detection/evaluation
 ```
 
 The current implementation focuses on preventing sensitive fields from reaching the LLM in the first place.
+
+
+### Unclassified Secret Detection
+
+Protected-field sanitization handles information that is known to be sensitive based on its field name. However, sensitive information can also appear inside an otherwise ordinary field.
+
+For example:
+
+```text
+description:
+"Temporary password: Temp#4729"
+```
+
+The `description` field itself is not classified as sensitive, but the value contains a password.
+
+To address this case, the security layer also supports **deterministic sensitive-value detection**.
+
+The current implementation uses a collection of specific, testable patterns:
+
+```text
+SENSITIVE_VALUE_PATTERNS
+        |
+        +-- password-like values
+        |
+        +-- future patterns
+```
+
+The first pattern detects password-style values and replaces the value with `[REDACTED]`:
+
+```text
+Temporary password: Temp#4729
+                ↓
+Temporary password: [REDACTED]
+```
+
+The pattern library is intentionally small and extensible. Additional patterns can be added as concrete security requirements arise, rather than attempting to create one generic pattern that detects every possible secret.
+
+### Integration with the Tool Security Boundary
+
+Sensitive-value detection is integrated into the same security boundary used for protected fields.
+
+```text
+Tool retrieves data
+       |
+       v
+Raw tool result
+       |
+       v
+sanitize_tool_result()
+       |
+       v
+sanitize_ticket()
+       |
+       +-----------------------------+
+       |                             |
+       v                             v
+Protected fields              String values
+removed                       scanned for
+                              known secret patterns
+                                     |
+                                     v
+                              Sensitive values
+                              redacted
+       |                             |
+       +-------------+---------------+
+                     |
+                     v
+              Safe tool result
+                     |
+                     v
+                 Agent / LLM
+```
+
+This means both types of protection happen **before the tool result reaches the LLM**:
+
+* Known sensitive fields are removed.
+* Recognizable sensitive values inside ordinary fields are redacted.
+
+### Tests
+
+The deterministic tests verify both the detector itself and its integration with the tool-execution boundary.
+
+The tests verify that:
+
+1. A password-like value is redacted.
+2. The redacted value is replaced with `[REDACTED]`.
+3. A sensitive value inside an ordinary field such as `description` is detected.
+4. The sensitive value does not appear in the `ToolResult` delivered to the agent.
+5. The surrounding non-sensitive information remains available.
+6. The existing protected-field sanitization continues to work.
+
+These tests do not use an LLM. They test the security mechanism deterministically.
+
+### Current Limitation
+
+Deterministic pattern matching cannot identify every possible form of sensitive information.
+
+For example, a password, API key, or other secret may have a format that is not covered by the current pattern library. Sensitive information may also be semantic rather than syntactically recognizable.
+
+The current implementation therefore provides **deterministic protection for known protected fields and currently recognized secret patterns**, rather than claiming to detect all possible sensitive information.
+
+Future security evaluation can address more semantic forms of leakage using the project's LLM-based evaluation infrastructure.

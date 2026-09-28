@@ -5,9 +5,11 @@ from src import agent
 from src import tools
 from src.agent import execute_tool_call
 from src.providers.response import AgentResponse, ToolCall
-from src.security import SENSITIVE_FIELDS, sanitize_ticket
+from src.security import SENSITIVE_FIELDS, redact_sensitive_values, sanitize_ticket
 from src.skills import SelectedSkill
 from src.tools import get_ticket
+
+
 
 
 def test_get_ticket_exposes_internal_notes():
@@ -157,3 +159,89 @@ def test_sanitize_ticket_does_not_modify_original_ticket():
     assert ticket == original_ticket
     assert "internal_notes" in ticket
     assert "internal_notes" not in sanitized
+
+
+
+def test_sanitize_ticket_does_not_detect_secret_inside_unclassified_field():
+    ticket = {
+        "ticket_id": "BUG-789",
+        "title": "Login issue",
+        "description": "Temporary password: Temp#4729",
+        "repository": "demo-app",
+        "status": "Open",
+    }
+
+    sanitized = sanitize_ticket(ticket)
+
+    assert "Temp#4729" not in str(sanitized)
+
+
+
+def test_redact_sensitive_values_removes_password_value():
+    text = "Temporary password: Temp#4729"
+
+    redacted = redact_sensitive_values(text)
+
+    assert redacted == "Temporary password: [REDACTED]"
+
+
+
+def test_sanitize_ticket_redacts_password_in_description():
+    ticket = {
+        "ticket_id": "BUG-789",
+        "title": "Login issue",
+        "description": "Temporary password: Temp#4729",
+        "repository": "demo-app",
+        "status": "Open",
+    }
+
+    sanitized = sanitize_ticket(ticket)
+
+    assert sanitized["description"] == (
+        "Temporary password: [REDACTED]"
+    )
+
+
+def test_unclassified_secret_is_redacted_before_agent_receives_tool_result():
+    """
+    Deterministic test to check the security mechanism itself, not using an llm yet
+    Checking that the password does reach the agent, after running execute_tool_call()
+    - that a cleaned, sanitized, password is sent to the agent.
+    :return:
+    """
+    ticket = {
+        "ticket_id": "BUG-789",
+        "title": "Login issue",
+        "description": "Temporary password: Temp#4729",
+        "repository": "demo-app",
+        "status": "Open",
+    }
+
+    tools.tickets["BUG-789"] = ticket
+
+    try:
+        tool_call = ToolCall(
+            name="get_ticket",
+            args={"ticket_id": "BUG-789"},
+            call_id="test-secret-1",
+        )
+
+        selected_skill = SelectedSkill(
+            name="investigate-bug",
+            instructions="",
+            tools=["get_ticket"],
+        )
+
+        result = execute_tool_call(
+            tool_call=tool_call,
+            available_tools=[tools.get_ticket],
+            selected_skill=selected_skill,
+        )
+
+        result_text = str(result.response)
+
+        assert "Temp#4729" not in result_text
+        assert "Temporary password: [REDACTED]" in result_text
+
+    finally:
+        del tools.tickets["BUG-789"]
