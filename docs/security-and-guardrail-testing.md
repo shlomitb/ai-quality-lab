@@ -786,3 +786,132 @@ For example, a password, API key, or other secret may have a format that is not 
 The current implementation therefore provides **deterministic protection for known protected fields and currently recognized secret patterns**, rather than claiming to detect all possible sensitive information.
 
 Future security evaluation can address more semantic forms of leakage using the project's LLM-based evaluation infrastructure.
+
+
+### LLM-Based Semantic Leakage Evaluation
+
+Deterministic detection is useful for known protected fields and recognizable secret patterns, but it cannot identify every form of sensitive information.
+
+Some information is sensitive because of its **meaning and context**, rather than because it matches a known pattern. For example, an internal business decision or confidential note may contain no password, API key, or other recognizable secret format.
+
+The project therefore also uses the existing LLM-based judge infrastructure to evaluate potential sensitive-information leakage at the response level.
+
+The judge is tested using predefined responses in `data/judge_test_cases.json`. The `ai_response` in these cases is intentionally hard-coded. The LLM is used as the **judge**, not as the source of the response.
+
+The current security evaluation includes:
+
+```text
+Actual credential disclosed
+    → expected FAIL
+
+Sensitive concept mentioned without
+revealing the credential
+    → expected PASS
+
+Confidential internal business information disclosed
+    → expected FAIL
+```
+
+This provides a basic check that the judge can distinguish between merely mentioning a sensitive concept and actually disclosing sensitive information.
+
+The LLM judge is an **evaluation mechanism**, not the primary security boundary. Whenever possible, sensitive information should be removed or redacted deterministically before it reaches the agent.
+
+### End-to-End Agent Security Tests
+
+The project also includes LLM-based end-to-end tests that exercise the actual agent rather than supplying a hard-coded response.
+
+The end-to-end flow is:
+
+```text
+Test data containing sensitive information
+        |
+        v
+Real tool
+        |
+        v
+Tool-result sanitization
+        |
+        v
+Real agent / LLM
+        |
+        v
+Final agent response
+```
+
+The tests verify two complementary properties.
+
+#### 1. Sensitive information is not leaked
+
+A ticket containing an unclassified password-like value is retrieved through the real tool path. The test verifies that the sensitive value does not appear in the final agent response.
+
+This verifies the complete security path rather than testing the redaction function in isolation.
+
+#### 2. Safe information is preserved
+
+The same type of ticket contains both useful information and a sensitive value.
+
+The test verifies that:
+
+* the sensitive value does not appear in the final response;
+* useful, non-sensitive information from the ticket remains available to the agent.
+
+This prevents a security implementation from simply removing the entire tool result and demonstrates that the security layer provides **protection without unnecessary information loss**.
+
+### Security Layers
+
+Sensitive-information protection therefore operates at multiple levels:
+
+```text
+                     Tool data
+                         |
+                         v
+              Deterministic sanitization
+                    /           \
+                   /             \
+                  v               v
+        Protected fields      Known secret
+           removed             patterns
+                                  |
+                                  v
+                              redacted
+                   \             /
+                    \           /
+                     v         v
+                  Safe tool result
+                         |
+                         v
+                       Agent
+                         |
+                         v
+                Final agent response
+                         |
+              +----------+----------+
+              |                     |
+              v                     v
+       End-to-end test        LLM evaluation
+       checks actual          checks semantic
+       leakage behavior      leakage behavior
+```
+
+The deterministic layer is intended to provide the primary protection before sensitive information reaches the LLM.
+
+The LLM-based evaluation layer provides additional testing for semantic forms of leakage that cannot reliably be identified by deterministic patterns alone.
+
+### Current Scope and Limitations
+
+The current implementation does **not** attempt to detect every possible secret or every category of confidential information.
+
+Deterministic protection currently covers:
+
+* explicitly protected fields;
+* currently recognized sensitive-value patterns.
+
+The LLM judge provides an additional semantic evaluation layer, but an LLM-based evaluator is itself not a perfect security mechanism and should not replace deterministic controls where deterministic controls are possible.
+
+The goal of the current implementation is therefore **defense in depth**:
+
+1. Remove known sensitive fields.
+2. Redact recognizable sensitive values.
+3. Prevent those values from reaching the agent whenever possible.
+4. Test the actual agent boundary with end-to-end security tests.
+5. Use semantic LLM evaluation to identify additional forms of potential information leakage.
