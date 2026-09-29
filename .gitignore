@@ -10,3 +10,4 @@ reports/
 #reports/pytest/junit.xml
 #reports/deepeval/*.json
 #reports/deepeval/*.md
+

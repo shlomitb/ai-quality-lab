@@ -8,11 +8,31 @@ from src.agent import answer_customer_with_trace, get_tool_call_details
 from src.llm_client import create_client
 from tests.deepeval.helpers import create_gemini_model
 
+
+
+"""
+DeepEval Tool Argument Correctness tests.
+
+These tests evaluate whether the arguments supplied to a selected tool
+are appropriate for the user's request.
+
+This is different from tool selection:
+
+    Tool selection:
+        Did the agent choose the correct tool?
+
+    Tool arguments:
+        Given that tool, did the agent provide the correct arguments?
+
+The agent itself makes the first LLM call. DeepEval then uses an LLM
+judge to evaluate whether the observed tool arguments were correct.
+"""
+
 load_dotenv()
 
 gemini_model = create_gemini_model()
 
-def test_product_information_argument_correctness():
+def test_product_information_tool_argument_correctness():
     """
     Gemini LLM call #1
     → runs your agent

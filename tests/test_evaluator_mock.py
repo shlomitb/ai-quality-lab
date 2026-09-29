@@ -60,7 +60,7 @@ def test_evaluator_returns_fail():
     assert result.result == "FAIL"
 
 
-def test_evaluator_calls_llm():
+def test_evaluator_invokes_llm_client():
     client = Mock()
 
     client.models.generate_content.return_value.parsed = EvaluationResult(

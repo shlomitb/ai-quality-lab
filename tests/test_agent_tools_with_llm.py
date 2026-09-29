@@ -671,7 +671,7 @@ def test_agent_repairs_real_code_and_verifies():
 
 
 @pytest.mark.llm
-def test_agent_dynamically_escalates_to_run_tests():
+def test_agent_requests_access_to_run_tests():
     question = (
         "Review the login implementation in demo-app_fail. "
         "Determine whether the implementation satisfies the repository's "

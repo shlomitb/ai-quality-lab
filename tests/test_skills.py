@@ -148,7 +148,7 @@ def test_review_skill_does_not_initially_include_requestable_tool():
     assert "run_tests" not in skill.tools
 
 
-def test_review_skill_can_escalate_to_run_tests():
+def test_review_skill_can_request_access_to_run_tests():
     from src.skills import is_tool_access_allowed
 
     assert is_tool_access_allowed(
@@ -157,7 +157,7 @@ def test_review_skill_can_escalate_to_run_tests():
     )
 
 
-def test_review_skill_cannot_escalate_to_edit_file():
+def test_review_skill_cannot_request_access_to_edit_file():
     from src.skills import is_tool_access_allowed
 
     assert not is_tool_access_allowed(

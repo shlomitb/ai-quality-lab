@@ -1,3 +1,10 @@
+"""
+General deterministic agent-loop and trace tests.
+
+Use mocked providers and AgentResponse objects to test the agent's
+tool execution, dynamic tool access, and trace helpers without
+making real LLM/API calls.
+"""
 
 from src.agent import (
     answer_customer_with_trace,
@@ -11,12 +18,6 @@ from src.skills import get_selected_skill
 from unittest.mock import Mock, patch
 
 
-
-"""
-General deterministic agent trajectory tests
-Use mock AgentResponse objects to test the agent helper functions
-without making an LLM call.
-"""
 
 
 def test_get_tool_calls():
@@ -250,7 +251,7 @@ def test_execute_tool_call_runs_available_tool():
     assert result.call_id == "call-123"
 
 
-def test_execute_tool_call_authorizes_escalation():
+def test_execute_tool_call_authorizes_tool_access_request():
     from src.agent import execute_tool_call
     from src.providers.response import ToolCall
     from src.skills import get_selected_skill
@@ -282,7 +283,7 @@ def test_execute_tool_call_authorizes_escalation():
 
 
 
-def test_execute_tool_call_denies_unauthorized_escalation():
+def test_execute_tool_call_denies_unauthorized_tool_access_request():
 
     skill = get_selected_skill(
         "Please review this code."
@@ -309,7 +310,7 @@ def test_execute_tool_call_denies_unauthorized_escalation():
     assert "edit_file" not in skill.tools
 
 
-def test_agent_handles_dynamic_tool_escalation():
+def test_agent_handles_dynamic_tool_access():
 
     first_response = AgentResponse(
         final_text="",
@@ -439,7 +440,7 @@ def test_agent_handles_dynamic_tool_escalation():
     }
 
 
-def test_agent_denies_dynamic_unauthorized_escalation():
+def test_agent_denies_unauthorized_dynamic_tool_access():
 
     first_response = AgentResponse(
         final_text="",
@@ -502,5 +503,176 @@ def test_agent_denies_dynamic_unauthorized_escalation():
     assert send_results[0].response["authorized"] is False
 
 
+
+def test_agent_stops_after_max_agent_turns():
+    """
+    Verify that the agent stops executing tool calls when
+    MAX_AGENT_TURNS is reached, even if the provider keeps
+    requesting another tool call.
+    """
+    tool_response = AgentResponse(
+        final_text="",
+        tool_calls=[
+            ToolCall(
+                name="get_ticket",
+                args={"ticket_id": "BUG-123"},
+                call_id="call-1",
+            )
+        ],
+        tool_results=[],
+    )
+
+    fake_provider = Mock()
+
+    # Initial model response contains a tool call.
+    fake_provider.generate.return_value = tool_response
+
+    # Every subsequent model response also contains a tool call.
+    fake_provider.send_tool_results.return_value = tool_response
+
+    with patch(
+        "src.agent.create_provider",
+        return_value=fake_provider,
+    ):
+        with patch(
+            "src.agent.MAX_AGENT_TURNS",
+            3,
+        ):
+            response = answer_customer_with_trace(
+                client=Mock(),
+                question="Investigate BUG-123.",
+            )
+
+    assert fake_provider.generate.call_count == 1
+    assert fake_provider.send_tool_results.call_count == 3
+
+    # The agent received another tool call at the final turn,
+    # but did not execute another turn after reaching the limit.
+    assert response.tool_calls
+
+
+
+def test_request_tool_access_requires_tool_name():
+    skill = get_selected_skill(
+        "Please review this code."
+    )
+
+    assert skill is not None
+
+    tool_call = ToolCall(
+        name="request_tool_access",
+        args={},
+        call_id="call-missing",
+    )
+
+    result = execute_tool_call(
+        tool_call=tool_call,
+        available_tools=[],
+        selected_skill=skill,
+    )
+
+    assert result.name == "request_tool_access"
+    assert result.response == {
+        "error": "tool_name is required."
+    }
+
+
+    def test_request_tool_access_rejects_non_string_tool_name():
+        skill = get_selected_skill(
+            "Please review this code."
+        )
+
+        assert skill is not None
+
+        tool_call = ToolCall(
+            name="request_tool_access",
+            args={
+                "tool_name": 123
+            },
+            call_id="call-invalid-type",
+        )
+
+        result = execute_tool_call(
+            tool_call=tool_call,
+            available_tools=[],
+            selected_skill=skill,
+        )
+
+        assert result.name == "request_tool_access"
+        assert result.response == {
+            "error": "tool_name is required."
+        }
+
+    def test_request_tool_access_denied_when_no_skill_is_selected():
+        tool_call = ToolCall(
+            name="request_tool_access",
+            args={
+                "tool_name": "run_tests"
+            },
+            call_id="call-no-skill",
+        )
+
+        result = execute_tool_call(
+            tool_call=tool_call,
+            available_tools=[],
+            selected_skill=None,
+        )
+
+        assert result.name == "request_tool_access"
+        assert result.response == {
+            "tool_name": "run_tests",
+            "authorized": False,
+            "error": "No skill is selected.",
+        }
+
+
+def test_request_tool_access_rejects_non_string_tool_name():
+    skill = get_selected_skill(
+        "Please review this code."
+    )
+
+    assert skill is not None
+
+    tool_call = ToolCall(
+        name="request_tool_access",
+        args={
+            "tool_name": 123,
+        },
+        call_id="call-invalid-type",
+    )
+
+    result = execute_tool_call(
+        tool_call=tool_call,
+        available_tools=[],
+        selected_skill=skill,
+    )
+
+    assert result.name == "request_tool_access"
+    assert result.response == {
+        "error": "tool_name is required.",
+    }
+
+
+def test_request_tool_access_denied_when_no_skill_is_selected():
+    tool_call = ToolCall(
+        name="request_tool_access",
+        args={
+            "tool_name": "run_tests",
+        },
+        call_id="call-no-skill",
+    )
+
+    result = execute_tool_call(
+        tool_call=tool_call,
+        available_tools=[],
+        selected_skill=None,
+    )
+
+    assert result.name == "request_tool_access"
+    assert result.response == {
+        "tool_name": "run_tests",
+        "authorized": False,
+        "error": "No skill is selected.",
+    }
 
 

@@ -1,10 +1,19 @@
+"""
+DeepEval evaluation of a task requiring dynamic tool access.
+
+Evaluates whether the agent completes the task successfully and uses
+an efficient trajectory while handling the need for additional tool access.
+
+Direct permission and dynamic-access enforcement are tested separately.
+"""
+
 import os
 
 import pytest
 from dotenv import load_dotenv
 
 from deepeval import assert_test
-from deepeval.dataset import EvaluationDataset, Golden
+from deepeval.dataset import Golden
 from deepeval.metrics import (
     TaskCompletionMetric,
     StepEfficiencyMetric,
@@ -23,26 +32,20 @@ os.environ.setdefault(
 
 
 @pytest.mark.llm
-@pytest.mark.parametrize(
-    "golden",
-    EvaluationDataset(
-        goldens=[
-            Golden(
-                input=(
-                    "Review the login implementation in demo-app_fail. "
-                    "Determine whether the implementation satisfies the repository's "
-                    "expected behavior. Source inspection alone is not sufficient; "
-                    "validate your conclusion using the repository's verification mechanism."
-                ),
-                expected_output=(
-                    "The login implementation does not satisfy the repository's "
-                    "expected behavior, and verification confirms the problem."
-                ),
-            )
-        ]
-    ).goldens,
-)
-def test_dynamic_access_agent(golden):
+def test_dynamic_tool_access_task_completion():
+    golden = Golden(
+        input=(
+            "Review the login implementation in demo-app_fail. "
+            "Determine whether the implementation satisfies the repository's "
+            "expected behavior. Source inspection alone is not sufficient; "
+            "validate your conclusion using the repository's verification mechanism."
+        ),
+        expected_output=(
+            "The login implementation does not satisfy the repository's "
+            "expected behavior, and verification confirms the problem."
+        ),
+    )
+
     load_dotenv()
 
     client = create_client()
@@ -69,10 +72,16 @@ def test_dynamic_access_agent(golden):
         ),
     ]
 
-    answer_customer_with_trace(
+    response = answer_customer_with_trace(
         client=client,
         question=golden.input,
     )
+
+    print("\nAGENT TOOL CALLS:")
+    print(response.tool_calls)
+
+    print("\nFINAL RESPONSE:")
+    print(response.final_text)
 
     assert_test(
         golden=golden,

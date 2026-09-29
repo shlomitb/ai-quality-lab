@@ -104,10 +104,26 @@ def test_review_skill_tools_are_correct():
     ]
 
 
-def test_escalation_tool_is_available():
+def test_request_tool_access_is_available():
     from src.tool_catalog import get_tools
 
     tools = get_tools(["request_tool_access"])
 
     assert len(tools) == 1
     assert tools[0].__name__ == "request_tool_access"
+
+
+def test_every_registered_tool_has_a_description():
+    from src.tool_catalog import TOOLS, TOOL_DESCRIPTIONS
+
+    missing_descriptions = [
+        tool_name
+        for tool_name in TOOLS
+        if tool_name not in TOOL_DESCRIPTIONS
+        or not TOOL_DESCRIPTIONS[tool_name].strip()
+    ]
+
+    assert not missing_descriptions, (
+        f"Missing descriptions for registered tools: "
+        f"{missing_descriptions}"
+    )

@@ -1,4 +1,3 @@
-
 from pathlib import Path
 
 from deepeval import assert_test
@@ -8,20 +7,20 @@ from deepeval.metrics import TaskCompletionMetric, StepEfficiencyMetric
 from src.agent import answer_customer_with_trace
 from src.llm_client import create_client
 
-from tests.deepeval.helpers import create_gemini_model
-
-#deepeval test run tests/deepeval/bug_fix_real_code_deepeval.py
-
-gemini_model = create_gemini_model()
-
-
-TASK = (
-    "Investigate BUG-456, fix the failing test, "
-    "and verify that the tests pass."
-)
-
 
 def test_real_code_bug_fix_trajectory():
+    """
+    tests the agent against an actual file rather than your bug_fixed mock state.
+    Has determinitstic checks, asserts
+    And has DeepEval etric tess
+    It is a real-world integration test, not primarily an LLM evaluation test.
+    """
+
+    task = (
+        "Investigate BUG-456, fix the failing test, "
+        "and verify that the tests pass."
+    )
+
     file_path = Path("demo_repo/src/login.py")
 
     broken_content = """def login(username, password):
@@ -32,7 +31,7 @@ def test_real_code_bug_fix_trajectory():
 
     file_path.write_text(broken_content)
 
-    golden = Golden(input=TASK)
+    golden = Golden(input=task)
 
     try:
         response = answer_customer_with_trace(
@@ -59,7 +58,7 @@ def test_real_code_bug_fix_trajectory():
         task_completion = TaskCompletionMetric(
             threshold=0.5,
             model=gemini_model,
-            task=TASK,
+            task=task,
         )
 
         step_efficiency = StepEfficiencyMetric(
