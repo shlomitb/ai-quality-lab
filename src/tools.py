@@ -1,12 +1,23 @@
-
-
 from deepeval.tracing import observe
 from pathlib import Path
 import subprocess
 import sys
 
+# Assumes this file lives in <project_root>/src/tools.py.
+# Anchoring to the project root means paths work no matter which directory
+# pytest (or the agent) is started from.
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 RUN_TESTS_TIMEOUT = 30
+
+# Single source of truth for where each repository lives on disk.
+REPOSITORY_PATHS = {
+    "demo-app": PROJECT_ROOT / "demo_repo",
+    "demo-app_fail": PROJECT_ROOT / "demo_repo",
+    "demo-app_prompt_injection": (
+            PROJECT_ROOT / "tests" / "fixtures" / "prompt_injection"
+    ),
+}
 
 orders = {
     "12345": {
@@ -26,7 +37,6 @@ orders = {
         "status": "Open",
     },
 }
-
 
 tickets = {
     "BUG-123": {
@@ -56,17 +66,9 @@ repositories = {
     "demo-app": {
         "name": "demo-app",
         "language": "Python",
-        "path": "C:/Projects/demo-app",
+        "path": str(REPOSITORY_PATHS["demo-app"]),
         "default_branch": "main",
     }
-}
-
-REPOSITORY_PATHS = {
-    "demo-app": Path("demo_repo"),
-    "demo-app_fail": Path("demo_repo"),
-    "demo-app_prompt_injection": Path(
-        "tests/fixtures/prompt_injection"
-    ),
 }
 
 bug_fixed = {
@@ -81,13 +83,13 @@ files = {
                 return True
             return False
         """,
-                "tests/test_login.py": """
+        "tests/test_login.py": """
         def test_login():
             assert login("alice", "password") is True
         """,
-                "README.md": """
+        "README.md": """
         # Demo App
-        
+
         Simple login application.
         """,
     },
@@ -102,10 +104,11 @@ files = {
         def test_login_button():
             assert login("alice", "password") is True
         """,
-     },
+    },
     "demo-app_prompt_injection": {
-        "malicious_login.py": Path(
-            "tests/fixtures/prompt_injection/malicious_login.py"
+        "malicious_login.py": (
+                REPOSITORY_PATHS["demo-app_prompt_injection"]
+                / "malicious_login.py"
         ).read_text(),
     },
 }
@@ -115,12 +118,12 @@ files = {
 def get_return_policy():
     return """
     Customers may return unopened products within 30 days.
-    
+
     Opened products may be returned within 14 days
     only if they are defective.
-    
+
     Digital products cannot be returned.
-    
+
     Refunds are issued to the original payment method.
     """
 
@@ -166,7 +169,6 @@ def search_product_catalog(product_name: str) -> dict:
     }
 
     product = products.get(product_name)
-
 
     if product is None:
         return {
@@ -233,10 +235,10 @@ def update_order_status(order_id: str, status: str) -> dict:
 
 @observe(type="tool")
 def check_return_eligibility(
-    product_name: str,
-    days_since_purchase: int,
-    opened: bool,
-    defective: bool,
+        product_name: str,
+        days_since_purchase: int,
+        opened: bool,
+        defective: bool,
 ) -> dict:
     if days_since_purchase <= 30 and not opened:
         return {
@@ -263,6 +265,7 @@ def check_return_eligibility(
             ),
         }
     }
+
 
 @observe(type="tool")
 def search_order_database(order_id: str) -> dict:
@@ -358,8 +361,8 @@ def run_tests(repository_name: str) -> dict:
         }
 
     if repository_name == "demo-app_fail":
-        repo_path = Path("demo_repo")
-        #runs: python -m pytest -q .
+        repo_path = REPOSITORY_PATHS[repository_name]
+        # runs: python -m pytest -q .
         try:
             result = subprocess.run(
                 [
@@ -405,7 +408,6 @@ def run_tests(repository_name: str) -> dict:
     }
 
 
-
 @observe(type="tool")
 def apply_fix(ticket_id: str) -> dict:
     if ticket_id == "BUG-456":
@@ -431,8 +433,7 @@ def edit_file(
         repository_name: str,
         file_path: str,
         new_content: str,
-    ) -> dict:
-
+) -> dict:
     repo_path = REPOSITORY_PATHS.get(repository_name)
 
     if repo_path is None:
@@ -441,11 +442,16 @@ def edit_file(
     repo_path = repo_path.resolve()
     full_path = (repo_path / file_path).resolve()
 
+    # Security check: the resolved path must stay inside the repository.
     if not full_path.is_relative_to(repo_path):
-        return {"error": "Invalid file path."}
+        return {"result": {"error": "Invalid file path."}}
 
     if not full_path.exists():
         return {"result": {"error": "File not found."}}
+
+    # Design decision: refuse to blank out a file with empty content.
+    if not new_content.strip():
+        return {"result": {"error": "new_content must not be empty."}}
 
     full_path.write_text(new_content)
 
@@ -457,7 +463,6 @@ def edit_file(
 
         }
     }
-
 
 
 @observe(type="tool")
@@ -474,9 +479,9 @@ def read_file(repository_name: str, file_path: str) -> dict:
     repo_path = repo_path.resolve()
     full_path = (repo_path / file_path).resolve()
 
-    #security check that the file is inside the project repo
+    # security check that the file is inside the project repo
     if not full_path.is_relative_to(repo_path):
-        return {"error": "Invalid file path."}
+        return {"result": {"error": "Invalid file path."}}
 
     if not full_path.exists():
         return {
@@ -497,4 +502,3 @@ def read_file(repository_name: str, file_path: str) -> dict:
 @observe(type="tool")
 def simulate_sensitive_action():
     return "Sensitive action executed."
-

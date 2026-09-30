@@ -1,5 +1,9 @@
 from pathlib import Path
+
+import pytest
+
 from src.tools import (
+    REPOSITORY_PATHS,
     get_product_information,
     search_product_catalog,
     get_order_information,
@@ -17,7 +21,8 @@ from src.tools import (
     read_file,
 )
 
-#run with: pytest -v tests/test_tools.py
+# run with: pytest -v tests/test_tools.py
+# Shared fixtures (reset_shared_state, restore_login_file) live in conftest.py
 
 
 def test_get_product_information_returns_product():
@@ -34,8 +39,6 @@ def test_get_product_information_returns_product():
 
 def test_get_product_information_returns_error_for_unavailable_product():
     result = get_product_information("Unavailable Product")
-
-    print(result)
 
     assert result == {
         "result": {
@@ -79,6 +82,7 @@ def test_get_order_info_for_known_order() -> None:
             "status": "Open",
         }
     }
+
 
 def test_get_order_information_returns_error_for_unknown_order():
     result = get_order_information("99999")
@@ -143,23 +147,18 @@ def test_check_return_eligibility_for_opened_defective_product_within_14_days():
     }
 
 
+def test_update_order_status(reset_shared_state):
+    result = update_order_status("12345", "Reviewed")
 
-
-def test_update_order_status():
-    try:
-        result = update_order_status("12345", "Reviewed")
-
-        assert result == {
-            "result": {
-                "order_id": "12345",
-                "status": "Reviewed",
-            }
+    assert result == {
+        "result": {
+            "order_id": "12345",
+            "status": "Reviewed",
         }
+    }
 
-        assert orders["12345"]["status"] == "Reviewed"
+    assert orders["12345"]["status"] == "Reviewed"
 
-    finally:
-        orders["12345"]["status"] = "Open"
 
 def test_get_order_information_fails_for_unavailable_order():
     result = get_order_information("54321")
@@ -186,7 +185,6 @@ def test_search_order_database_finds_order():
     }
 
 
-
 def test_get_ticket_for_known_ticket():
     result = get_ticket("BUG-123")
 
@@ -200,6 +198,7 @@ def test_get_ticket_for_known_ticket():
         }
     }
 
+
 def test_get_ticket_for_unknown_ticket():
     result = get_ticket("BUG-999")
 
@@ -209,17 +208,17 @@ def test_get_ticket_for_unknown_ticket():
         }
     }
 
-def test_get_repository_for_known_repository():
-    result = get_repository("demo-app")
 
-    assert result == {
-        "result": {
-            "name": "demo-app",
-            "language": "Python",
-            "path": "C:/Projects/demo-app",
-            "default_branch": "main",
-        }
-    }
+def test_get_repository_for_known_repository():
+    result = get_repository("demo-app")["result"]
+
+    assert result["name"] == "demo-app"
+    assert result["language"] == "Python"
+    assert result["default_branch"] == "main"
+    # The path is machine-specific, so check it against the real location
+    # instead of a hardcoded string.
+    assert Path(result["path"]) == REPOSITORY_PATHS["demo-app"]
+    assert Path(result["path"]).is_dir()
 
 
 def test_get_repository_for_unknown_repository():
@@ -243,8 +242,9 @@ def test_search_files_finds_matching_files():
     }
 
     assert "src/login.py" in file_paths
-    assert ("tests/test_login.py" in file_paths)
+    assert "tests/test_login.py" in file_paths
     assert "README.md" in file_paths
+
 
 def test_search_files_returns_empty_matches_when_nothing_found():
     result = search_files("demo-app", "database")
@@ -304,55 +304,43 @@ def test_get_ticket_for_bug_456():
         }
     }
 
-def test_apply_fix_for_bug_456():
-    bug_fixed["BUG-456"] = False
-    try:
-        result = apply_fix("BUG-456")
 
-        assert result == {
-            "result": {
-                "status": "fixed",
-                "ticket_id": "BUG-456",
-                "message": "The login button issue was fixed.",
-            }
+def test_apply_fix_for_bug_456(reset_shared_state):
+    result = apply_fix("BUG-456")
+
+    assert result == {
+        "result": {
+            "status": "fixed",
+            "ticket_id": "BUG-456",
+            "message": "The login button issue was fixed.",
         }
+    }
 
-        assert bug_fixed["BUG-456"] is True
-    finally:
-        bug_fixed["BUG-456"] = False
-
+    assert bug_fixed["BUG-456"] is True
 
 
-def test_edit_file():
-    file_path = "demo_repo/src/login.py"
-
-    original_content = Path(file_path).read_text()
-
+def test_edit_file(restore_login_file):
     new_content = """def login(username, password):
     if username and password:
         return True
     return False
     """
 
-    try:
-        result = edit_file(
-            repository_name="demo-app_fail",
-            file_path="src/login.py",
-            new_content=new_content,
-        )
+    result = edit_file(
+        repository_name="demo-app_fail",
+        file_path="src/login.py",
+        new_content=new_content,
+    )
 
-        assert result == {
-            "result": {
-                "status": "updated",
-                "repository_name": "demo-app_fail",
-                "file_path": "src/login.py",
-            }
+    assert result == {
+        "result": {
+            "status": "updated",
+            "repository_name": "demo-app_fail",
+            "file_path": "src/login.py",
         }
+    }
 
-        assert Path("demo_repo/src/login.py").read_text() == new_content
-
-    finally:
-        Path(file_path).write_text(original_content)
+    assert restore_login_file.read_text() == new_content
 
 
 def test_run_tests_expect_failure():
@@ -374,5 +362,71 @@ def test_read_file():
     assert "def login" in result["result"]["content"]
 
 
+# --- read_file / edit_file: error handling and security -------------------
+
+TRAVERSAL_PATHS = [
+    "../secret.txt",
+    "../../etc/passwd",
+    "src/../../outside.txt",
+    "/etc/passwd",
+]
 
 
+def test_read_file_unknown_repository():
+    result = read_file("unknown-repo", "src/login.py")
+
+    assert result == {"result": {"error": "Repository not found."}}
+
+
+def test_read_file_missing_file():
+    result = read_file("demo-app_fail", "src/does_not_exist.py")
+
+    assert result == {"result": {"error": "File not found."}}
+
+
+@pytest.mark.parametrize("bad_path", TRAVERSAL_PATHS)
+def test_read_file_blocks_path_traversal(bad_path):
+    result = read_file("demo-app_fail", bad_path)
+
+    assert result == {"result": {"error": "Invalid file path."}}
+
+
+def test_edit_file_unknown_repository():
+    result = edit_file("unknown-repo", "src/login.py", "x = 1")
+
+    assert result == {"result": {"error": "Repository not found."}}
+
+
+def test_edit_file_missing_file_is_not_created():
+    result = edit_file("demo-app_fail", "src/new_file.py", "x = 1")
+    new_file = REPOSITORY_PATHS["demo-app_fail"] / "src" / "new_file.py"
+
+    assert result == {"result": {"error": "File not found."}}
+    assert not new_file.exists()
+
+
+@pytest.mark.parametrize("bad_path", TRAVERSAL_PATHS)
+def test_edit_file_blocks_path_traversal(bad_path):
+    result = edit_file("demo-app_fail", bad_path, "pwned")
+
+    assert result == {"result": {"error": "Invalid file path."}}
+
+
+def test_edit_file_traversal_does_not_write_outside_repository():
+    outside = REPOSITORY_PATHS["demo-app_fail"].parent / "pwned.txt"
+
+    try:
+        edit_file("demo-app_fail", "../pwned.txt", "pwned")
+        assert not outside.exists()
+    finally:
+        outside.unlink(missing_ok=True)
+
+
+@pytest.mark.parametrize("empty_content", ["", "   ", "\n"])
+def test_edit_file_rejects_empty_content(restore_login_file, empty_content):
+    original = restore_login_file.read_text()
+
+    result = edit_file("demo-app_fail", "src/login.py", empty_content)
+
+    assert "error" in result["result"]
+    assert restore_login_file.read_text() == original

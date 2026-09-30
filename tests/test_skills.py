@@ -338,3 +338,10 @@ def test_unknown_skill_cannot_request_tool_access():
         "does-not-exist",
         "run_tests",
     )
+
+
+def test_granting_access_does_not_mutate_policy():
+    skill = get_selected_skill("investigate bug")
+    request_tool_access(skill, "get_repository")
+    assert "get_repository" in skill.tools
+    assert "get_repository" not in get_initial_tools("investigate-bug")
