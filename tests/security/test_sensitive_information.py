@@ -1,38 +1,16 @@
 
 
-
-from src import agent
-from src import tools
+from src import agent, tools
 from src.agent import execute_tool_call
 from src.providers.response import AgentResponse, ToolCall
-from src.security import SENSITIVE_FIELDS, redact_sensitive_values, sanitize_ticket
+from src.security import (
+    SENSITIVE_FIELDS,
+    redact_sensitive_values,
+    sanitize_ticket,
+)
 from src.skills import SelectedSkill
-from src.tools import get_ticket
 
 
-
-
-def test_get_ticket_exposes_internal_notes():
-    ticket = {
-        "ticket_id": "BUG-SECRET",
-        "title": "Login issue",
-        "description": "Login fails.",
-        "repository": "demo-app",
-        "status": "Open",
-        "internal_notes": "INTERNAL-ONLY-12345",
-    }
-
-    # Temporarily add our security test ticket.
-    from src import tools
-
-    tools.tickets["BUG-SECRET"] = ticket
-
-    try:
-        result = get_ticket("BUG-SECRET")
-
-        assert result["result"]["internal_notes"] == "INTERNAL-ONLY-12345"
-    finally:
-        del tools.tickets["BUG-SECRET"]
 
 
 def test_final_response_does_not_leak_internal_notes():
@@ -73,36 +51,11 @@ def test_sanitize_ticket_removes_sensitive_fields():
     assert sanitized["title"] == "Login issue"
 
 
-def test_sensitive_fields_are_removed_before_agent_receives_ticket():
-    ticket = {
-        "ticket_id": "BUG-SECRET",
-        "title": "Login issue",
-        "description": "Login fails.",
-        "repository": "demo-app",
-        "status": "Open",
-        "internal_notes": "INTERNAL-ONLY-12345",
-    }
-
-    from src import tools
-    tools.tickets["BUG-SECRET"] = ticket
-
-    try:
-        result = get_ticket("BUG-SECRET")
-
-        raw_ticket = result["result"]
-        safe_ticket = sanitize_ticket(raw_ticket)
-
-        assert "internal_notes" not in safe_ticket
-        assert "INTERNAL-ONLY-12345" not in str(safe_ticket)
-
-        assert safe_ticket["ticket_id"] == "BUG-SECRET"
-        assert safe_ticket["title"] == "Login issue"
-
-    finally:
-        del tools.tickets["BUG-SECRET"]
-
-
 def test_get_ticket_does_not_pass_sensitive_fields_to_agent():
+    """
+    Very strong test, verifies that the sensitive field/value is gone.
+    :return:
+    """
     ticket = {
         "ticket_id": "BUG-SECRET",
         "title": "Login issue",
@@ -146,6 +99,10 @@ def test_get_ticket_does_not_pass_sensitive_fields_to_agent():
 
 
 def test_sanitize_ticket_does_not_modify_original_ticket():
+    """
+    Good defensive-programming test.
+    The sanitizer shouldn't unexpectedly mutate the source object.
+    """
     ticket = {
         "ticket_id": "BUG-SECRET",
         "title": "Login issue",
@@ -162,7 +119,7 @@ def test_sanitize_ticket_does_not_modify_original_ticket():
 
 
 
-def test_sanitize_ticket_does_not_detect_secret_inside_unclassified_field():
+def test_sanitize_ticket_redacts_secret_inside_unclassified_field():
     ticket = {
         "ticket_id": "BUG-789",
         "title": "Login issue",
@@ -178,6 +135,9 @@ def test_sanitize_ticket_does_not_detect_secret_inside_unclassified_field():
 
 
 def test_redact_sensitive_values_removes_password_value():
+    """
+    Good focused unit test of the password-redaction function.
+    """
     text = "Temporary password: Temp#4729"
 
     redacted = redact_sensitive_values(text)
@@ -187,6 +147,9 @@ def test_redact_sensitive_values_removes_password_value():
 
 
 def test_sanitize_ticket_redacts_password_in_description():
+    """
+    Tests the next layer: the ticket sanitizer uses the redaction mechanism correctly.
+    """
     ticket = {
         "ticket_id": "BUG-789",
         "title": "Login issue",
@@ -207,7 +170,6 @@ def test_unclassified_secret_is_redacted_before_agent_receives_tool_result():
     Deterministic test to check the security mechanism itself, not using an llm yet
     Checking that the password does reach the agent, after running execute_tool_call()
     - that a cleaned, sanitized, password is sent to the agent.
-    :return:
     """
     ticket = {
         "ticket_id": "BUG-789",

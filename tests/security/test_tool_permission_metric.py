@@ -1,11 +1,3 @@
-
-from deepeval.metrics import ToolPermissionMetric
-from deepeval.test_case import LLMTestCase, ToolCall as DeepEvalToolCall
-from tests.deepeval.helpers import to_deepeval_tool_calls
-
-from src.providers.response import ToolCall as AgentToolCall
-
-
 """
 Deterministic security tests for tool permissions.
 
@@ -15,6 +7,15 @@ are accepted and unauthorized tools are rejected.
 Also verifies that our agent's ToolCall representation can be
 converted to DeepEval's ToolCall representation for evaluation.
 """
+
+from deepeval.metrics import ToolPermissionMetric
+from deepeval.test_case import LLMTestCase, ToolCall as DeepEvalToolCall
+from tests.deepeval.helpers import to_deepeval_tool_calls
+
+from src.providers.response import ToolCall as AgentToolCall
+
+
+
 
 # def to_deepeval_tool_calls(tool_calls):
 #     # Permission evaluation only needs the tool names.

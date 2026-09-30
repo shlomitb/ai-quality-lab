@@ -1,11 +1,8 @@
+"""
+Tests the agent's runtime tool-authorization layer and verifies that unauthorized tool calls are blocked.
+"""
 
 from unittest.mock import Mock
-
-
-
-"""
-Application security enforcement — unauthorized tool call is actually blocked
-"""
 
 
 def test_execute_tool_call_blocks_unauthorized_tool():

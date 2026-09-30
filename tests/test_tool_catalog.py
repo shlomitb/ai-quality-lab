@@ -1,7 +1,8 @@
-from src.tool_catalog import get_tool_descriptions
+from src.skills import get_selected_skill
+from src.tool_catalog import get_tools, get_tool_descriptions, TOOLS, TOOL_DESCRIPTIONS
 
 
-def test_bug_skill_gets_bug_tools():
+def test_bug_tool_descriptions_include_expected_tools():
     descriptions = get_tool_descriptions(
         [
             "get_ticket",
@@ -20,7 +21,7 @@ def test_bug_skill_gets_bug_tools():
     assert "get_repository" not in descriptions
 
 
-def test_review_skill_gets_review_tools():
+def test_review_tool_descriptions_include_expected_tools():
     descriptions = get_tool_descriptions(
         [
             "search_files",
@@ -33,9 +34,6 @@ def test_review_skill_gets_review_tools():
 
     assert "run_tests" not in descriptions
     assert "edit_file" not in descriptions
-
-
-from src.tool_catalog import get_tools
 
 
 def test_bug_skill_gets_only_bug_tools():
@@ -75,8 +73,6 @@ def test_review_skill_gets_only_review_tools():
 
 
 def test_bug_skill_tools_are_correct():
-    from src.skills import get_selected_skill
-
     skill = get_selected_skill(
         "Please investigate BUG-456 and fix the failing test."
     )
@@ -91,8 +87,6 @@ def test_bug_skill_tools_are_correct():
 
 
 def test_review_skill_tools_are_correct():
-    from src.skills import get_selected_skill
-
     skill = get_selected_skill(
         "Please review this code for maintainability."
     )
@@ -105,8 +99,6 @@ def test_review_skill_tools_are_correct():
 
 
 def test_request_tool_access_is_available():
-    from src.tool_catalog import get_tools
-
     tools = get_tools(["request_tool_access"])
 
     assert len(tools) == 1
@@ -114,8 +106,6 @@ def test_request_tool_access_is_available():
 
 
 def test_every_registered_tool_has_a_description():
-    from src.tool_catalog import TOOLS, TOOL_DESCRIPTIONS
-
     missing_descriptions = [
         tool_name
         for tool_name in TOOLS
@@ -127,3 +117,20 @@ def test_every_registered_tool_has_a_description():
         f"Missing descriptions for registered tools: "
         f"{missing_descriptions}"
     )
+
+
+def test_get_tools_ignores_unknown_tool_names():
+    tools = get_tools(
+        [
+            "get_ticket",
+            "does_not_exist",
+            "read_file",
+        ]
+    )
+
+    tool_names = [tool.__name__ for tool in tools]
+
+    assert tool_names == [
+        "get_ticket",
+        "read_file",
+    ]

@@ -156,13 +156,13 @@ def get_skill_info(question: str) -> tuple[str, int]:
     return skill.name, len(skill.instructions)
 
 
-def is_tool_access_allowed(skill_name: str, tool_name: str, ) -> bool:
-    allowed_tools = get_requestable_tools(skill_name)
-    return tool_name in allowed_tools
+def is_tool_access_requestable(skill_name: str, tool_name: str, ) -> bool:
+    requestable = get_requestable_tools(skill_name)
+    return tool_name in requestable
 
 
 def authorize_tool_access(request: ToolAccessRequest, ) -> bool:
-    return is_tool_access_allowed(
+    return is_tool_access_requestable(
         request.skill_name,
         request.tool_name,
     )

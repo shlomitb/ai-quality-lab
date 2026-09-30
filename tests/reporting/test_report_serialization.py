@@ -1,3 +1,13 @@
+"""
+A real round-trip verification:
+Builds a fairly complete QualityReport
+Saves it to JSON
+Loads it back
+Verifies the reconstructed object equals the original
+"""
+
+
+
 import pytest
 
 from src.reporting.models import (
@@ -40,6 +50,7 @@ def test_save_and_load_quality_report(tmp_path):
                         threshold=0.8,
                         success=True,
                         reason="Good",
+                        evaluation_model="gemini-test",
                     )
                 ],
                 trajectory=[

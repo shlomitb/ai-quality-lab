@@ -1,7 +1,8 @@
 import json
+from pathlib import Path
+
 import pytest
 
-from pathlib import Path
 from src.reporting.deepeval_report import load_deepeval_results
 
 

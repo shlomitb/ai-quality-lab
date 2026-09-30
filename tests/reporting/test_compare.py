@@ -77,6 +77,7 @@ def test_compare_quality_reports():
     assert comparison.pytest_changes["passed"] == 2
     assert comparison.pytest_changes["failed"] == -1
     assert comparison.pytest_changes["skipped"] == 1
+    assert comparison.pytest_changes["total"] == 2
 
     assert len(comparison.deepeval_metrics) == 1
 
@@ -310,3 +311,25 @@ def test_compare_quality_reports_ignores_unchanged_values():
 
     assert comparison.regressions == []
     assert comparison.improvements == []
+
+
+def test_compare_quality_reports_handles_missing_current_pytest_data():
+    previous = QualityReport(
+        run_id="run-001",
+        timestamp="2026-09-22T10:00:00",
+        pytest=PytestSummary(
+            total=10,
+            passed=10,
+            failed=0,
+            skipped=0,
+        ),
+    )
+
+    current = QualityReport(
+        run_id="run-002",
+        timestamp="2026-09-23T10:00:00",
+    )
+
+    comparison = compare_quality_reports(previous, current)
+
+    assert comparison.pytest_changes == {}

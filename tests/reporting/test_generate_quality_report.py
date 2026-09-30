@@ -1,3 +1,7 @@
+"""
+Tests the end-to-end reporting workflow:
+"""
+
 from pathlib import Path
 
 from src.reporting import generate_quality_report as generator

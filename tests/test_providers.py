@@ -9,9 +9,6 @@ def test_gemini_provider_implements_llm_provider():
     assert issubclass(GeminiProvider, LLMProvider)
 
 
-
-
-
 def test_agent_response_can_store_tool_calls_and_results():
     response = AgentResponse(
         final_text="The tests passed.",
@@ -44,7 +41,9 @@ def test_agent_response_can_store_tool_calls_and_results():
     assert response.tool_results[0].call_id == "call-123"
 
 def test_create_provider_returns_gemini_provider():
-    provider = create_provider(client=None)
+    client = Mock()
+
+    provider = create_provider(client=client)
 
     assert isinstance(provider, GeminiProvider)
 
@@ -53,9 +52,9 @@ def test_gemini_provider_extracts_function_calls():
     client = Mock()
 
     function_call = Mock()
-    function_call.name = "get_return_policy"
+    function_call.name = "get_ticket"
     function_call.args = {
-        "customer_type": "standard"
+        "ticket_id": "BUG-123"
     }
     function_call.id = "call-123"
 
@@ -84,9 +83,9 @@ def test_gemini_provider_extracts_function_calls():
 
     assert result.tool_calls == [
         ToolCall(
-            name="get_return_policy",
+            name="get_ticket",
             args={
-                "customer_type": "standard"
+                "ticket_id": "BUG-123"
             },
             call_id="call-123",
         )
@@ -178,3 +177,28 @@ def test_gemini_provider_sends_tool_results_and_gets_next_response():
 
     assert sent_contents[-1].role == "tool"
     assert sent_contents[-1].parts[0].function_response.name == "run_tests"
+
+
+def test_gemini_provider_handles_final_text_without_tool_calls():
+    client = Mock()
+
+    response = Mock()
+    response.text = "The tests passed."
+    response.parsed = None
+    response.function_calls = []
+
+    client.models.generate_content.return_value = response
+
+    provider = GeminiProvider(
+        client=client,
+        model="test-model",
+    )
+
+    result = provider.generate(
+        prompt="Run the tests.",
+        config=Mock(),
+    )
+
+    assert result.final_text == "The tests passed."
+    assert result.tool_calls == []
+    assert result.tool_results == []

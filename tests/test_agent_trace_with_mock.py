@@ -5,6 +5,7 @@ Use mocked providers and AgentResponse objects to test the agent's
 tool execution, dynamic tool access, and trace helpers without
 making real LLM/API calls.
 """
+from unittest.mock import Mock, patch
 
 from src.agent import (
     answer_customer_with_trace,
@@ -14,9 +15,7 @@ from src.agent import (
     execute_tool_call
 )
 from src.providers.response import AgentResponse, ToolCall, ToolResult
-from src.skills import get_selected_skill
-from unittest.mock import Mock, patch
-
+from src.skills import get_selected_skill, SelectedSkill
 
 
 
@@ -210,10 +209,6 @@ def test_agent_does_not_initially_add_requestable_tool():
 
 
 def test_execute_tool_call_runs_available_tool():
-    from src.agent import execute_tool_call
-    from src.providers.response import ToolCall
-    from src.skills import SelectedSkill
-
     tool = Mock()
     tool.__name__ = "run_tests"
     tool.return_value = {"status": "passed"}
@@ -252,10 +247,6 @@ def test_execute_tool_call_runs_available_tool():
 
 
 def test_execute_tool_call_authorizes_tool_access_request():
-    from src.agent import execute_tool_call
-    from src.providers.response import ToolCall
-    from src.skills import get_selected_skill
-
     skill = get_selected_skill(
         "Please review this code."
     )
@@ -284,7 +275,6 @@ def test_execute_tool_call_authorizes_tool_access_request():
 
 
 def test_execute_tool_call_denies_unauthorized_tool_access_request():
-
     skill = get_selected_skill(
         "Please review this code."
     )
@@ -311,7 +301,6 @@ def test_execute_tool_call_denies_unauthorized_tool_access_request():
 
 
 def test_agent_handles_dynamic_tool_access():
-
     first_response = AgentResponse(
         final_text="",
         tool_calls=[
@@ -577,55 +566,6 @@ def test_request_tool_access_requires_tool_name():
     }
 
 
-    def test_request_tool_access_rejects_non_string_tool_name():
-        skill = get_selected_skill(
-            "Please review this code."
-        )
-
-        assert skill is not None
-
-        tool_call = ToolCall(
-            name="request_tool_access",
-            args={
-                "tool_name": 123
-            },
-            call_id="call-invalid-type",
-        )
-
-        result = execute_tool_call(
-            tool_call=tool_call,
-            available_tools=[],
-            selected_skill=skill,
-        )
-
-        assert result.name == "request_tool_access"
-        assert result.response == {
-            "error": "tool_name is required."
-        }
-
-    def test_request_tool_access_denied_when_no_skill_is_selected():
-        tool_call = ToolCall(
-            name="request_tool_access",
-            args={
-                "tool_name": "run_tests"
-            },
-            call_id="call-no-skill",
-        )
-
-        result = execute_tool_call(
-            tool_call=tool_call,
-            available_tools=[],
-            selected_skill=None,
-        )
-
-        assert result.name == "request_tool_access"
-        assert result.response == {
-            "tool_name": "run_tests",
-            "authorized": False,
-            "error": "No skill is selected.",
-        }
-
-
 def test_request_tool_access_rejects_non_string_tool_name():
     skill = get_selected_skill(
         "Please review this code."
@@ -636,7 +576,7 @@ def test_request_tool_access_rejects_non_string_tool_name():
     tool_call = ToolCall(
         name="request_tool_access",
         args={
-            "tool_name": 123,
+            "tool_name": 123
         },
         call_id="call-invalid-type",
     )
@@ -649,15 +589,14 @@ def test_request_tool_access_rejects_non_string_tool_name():
 
     assert result.name == "request_tool_access"
     assert result.response == {
-        "error": "tool_name is required.",
+        "error": "tool_name is required."
     }
-
 
 def test_request_tool_access_denied_when_no_skill_is_selected():
     tool_call = ToolCall(
         name="request_tool_access",
         args={
-            "tool_name": "run_tests",
+            "tool_name": "run_tests"
         },
         call_id="call-no-skill",
     )
@@ -674,5 +613,6 @@ def test_request_tool_access_denied_when_no_skill_is_selected():
         "authorized": False,
         "error": "No skill is selected.",
     }
+
 
 

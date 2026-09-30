@@ -1,13 +1,15 @@
-from pathlib import Path
-
+"""
+Tests security protections against unsafe tool arguments,
+including path-traversal attempts that could access or modify files outside the repository.
+"""
 from src.agent import execute_tool_call
 from src.providers.response import ToolCall
 from src.skills import SelectedSkill
-from src.tools import read_file, edit_file, REPOSITORY_PATHS
-
-"""
-Unsafe arguments — e.g. path traversal
-"""
+from src.tools import (
+    REPOSITORY_PATHS,
+    edit_file,
+    read_file,
+)
 
 
 def test_read_file_blocks_path_traversal():
@@ -42,11 +44,6 @@ def test_read_file_blocks_path_traversal():
             available_tools=[read_file],
             selected_skill=selected_skill,
         )
-        # print("\n========== DEBUG ==========")
-        # print("result =", result)
-        # print("result.response =", result.response)
-        # print("===========================")
-
 
         assert result.response["result"]["error"] == "Invalid file path."
 

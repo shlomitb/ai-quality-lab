@@ -1,3 +1,9 @@
+
+"""
+Tests report assembly
+Verifies that build_quality_report() correctly combines the two parsed inputs into a QualityReport and preserves the important nested data.
+"""
+
 from pathlib import Path
 
 from src.reporting.deepeval_report import load_deepeval_results
@@ -31,6 +37,7 @@ def test_build_quality_report():
     assert report.pytest.skipped == 1
     assert report.pytest.errors == 0
     assert report.pytest.duration_seconds == 1.25
+    assert report.comparison is None
 
     assert len(report.deepeval) == 1
 

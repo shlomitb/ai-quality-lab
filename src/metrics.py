@@ -1,3 +1,16 @@
+
+"""
+calculates accuracy for the agent evaluation results.
+It provides a general calculate_accuracy() function
+and specialized helpers for measuring behavior accuracy, answer accuracy, and judge accuracy.
+
+    → compares expected vs. actual evaluation results
+    → calculates the percentage that are correct
+    → provides separate helpers for behavior, answer, and judge results
+"""
+
+
+
 def calculate_accuracy(expected, actual):
 
     if len(expected) != len(actual):

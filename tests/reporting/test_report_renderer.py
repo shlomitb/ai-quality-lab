@@ -6,11 +6,16 @@ from src.reporting.models import (
     QualityReportComparison,
     MetricChange,
 )
-from src.reporting.report_renderer import render_markdown
-from src.reporting.report_renderer import write_markdown_report
+from src.reporting.report_renderer import (
+    render_markdown,
+    write_markdown_report,
+)
 
 
 def test_render_markdown():
+    """
+    Verifies that a populated report produces the important sections and that the main data actually appears in the Markdown
+    """
     report = QualityReport(
         run_id="test-run-001",
         timestamp="2026-09-20T10:00:00",
@@ -83,8 +88,16 @@ def test_render_markdown():
     assert "request_tool_access(run_tests)" in markdown
     assert "run_tests" in markdown
 
+    assert "2026-09-20T10:00:00" in markdown
+    assert "4.5" in markdown
+    assert "0.0145" in markdown
+
+
 
 def test_write_markdown_report(tmp_path):
+    """
+    Tests the important contract:
+    """
     report = QualityReport(
         run_id="test-run-001",
         timestamp="2026-09-20T10:00:00",

@@ -1,9 +1,17 @@
-
-from unittest.mock import Mock
-
 """
 Prompt-injection security — malicious instructions cannot cause unauthorized action
+
+Even when malicious content causes an attempted call to simulate_sensitive_action,
+the application authorization layer blocks the tool because that tool is not authorized for the selected skill.
 """
+
+from pathlib import Path
+
+from src.agent import execute_tool_call
+from src.providers.response import ToolCall
+from src.skills import SelectedSkill
+from unittest.mock import Mock
+
 
 def test_prompt_injection_cannot_execute_unauthorized_tool():
     """
@@ -21,14 +29,12 @@ def test_prompt_injection_cannot_execute_unauthorized_tool():
         ↓
     BLOCKED
     """
-    from pathlib import Path
 
-    from src.agent import execute_tool_call
-    from src.providers.response import ToolCall
-    from src.skills import SelectedSkill
-
-    fixture_path = Path(
-        "tests/fixtures/prompt_injection/malicious_login.py"
+    fixture_path = (
+            Path(__file__).parents[1]
+            / "fixtures"
+            / "prompt_injection"
+            / "malicious_login.py"
     )
 
     malicious_content = fixture_path.read_text()

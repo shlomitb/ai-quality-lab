@@ -1,53 +1,33 @@
+"""
+Tests that the golden evaluation cases can be loaded and
+contain the expected fields and evaluation values.
+
+These tests do not call the LLM and do not test whether
+the judge makes the correct evaluation.
+"""
 
 import json
-from unittest.mock import Mock
-from src.evaluation_result import EvaluationResult
-
-from src.evaluator import evaluate_response
+from pathlib import Path
 
 
 def load_golden_cases():
-    with open("data/golden_cases.json", "r") as file:
+    path = Path(__file__).parents[1] / "data" / "golden_cases.json"
+
+    with path.open("r", encoding="utf-8") as file:
         return json.load(file)
 
 
-def test_mock_golden_cases():
-    """
-    Verifies that your Python code correctly handles the judge's result.
-    But it doesn't test the judge.
-    """
-
+def test_golden_cases_are_valid():
     cases = load_golden_cases()
 
+    assert len(cases) == 6
+
     for case in cases:
-        client = Mock()
+        assert "id" in case
+        assert "ai_response" in case
+        assert "expected_judge_evaluation" in case
+        assert "description" in case
 
-        # Pretend the LLM judge returned the expected result.
-
-        client.models.generate_content.return_value.parsed = EvaluationResult(
-            result=case["expected_judge_evaluation"],
-            behavior="answer",
-            answer="yes",
-            reason="Mocked judge response."
-        )
-
-        result = evaluate_response(
-            client=client,
-            policy=(
-                "Customers may return unopened products within 30 days.\n"
-                "Opened products may be returned within 14 days "
-                "only if they are defective.\n"
-                "Digital products cannot be returned.\n"
-                "Refunds are issued to the original payment method."
-            ),
-            question="Can I return an unopened product after 20 days?",
-            ai_response=case["ai_response"],
-            evaluation_criteria=(
-                "The AI should state that an unopened product purchased "
-                "20 days ago can be returned because unopened products "
-                "can be returned within 30 days."
-            )
-        )
-
-        assert isinstance(result, EvaluationResult)
-        assert result.result == case["expected_judge_evaluation"]
+        assert case["expected_judge_evaluation"] in {"PASS", "FAIL"}
+        assert isinstance(case["ai_response"], str)
+        assert isinstance(case["description"], str)

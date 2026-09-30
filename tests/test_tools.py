@@ -19,6 +19,19 @@ from src.tools import (
 
 #run with: pytest -v tests/test_tools.py
 
+
+def test_get_product_information_returns_product():
+    result = get_product_information("Example Product")
+
+    assert result == {
+        "result": {
+            "category": "physical",
+            "name": "Example Product",
+            "price": 49.99,
+        }
+    }
+
+
 def test_get_product_information_returns_error_for_unavailable_product():
     result = get_product_information("Unavailable Product")
 
@@ -67,6 +80,16 @@ def test_get_order_info_for_known_order() -> None:
         }
     }
 
+def test_get_order_information_returns_error_for_unknown_order():
+    result = get_order_information("99999")
+
+    assert result == {
+        "result": {
+            "error": "Order not found."
+        }
+    }
+
+
 def test_check_return_eligibility_for_opened_defective_product():
     result = check_return_eligibility(
         product_name="Example Product",
@@ -86,21 +109,57 @@ def test_check_return_eligibility_for_opened_defective_product():
     }
 
 
-def test_update_order_status():
-    result = update_order_status("12345", "Reviewed")
+def test_check_return_eligibility_for_unopened_product():
+    result = check_return_eligibility(
+        product_name="Example Product",
+        days_since_purchase=20,
+        opened=False,
+        defective=False,
+    )
 
     assert result == {
         "result": {
-            "order_id": "12345",
-            "status": "Reviewed",
+            "eligible": True,
+            "reason": "Unopened products can be returned within 30 days.",
         }
     }
 
-    assert orders["12345"]["status"] == "Reviewed"
 
-    # Reset the shared test data
-    orders["12345"]["status"] = "Open"
+def test_check_return_eligibility_for_opened_defective_product_within_14_days():
+    result = check_return_eligibility(
+        product_name="Example Product",
+        days_since_purchase=10,
+        opened=True,
+        defective=True,
+    )
 
+    assert result == {
+        "result": {
+            "eligible": True,
+            "reason": (
+                "Opened defective products can be returned within 14 days."
+            ),
+        }
+    }
+
+
+
+
+def test_update_order_status():
+    try:
+        result = update_order_status("12345", "Reviewed")
+
+        assert result == {
+            "result": {
+                "order_id": "12345",
+                "status": "Reviewed",
+            }
+        }
+
+        assert orders["12345"]["status"] == "Reviewed"
+
+    finally:
+        orders["12345"]["status"] = "Open"
 
 def test_get_order_information_fails_for_unavailable_order():
     result = get_order_information("54321")
@@ -184,8 +243,7 @@ def test_search_files_finds_matching_files():
     }
 
     assert "src/login.py" in file_paths
-    assert ("tests/test_login.py" in
-            file_paths)
+    assert ("tests/test_login.py" in file_paths)
     assert "README.md" in file_paths
 
 def test_search_files_returns_empty_matches_when_nothing_found():
@@ -197,6 +255,15 @@ def test_search_files_returns_empty_matches_when_nothing_found():
         }
     }
 
+
+def test_search_files_returns_error_for_unknown_repository():
+    result = search_files("unknown-repo", "login")
+
+    assert result == {
+        "result": {
+            "error": "Repository not found."
+        }
+    }
 
 
 def test_run_tests_for_known_repository():
@@ -221,7 +288,7 @@ def test_run_tests_for_unknown_repository():
     }
 
 
-def test_get_ticket_for_failing_repository():
+def test_get_ticket_for_bug_456():
     result = get_ticket("BUG-456")
 
     assert result == {
@@ -239,20 +306,20 @@ def test_get_ticket_for_failing_repository():
 
 def test_apply_fix_for_bug_456():
     bug_fixed["BUG-456"] = False
+    try:
+        result = apply_fix("BUG-456")
 
-    result = apply_fix("BUG-456")
-
-    assert result == {
-        "result": {
-            "status": "fixed",
-            "ticket_id": "BUG-456",
-            "message": "The login button issue was fixed.",
+        assert result == {
+            "result": {
+                "status": "fixed",
+                "ticket_id": "BUG-456",
+                "message": "The login button issue was fixed.",
+            }
         }
-    }
 
-    assert bug_fixed["BUG-456"] is True
-
-    bug_fixed["BUG-456"] = False
+        assert bug_fixed["BUG-456"] is True
+    finally:
+        bug_fixed["BUG-456"] = False
 
 
 
