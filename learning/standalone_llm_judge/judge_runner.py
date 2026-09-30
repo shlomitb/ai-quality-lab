@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from src.evaluator import evaluate_response
+from learning.standalone_llm_judge.evaluator import evaluate_response
 from src.llm_client import create_client
 from src.reporting.judge_report import save_judge_results
 from src.reporting.models import JudgeTestResult
@@ -15,7 +15,7 @@ The judge_test_cases.json contains hard-coded ai_responss for each case (the 1st
 And the judge is what we are testing, and this is a real llm call
 In a normal run of the agent this would be 2 llm calls, the initial ai response and then the judge checks that responser.
 
-Run with: python -m src.judge_runner
+Run with: python -m learning.standalone_llm_judge.judge_runner
 Since uses an llm call per case, to run 1 case change MAX_CASES = 1
 and put the case you want to run 1st in the json list.
 

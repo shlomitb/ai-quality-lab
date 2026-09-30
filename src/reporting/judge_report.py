@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from .models import JudgeTestResult
+from src.reporting.models import JudgeTestResult
 
 
 def load_judge_results(
@@ -37,3 +37,35 @@ def load_judge_results(
         )
 
     return results
+
+
+def save_judge_results(
+    results: list[JudgeTestResult],
+    output_path: str | Path,
+) -> None:
+    """
+    Save normalized judge results as JSON.
+    """
+
+    output_path = Path(output_path)
+    output_path.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    data = [
+        {
+            "name": result.name,
+            "test_type": result.test_type,
+            "expected": result.expected,
+            "actual": result.actual,
+            "success": result.success,
+            "reason": result.reason,
+        }
+        for result in results
+    ]
+
+    output_path.write_text(
+        json.dumps(data, indent=2),
+        encoding="utf-8",
+    )

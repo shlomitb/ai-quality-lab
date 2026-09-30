@@ -1,7 +1,21 @@
+"""
+Learning example: standalone LLM-as-a-judge evaluator.
+
+This module was built before the project adopted DeepEval.
+It is preserved to demonstrate the underlying concepts of:
+- evaluator prompting
+- LLM-based judging
+- structured LLM output
+- Pydantic response models
+
+It is not used by the current AI quality evaluation pipeline.
+"""
+
+
 from google.genai import types
 
-from src.config import JUDGE_MODEL
-from src.evaluation_result import EvaluationResult
+from learning.standalone_llm_judge.config import JUDGE_MODEL
+from learning.standalone_llm_judge.evaluation_result import EvaluationResult
 from src.llm import ask_llm
 
 

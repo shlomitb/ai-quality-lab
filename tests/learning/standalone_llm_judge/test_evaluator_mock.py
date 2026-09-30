@@ -1,15 +1,18 @@
 """
-These tests verify that evaluate_response() correctly handles
-the result returned by the LLM evaluator.
+Tests the standalone LLM-as-a-judge evaluator.
 
-They do not call Gemini and do not test whether Gemini itself is a good judge.
+These tests verify that evaluate_response() correctly handles
+the structured result returned by the evaluator.
+
+They do not call Gemini and do not test whether Gemini itself
+is a good judge.
 """
 
 
 from unittest.mock import Mock, patch
 
-from src.evaluator import evaluate_response
-from src.evaluation_result import EvaluationResult
+from learning.standalone_llm_judge.evaluator import evaluate_response
+from learning.standalone_llm_judge.evaluation_result import EvaluationResult
 
 
 
@@ -30,7 +33,7 @@ def test_evaluator_returns_pass():
     mock_response.parsed = expected_result
 
     with patch(
-        "src.evaluator.ask_llm",
+        "learning.standalone_llm_judge.evaluator.ask_llm",
         return_value=mock_response,
     ):
         result = evaluate_response(
@@ -64,8 +67,8 @@ def test_evaluator_returns_fail():
     mock_response.parsed = expected_result
 
     with patch(
-        "src.evaluator.ask_llm",
-        return_value=mock_response,
+            "learning.standalone_llm_judge.evaluator.ask_llm",
+            return_value=mock_response,
     ):
         result = evaluate_response(
             client=client,
@@ -95,8 +98,8 @@ def test_evaluator_invokes_llm():
     mock_response.parsed = expected_result
 
     with patch(
-        "src.evaluator.ask_llm",
-        return_value=mock_response,
+            "learning.standalone_llm_judge.evaluator.ask_llm",
+            return_value=mock_response,
     ) as mock_ask_llm:
 
         evaluate_response(

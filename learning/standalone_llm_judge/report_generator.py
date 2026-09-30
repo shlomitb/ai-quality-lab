@@ -1,5 +1,5 @@
 
-from metrics import behavior_accuracy, answer_accuracy, judge_accuracy
+from src.metrics import behavior_accuracy, answer_accuracy, judge_accuracy
 
 
 def generate_report(results):

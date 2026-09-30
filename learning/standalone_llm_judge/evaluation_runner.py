@@ -1,21 +1,25 @@
+
+"""
+Learning example: runs the agent, evaluates its response with
+a standalone LLM judge, and generates an evaluation report.
+"""
+
 import json
 
-from agent import answer_customer
-from evaluator import evaluate_response
-from llm_client import create_client
-from tools import get_return_policy
-from report_generator import generate_report
+from src.agent import answer_customer
+
+from src.llm_client import create_client
+from src.tools import get_return_policy
+
+from learning.standalone_llm_judge.evaluator import evaluate_response
+from learning.standalone_llm_judge.report_generator import generate_report
 
 
-
-"""
-Tests what the agent did.
-"""
 
 
 MAX_CASES = 2
 
-FILEPATH = "../data/evaluation_cases_for_report.json"
+FILEPATH = "../../data/evaluation_cases_for_report.json"
 #"../data/evaluation_cases.json"
 
 def load_evaluation_cases():
