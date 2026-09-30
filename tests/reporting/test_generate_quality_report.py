@@ -12,13 +12,19 @@ from src.reporting.serialization import load_quality_report, save_quality_report
 FIXTURES = Path(__file__).parent.parent / "fixtures"
 PYTEST_FIXTURE = FIXTURES / "pytest_sample.xml"
 DEEPEVAL_FIXTURE = FIXTURES / "deepeval_sample.json"
+JUDGE_FIXTURE = FIXTURES / "judge_results.json"
 
 
 def configure_test_paths(monkeypatch, tmp_path):
     pytest_report = tmp_path / "pytest" / "junit.xml"
+
     deepeval_report = (
         tmp_path / "deepeval" / ".latest_test_run.json"
     )
+
+    judge_report = tmp_path / "judge" / "judge_results.json"
+    judge_report.parent.mkdir(parents=True)
+
     summary_dir = tmp_path / "summary"
     history_dir = summary_dir / "history"
     output_report = summary_dir / "ai_quality_report.md"
@@ -37,6 +43,11 @@ def configure_test_paths(monkeypatch, tmp_path):
         encoding="utf-8",
     )
 
+    judge_report.write_text(
+        JUDGE_FIXTURE.read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+
     monkeypatch.setattr(
         generator,
         "PYTEST_REPORT",
@@ -47,6 +58,12 @@ def configure_test_paths(monkeypatch, tmp_path):
         generator,
         "DEEPEVAL_REPORT",
         deepeval_report,
+    )
+
+    monkeypatch.setattr(
+        generator,
+        "JUDGE_REPORT",
+        judge_report,
     )
 
     monkeypatch.setattr(

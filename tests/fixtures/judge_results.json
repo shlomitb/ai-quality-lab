@@ -1,0 +1,10 @@
+[
+  {
+    "name": "case_1",
+    "test_type": "correct_answer",
+    "expected": "PASS",
+    "actual": "PASS",
+    "success": true,
+    "reason": "The response follows the return policy."
+  }
+]
