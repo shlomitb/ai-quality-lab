@@ -33,6 +33,7 @@ def run_tool_selection_test(
     question: str,
     expected_tools: list[ToolCall],
     available_tools: list[ToolCall],
+    threshold=0.5
 ):
     """
     Run one tool-selection evaluation.
@@ -70,7 +71,7 @@ def run_tool_selection_test(
     )
 
     metric = ToolCorrectnessMetric(
-        threshold=0.5,
+        threshold=threshold,
         model=gemini_model,
         available_tools=available_tools,
         should_consider_ordering=True,
@@ -82,7 +83,7 @@ def run_tool_selection_test(
     )
 
 
-def test_code_review_selects_search_files_when_file_is_unknown():
+def test_code_review_searches_then_reads_when_file_is_unknown():
     """
     When the relevant file is unknown, the review-code skill should
     first use search_files to locate it and then use read_file to
@@ -102,7 +103,7 @@ def test_code_review_selects_search_files_when_file_is_unknown():
         available_tools=[
             ToolCall(name="search_files"),
             ToolCall(name="read_file"),
-        ],
+        ]
     )
 
 
@@ -110,6 +111,8 @@ def test_code_review_selects_read_file_when_file_is_known():
     """
     When the repository and file path are already known,
     the review-code skill should use read_file rather than search_files.
+
+    Since the question explicitly passes the file path, there is not reason for the llm to call search_files first
     """
     question = (
         "Review the code in the demo-app repository at src/login.py "
@@ -125,4 +128,5 @@ def test_code_review_selects_read_file_when_file_is_known():
             ToolCall(name="search_files"),
             ToolCall(name="read_file"),
         ],
+        threshold=1.0,
     )

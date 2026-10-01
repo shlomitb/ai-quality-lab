@@ -1,5 +1,5 @@
 def login(username, password):
-        if username == "alice" and password == "password":
+        if username and password:
             return False
         return False
     

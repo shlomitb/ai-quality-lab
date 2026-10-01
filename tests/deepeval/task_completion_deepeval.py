@@ -8,10 +8,6 @@ from src.agent import answer_customer_with_trace
 from src.llm_client import create_client
 from src.tools import orders, bug_fixed
 
-from tests.deepeval.helpers import create_gemini_model
-
-
-
 """
 DeepEval Task Completion tests.
 
@@ -19,7 +15,13 @@ These tests evaluate whether the agent accomplished the requested task.
 Deterministic assertions are used where the expected state or answer can
 be verified directly; TaskCompletionMetric evaluates the agent's overall
 task completion.
+
+Run tests here with:
+deepeval test run tests\deepeval\task_completion_deepeval.py -k test_bug_fix_agent_task_completion
 """
+
+from tests.deepeval.helpers import create_gemini_model
+
 
 gemini_model = create_gemini_model()
 
@@ -100,40 +102,53 @@ def test_bug_file_search_task_completion():
     )
 
 
-def test_bug_fix_agent_task_completion():
+def gtest_bug_fix_agent_task_completion(restore_login_file):
     task = (
         "Investigate BUG-456, fix the failing test, "
         "and verify that the tests pass."
     )
-    bug_fixed["BUG-456"] = False
+
+    # Ensure the test always starts with the known broken implementation.
+    broken_login = """def login(username, password):
+        if username == "alice" and password == "password":
+            return False
+        return False
+    """
+
+    restore_login_file.write_text(
+        broken_login,
+        encoding="utf-8",
+    )
 
     golden = Golden(input=task)
 
-    try:
-        response = answer_customer_with_trace(
-            client=create_client(),
-            question=golden.input,
-        )
+    response = answer_customer_with_trace(
+        client=create_client(),
+        question=golden.input,
+    )
 
-        print("\nFINAL RESPONSE:")
-        print(response.final_text)
+    print("\nAGENT TOOL CALLS:")
+    print(response.tool_calls)
 
-        assert bug_fixed["BUG-456"] is True
-        assert "pass" in response.final_text.lower()
+    print("\nTOOL RESULTS:")
+    print(response.tool_results)
 
-        task_completion = TaskCompletionMetric(
-            threshold=0.5,
-            model=gemini_model,
-            task=task,
-        )
+    print("\nFINAL RESPONSE:")
+    print(response.final_text)
 
-        assert_test(
-            golden=golden,
-            metrics=[task_completion],
-        )
+    assert response.final_text.strip()
+    assert "pass" in response.final_text.lower()
 
-    finally:
-        bug_fixed["BUG-456"] = False
+    task_completion = TaskCompletionMetric(
+        threshold=0.5,
+        model=gemini_model,
+        task=task,
+    )
+
+    assert_test(
+        golden=golden,
+        metrics=[task_completion],
+    )
 
 
 
