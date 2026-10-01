@@ -4,21 +4,25 @@ contain the expected fields and evaluation values.
 
 These tests do not call the LLM and do not test whether
 the judge makes the correct evaluation.
+
+To run:
+python -m pytest tests\test_judge_evaluation_cases_data.py -q
 """
 
 import json
 from pathlib import Path
 
 
-def load_golden_cases():
-    path = Path(__file__).parents[1] / "data" / "golden_cases.json"
+def load_judge_evaluation_cases():
+    path = Path(__file__).parents[1] / "tests" / "fixtures" / "judge_evaluation_cases.json"
+
 
     with path.open("r", encoding="utf-8") as file:
         return json.load(file)
 
 
-def test_golden_cases_are_valid():
-    cases = load_golden_cases()
+def test_judge_evaluation_are_valid():
+    cases = load_judge_evaluation_cases()
 
     assert len(cases) == 6
 

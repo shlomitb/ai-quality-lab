@@ -14,7 +14,7 @@ from src.llm_client import create_client
 
 
 FIXTURE_PATH = (
-    Path(__file__).resolve().parent
+    Path(__file__).resolve().parent.parent
     / "fixtures"
     / "golden_agent_cases.json"
 )

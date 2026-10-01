@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from learning.standalone_llm_judge.evaluator import evaluate_response
+from .evaluator import evaluate_response
 from src.llm_client import create_client
 from src.reporting.judge_report import save_judge_results
 from src.reporting.models import JudgeTestResult
@@ -15,7 +15,9 @@ The judge_test_cases.json contains hard-coded ai_responss for each case (the 1st
 And the judge is what we are testing, and this is a real llm call
 In a normal run of the agent this would be 2 llm calls, the initial ai response and then the judge checks that responser.
 
-Run with: python -m learning.standalone_llm_judge.judge_runner
+Run with (Use the module form): 
+python -m learning.standalone_llm_judge.judge_runner
+
 Since uses an llm call per case, to run 1 case change MAX_CASES = 1
 and put the case you want to run 1st in the json list.
 
@@ -24,10 +26,13 @@ and put the case you want to run 1st in the json list.
 MAX_CASES = 1
 
 DATA_FILE = (
-    Path(__file__).resolve().parent.parent
+    Path(__file__).resolve().parents[1]
     / "data"
     / "judge_test_cases.json"
 )
+
+print(f"DATA_FILE: {DATA_FILE}")
+print(f"EXISTS: {DATA_FILE.exists()}")
 
 JUDGE_REPORT_DIR = (
     Path(__file__).resolve().parent.parent
