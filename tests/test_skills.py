@@ -280,6 +280,7 @@ def test_investigate_bug_initial_tools():
 def test_investigate_bug_requestable_tools():
     assert get_requestable_tools("investigate-bug") == [
         "get_repository",
+        "search_files",
     ]
 
 
@@ -293,7 +294,7 @@ def test_investigate_bug_requestable_tool_is_authorized():
 
 def test_investigate_bug_unlisted_tool_is_not_authorized():
     assert not is_tool_authorized(
-        "investigate-bug",
+        "run_tests",
         "search_files",
     )
 

@@ -26,6 +26,7 @@ TOOL_ACCESS_POLICY = {
         ],
         "requestable_tools": [
             "get_repository",
+            "search_files",
         ],
     },
     "review-code": {
