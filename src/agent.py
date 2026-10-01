@@ -44,12 +44,16 @@ def build_prompt(question: str, selected_skill=None) -> str:
     if selected_skill is None:
         selected_skill = get_selected_skill(question)
 
+    requestable_tool_names = []
+
     if selected_skill:
         selected_skill_instructions = selected_skill.instructions
 
         prompt_tool_names = list(selected_skill.tools)
 
-        if get_requestable_tools(selected_skill.name):
+        requestable_tool_names = get_requestable_tools(selected_skill.name)
+
+        if requestable_tool_names:
             prompt_tool_names.append("request_tool_access")
 
         tool_descriptions = get_tool_descriptions(prompt_tool_names)
@@ -82,6 +86,13 @@ def build_prompt(question: str, selected_skill=None) -> str:
 
         {tool_descriptions}
 
+        Requestable tools:
+        {", ".join(requestable_tool_names) if requestable_tool_names else "None"}
+
+        You may request access only to these tools.
+        Do not invent or guess other tool names.
+        If a tool request is denied, do not try alternative tool names.
+
         General rules:
 
         - Choose only the tools that are relevant to the user's request.
@@ -91,14 +102,6 @@ def build_prompt(question: str, selected_skill=None) -> str:
         - Do not claim that an action was completed unless the available
           tool results provide evidence that it was completed.
         - Do not make assumptions when the available information is insufficient.
-
-        Return-policy rules:
-
-        - Use get_return_policy only when the customer asks for the return
-          policy or when the available order/eligibility information is
-          insufficient to answer the question.
-        - Do not call get_return_policy solely to explain an eligibility
-          result that has already been determined.
         """
 
     return prompt
@@ -195,8 +198,16 @@ def answer_customer_with_trace(client, question):
         # Keep tool calls from this later model turn too.
         all_tool_calls.extend(response.tool_calls)
 
+    if response.tool_calls:
+        final_text = (
+            "I could not complete the request because the agent "
+            "reached its maximum number of turns."
+        )
+    else:
+        final_text = response.final_text
+
     final_response = AgentResponse(
-        final_text=response.final_text,
+        final_text=final_text,
         tool_calls=all_tool_calls,
         tool_results=all_tool_results,
         parsed=response.parsed,

@@ -1,0 +1,7 @@
+[
+  {
+    "id": "bug_tests",
+    "question": "Run the tests for the demo-app repository and report whether they passed.",
+    "expected_answer_contains": ["passed"]
+  }
+]

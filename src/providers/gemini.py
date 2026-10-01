@@ -70,7 +70,7 @@ class GeminiProvider(LLMProvider):
             )
 
         function_response_content = types.Content(
-            role="tool",
+            role="user",
             parts=function_response_parts,
         )
 
