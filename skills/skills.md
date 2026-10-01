@@ -7,7 +7,7 @@ Description: Investigate, diagnose, and fix a software bug.
 Keywords:
 - bug
 - fix
-- test
+- failing test
 - error
 - failure
 

@@ -175,7 +175,7 @@ def test_gemini_provider_sends_tool_results_and_gets_next_response():
         "contents"
     ]
 
-    assert sent_contents[-1].role == "tool"
+    assert sent_contents[-1].role == "user"
     assert sent_contents[-1].parts[0].function_response.name == "run_tests"
 
 

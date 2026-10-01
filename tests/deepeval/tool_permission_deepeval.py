@@ -1,3 +1,15 @@
+"""
+DeepEval evaluation of tool permissions on a real agent trajectory.
+
+Runs the real agent, converts its observed tool calls into DeepEval's
+ToolCall format, and verifies that every tool used by the agent was
+among the tools permitted for the trajectory.
+
+Run with:
+deepeval test run tests\deepeval\tool_permission_deepeval.py  -v -s --run-llm
+deepeval test run tests\deepeval\task_completion_deepeval.py -k test_order_status_task_completion -v -s --run-llm
+"""
+
 import pytest
 from deepeval.metrics import ToolPermissionMetric
 from deepeval.test_case import LLMTestCase
@@ -6,14 +18,6 @@ from src.agent import answer_customer_with_trace
 from src.llm_client import create_client
 from tests.deepeval.helpers import to_deepeval_tool_calls
 
-
-"""
-DeepEval evaluation of tool permissions on a real agent trajectory.
-
-Runs the real agent, converts its observed tool calls into DeepEval's
-ToolCall format, and verifies that every tool used by the agent was
-among the tools permitted for the trajectory.
-"""
 
 
 @pytest.mark.llm

@@ -7,7 +7,7 @@ These tests do not assert an exact tool sequence.
 Exact tool selection is tested separately in tool_selection_deepeval.py.
 
 Run with:
-deepeval test run tests\deepeval\step_efficiency_deepeval.py -k return_eligibility -v -s
+deepeval test run tests\deepeval\step_efficiency_deepeval.py -k test_bug_file_search_step_efficiency -v -s
 """
 
 from deepeval import assert_test

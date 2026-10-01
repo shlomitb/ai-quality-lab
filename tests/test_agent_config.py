@@ -83,7 +83,7 @@ def test_bug_prompt_contains_initial_bug_tools_and_access_tool():
         "Available tools for this task:",
         1
     )[1].split(
-        "General rules:",
+        "Requestable tools:",
         1
     )[0]
 
@@ -106,7 +106,7 @@ def test_review_prompt_contains_only_review_tools():
         "Available tools for this task:",
         1
     )[1].split(
-        "General rules:",
+        "Requestable tools:",
         1
     )[0]
 
