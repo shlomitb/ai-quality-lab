@@ -9,10 +9,12 @@ from unittest.mock import Mock, patch
 
 from src.agent import (
     answer_customer_with_trace,
+    enforce_tool_result_consistency,
+    execute_tool_call,
     get_tool_calls,
     get_tool_call_details,
     get_tool_result_details,
-    execute_tool_call
+    MAX_AGENT_TURNS,
 )
 from src.providers.response import AgentResponse, ToolCall, ToolResult
 from src.skills import get_selected_skill, SelectedSkill
@@ -615,4 +617,219 @@ def test_request_tool_access_denied_when_no_skill_is_selected():
     }
 
 
+def test_agent_returns_failure_message_when_max_turns_reached():
+    """
+    agent keeps requesting tools
+        ↓
+    MAX_AGENT_TURNS reached
+        ↓
+    agent terminates
+        ↓
+    final_text is non-empty
+        ↓
+    explicit failure message returned
 
+    It also verifies the loop doesn't silently stop in a broken state.
+    """
+    repeated_tool_call = ToolCall(
+        name="get_ticket",
+        args={"ticket_id": "BUG-456"},
+        call_id="test-call",
+    )
+
+    initial_response = AgentResponse(
+        final_text="",
+        tool_calls=[repeated_tool_call],
+        tool_results=[],
+        parsed=None,
+    )
+
+    repeated_response = AgentResponse(
+        final_text="",
+        tool_calls=[repeated_tool_call],
+        tool_results=[],
+        parsed=None,
+    )
+
+    fake_provider = Mock()
+    fake_provider.generate.return_value = initial_response
+    fake_provider.send_tool_results.return_value = repeated_response
+
+    with patch(
+        "src.agent.create_provider",
+        return_value=fake_provider,
+    ):
+        response = answer_customer_with_trace(
+            client=Mock(),
+            question="Please investigate BUG-456 and fix the failing test.",
+        )
+
+    assert fake_provider.generate.call_count == 1
+    assert (
+        fake_provider.send_tool_results.call_count
+        == MAX_AGENT_TURNS
+    )
+
+    assert len(response.tool_calls) == MAX_AGENT_TURNS + 1
+    assert response.final_text == (
+        "I could not complete the request because the agent "
+        "reached its maximum number of turns."
+    )
+
+
+def test_agent_does_not_report_success_when_tests_fail():
+    failed_test_result = ToolResult(
+        name="run_tests",
+        response={
+            "result": {
+                "result": {
+                    "status": "failed",
+                    "tests_run": 1,
+                    "tests_failed": 1,
+                }
+            }
+        },
+        call_id="test-call",
+    )
+
+    response = AgentResponse(
+        final_text="The tests passed successfully.",
+        tool_calls=[],
+        tool_results=[failed_test_result],
+        parsed=None,
+    )
+
+    safe_response = enforce_tool_result_consistency(response)
+
+    assert safe_response.final_text == (
+        "The tests failed, so I cannot report the "
+        "verification as successful."
+    )
+
+
+
+
+def test_enforce_tool_result_consistency_rejects_success_after_failed_tests():
+    failed_test_result = ToolResult(
+        name="run_tests",
+        response={
+            "result": {
+                "result": {
+                    "status": "failed",
+                    "tests_run": 1,
+                    "tests_failed": 1,
+                }
+            }
+        },
+        call_id="test-call",
+    )
+
+    response = AgentResponse(
+        final_text="The tests passed successfully.",
+        tool_calls=[],
+        tool_results=[failed_test_result],
+        parsed=None,
+    )
+
+    safe_response = enforce_tool_result_consistency(response)
+
+    assert safe_response.final_text == (
+        "The tests failed, so I cannot report the "
+        "verification as successful."
+    )
+
+
+def test_enforce_tool_result_consistency_keeps_success_after_passed_tests():
+    passed_test_result = ToolResult(
+        name="run_tests",
+        response={
+            "result": {
+                "result": {
+                    "status": "passed",
+                    "tests_run": 1,
+                    "tests_failed": 0,
+                }
+            }
+        },
+        call_id="test-call",
+    )
+
+    response = AgentResponse(
+        final_text="The tests passed successfully.",
+        tool_calls=[],
+        tool_results=[passed_test_result],
+        parsed=None,
+    )
+
+    safe_response = enforce_tool_result_consistency(response)
+
+    assert safe_response is response
+
+
+def test_enforce_tool_result_consistency_ignores_other_tool_results():
+    read_result = ToolResult(
+        name="read_file",
+        response={
+            "result": {
+                "result": {
+                    "content": "some source code"
+                }
+            }
+        },
+        call_id="test-call",
+    )
+
+    response = AgentResponse(
+        final_text="The code looks good.",
+        tool_calls=[],
+        tool_results=[read_result],
+        parsed=None,
+    )
+
+    safe_response = enforce_tool_result_consistency(response)
+
+    assert safe_response is response
+
+
+def test_enforce_tool_result_consistency_uses_latest_test_result():
+    failed_test_result = ToolResult(
+        name="run_tests",
+        response={
+            "result": {
+                "result": {
+                    "status": "failed",
+                    "tests_run": 1,
+                    "tests_failed": 1,
+                }
+            }
+        },
+        call_id="failed-call",
+    )
+
+    passed_test_result = ToolResult(
+        name="run_tests",
+        response={
+            "result": {
+                "result": {
+                    "status": "passed",
+                    "tests_run": 1,
+                    "tests_failed": 0,
+                }
+            }
+        },
+        call_id="passed-call",
+    )
+
+    response = AgentResponse(
+        final_text="The tests passed successfully.",
+        tool_calls=[],
+        tool_results=[
+            failed_test_result,
+            passed_test_result,
+        ],
+        parsed=None,
+    )
+
+    safe_response = enforce_tool_result_consistency(response)
+
+    assert safe_response is response

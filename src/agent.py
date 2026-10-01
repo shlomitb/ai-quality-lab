@@ -129,6 +129,39 @@ def get_authorized_tools(selected_skill):
 
     return tools
 
+def enforce_tool_result_consistency(response):
+    """
+    Prevent the agent from reporting successful test verification
+    when the latest run_tests result shows failure.
+    """
+    for tool_result in reversed(response.tool_results):
+        if tool_result.name != "run_tests":
+            continue
+
+        result = tool_result.response
+
+        status = (
+            result.get("result", {})
+            .get("result", {})
+            .get("status")
+        )
+
+        if status == "failed":
+            return AgentResponse(
+                final_text=(
+                    "The tests failed, so I cannot report the "
+                    "verification as successful."
+                ),
+                tool_calls=response.tool_calls,
+                tool_results=response.tool_results,
+                parsed=response.parsed,
+            )
+
+        if status == "passed":
+            break
+
+    return response
+
 
 @observe(type="agent")
 def answer_customer_with_trace(client, question):
@@ -212,6 +245,8 @@ def answer_customer_with_trace(client, question):
         tool_results=all_tool_results,
         parsed=response.parsed,
     )
+
+    final_response = enforce_tool_result_consistency(final_response)
 
     update_current_trace(
         input=question,
