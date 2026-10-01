@@ -3,5 +3,10 @@
     "id": "bug_tests",
     "question": "Run the tests for the demo-app repository and report whether they passed.",
     "expected_answer_contains": ["passed"]
+  },
+  {
+    "id": "review_with_tests",
+    "question": "Please review the code in the demo-app repository and run the tests to verify your findings.",
+    "expected_answer_contains": ["passed"]
   }
 ]

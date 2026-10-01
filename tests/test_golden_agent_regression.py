@@ -44,16 +44,16 @@ def test_agent_regression(case):
         question=case["question"],
     )
 
-    print("\n=== TOOL CALLS === ")
-    for tool_call in response.tool_calls:
-        print(tool_call.name, tool_call.args)
-
-    print("\n=== TOOL RESULTS ===")
-    for tool_result in response.tool_results:
-        print(tool_result.name, tool_result.response)
-
-    print("\n=== FINAL ===")
-    print(response.final_text)
+    # print("\n=== TOOL CALLS === ")
+    # for tool_call in response.tool_calls:
+    #     print(tool_call.name, tool_call.args)
+    #
+    # print("\n=== TOOL RESULTS ===")
+    # for tool_result in response.tool_results:
+    #     print(tool_result.name, tool_result.response)
+    #
+    # print("\n=== FINAL ===")
+    # print(response.final_text)
 
     assert response.final_text.strip(), "Agent did not produce a final answer."
 
