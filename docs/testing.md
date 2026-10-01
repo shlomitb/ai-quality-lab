@@ -33,7 +33,34 @@ This is the main test suite to run after making ordinary code changes.
 
 ---
 
-### 2. LLM behavior tests
+### 2. Skill Routing Tests
+
+Skill routing tests verify that a user request is mapped to the appropriate agent skill before the agent is given its skill-specific instructions and tools.
+
+These tests are deterministic and do not call an LLM. They test the current keyword-based routing logic, including:
+
+* Expected routing to `investigate-bug` and `review-code`
+* Requests that could match more than one skill
+* Requests with no matching skill
+* Case-insensitive keyword matching
+
+The tests are located in:
+
+```text
+tests/
+└── test_skill_routing.py
+```
+
+Run them with:
+
+```powershell
+python -m pytest tests\test_skill_routing.py -q
+```
+
+Skill routing is tested separately from LLM tool-selection tests because a failure at the routing stage can prevent the agent from receiving the correct tools in the first place.
+
+
+### 3. LLM behavior tests
 
 These tests make real LLM calls and test how the agent behaves in specific situations.
 
@@ -58,7 +85,7 @@ LLM tests are marked with the `llm` pytest marker and require the project's LLM 
 
 ---
 
-### 3. DeepEval tests
+### 4. DeepEval tests
 
 DeepEval is used to evaluate higher-level agent behavior with metrics such as:
 
@@ -102,7 +129,7 @@ These tests make LLM calls and may fail because of temporary API problems even w
 
 ---
 
-### 4. Golden agent regression tests
+### 5. Golden agent regression tests
 
 Golden tests are end-to-end regression tests for important user scenarios.
 
@@ -161,7 +188,7 @@ Once a golden scenario is stable, unnecessary diagnostic printing should be remo
 
 ---
 
-### 5. Standalone LLM judge learning tests
+### 6. Standalone LLM judge learning tests
 
 The project also contains a separate learning exercise for an LLM-as-a-judge implementation.
 
