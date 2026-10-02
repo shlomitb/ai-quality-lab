@@ -15,7 +15,7 @@ python -m pytest tests\security\test_tool_permission.py -k test_requestable_tool
 
 from unittest.mock import Mock
 from src.agent import execute_tool_call
-from src.skills import get_selected_skill
+from src.skills import get_selected_skill, request_tool_access
 from src.providers.response import ToolCall
 
 def test_requestable_tool_is_blocked_without_authorization():
@@ -196,3 +196,52 @@ def test_unlisted_tool_cannot_be_authorized():
 
     assert result.response["authorized"] is False
     assert "send_email" not in skill.tools
+
+
+
+
+def test_requestable_tool_authorization_does_not_leak_between_skill_instances():
+    """
+    Authorization granted during one skill instance must not carry over
+    to a separate skill instance.
+    """
+
+    first_skill = get_selected_skill(
+        "Review the code and run tests if necessary."
+    )
+
+    assert first_skill is not None
+    assert "run_tests" not in first_skill.tools
+
+    # Grant run_tests during the first agent run.
+    assert request_tool_access(first_skill, "run_tests") is True
+    assert "run_tests" in first_skill.tools
+
+    # Create a completely new skill instance for a second agent run.
+    second_skill = get_selected_skill(
+        "Review the code and run tests if necessary."
+    )
+
+    assert second_skill is not None
+
+    # Authorization from the first run must not leak into the second.
+    assert "run_tests" not in second_skill.tools
+
+
+def test_new_skill_instance_gets_only_initial_tools():
+    """
+    A new skill instance starts with exactly its configured initial tools.
+    Requestable tools must not be automatically authorized.
+    """
+    from src.skills import get_selected_skill
+
+    skill = get_selected_skill(
+        "Review the code and run tests if necessary."
+    )
+
+    assert skill is not None
+
+    assert skill.tools == [
+        "search_files",
+        "read_file",
+    ]
