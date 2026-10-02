@@ -245,3 +245,13 @@ def test_new_skill_instance_gets_only_initial_tools():
         "search_files",
         "read_file",
     ]
+
+
+
+def test_requestable_tool_is_not_initially_authorized():
+    skill = get_selected_skill(
+        "Review the code and run tests if necessary."
+    )
+
+    assert skill is not None
+    assert "run_tests" not in skill.tools

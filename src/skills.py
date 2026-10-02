@@ -51,7 +51,11 @@ def get_requestable_tools(skill_name: str) -> list[str]:
     return list(policy.get("requestable_tools", []))
 
 
-def is_tool_authorized(skill_name: str, tool_name: str) -> bool:
+def is_tool_permitted_by_policy(skill_name: str, tool_name: str) -> bool:
+    """
+    Ia a tool permitted by the skill's policy.
+    It does not mean that the tool is currently authorized for this particular agent run.
+    """
     policy = TOOL_ACCESS_POLICY.get(skill_name, {})
 
     return (
@@ -158,6 +162,13 @@ def get_skill_info(question: str) -> tuple[str, int]:
 
 
 def is_tool_access_requestable(skill_name: str, tool_name: str, ) -> bool:
+    """
+        Return whether the tool is permitted by the skill policy.
+
+        This does not mean the tool is currently authorized for an agent run.
+        Requestable tools must still be explicitly granted through
+        request_tool_access() before execute_tool_call() can execute them.
+        """
     requestable = get_requestable_tools(skill_name)
     return tool_name in requestable
 

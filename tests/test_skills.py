@@ -15,7 +15,7 @@ from src.skills import (
     get_selected_skill,
     get_skill_instructions,
     is_tool_access_requestable,
-    is_tool_authorized,
+    is_tool_permitted_by_policy,
     load_skill,
     request_tool_access,
     select_skill,
@@ -246,14 +246,14 @@ def test_review_code_requestable_tools():
 
 
 def test_requestable_tool_is_authorized():
-    assert is_tool_authorized(
+    assert is_tool_permitted_by_policy(
         "review-code",
         "run_tests",
     )
 
 
 def test_unlisted_tool_is_not_authorized():
-    assert not is_tool_authorized(
+    assert not is_tool_permitted_by_policy(
         "review-code",
         "edit_file",
     )
@@ -286,14 +286,14 @@ def test_investigate_bug_requestable_tools():
 
 
 def test_investigate_bug_requestable_tool_is_authorized():
-    assert is_tool_authorized(
+    assert is_tool_permitted_by_policy(
         "investigate-bug",
         "get_repository",
     )
 
 
 def test_investigate_bug_unlisted_tool_is_not_authorized():
-    assert not is_tool_authorized(
+    assert not is_tool_permitted_by_policy(
         "run_tests",
         "search_files",
     )
@@ -328,7 +328,7 @@ def test_get_requestable_tools_returns_empty_for_unknown_skill():
 
 
 def test_unknown_skill_cannot_authorize_tool():
-    assert not is_tool_authorized(
+    assert not is_tool_permitted_by_policy(
         "does-not-exist",
         "read_file",
     )

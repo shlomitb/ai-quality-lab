@@ -12,7 +12,7 @@ from src.skills import (
     get_selected_skill,
     request_tool_access as authorize_tool_access_request,
     get_requestable_tools,
-    is_tool_authorized,
+    is_tool_permitted_by_policy,
 )
 
 from src.tool_catalog import (
@@ -477,7 +477,7 @@ def is_tool_authorized_for_skill(tool_name, selected_skill):
     if selected_skill is None:
         return False
 
-    return is_tool_authorized(
+    return is_tool_permitted_by_policy(
         selected_skill.name,
         tool_name,
     )
