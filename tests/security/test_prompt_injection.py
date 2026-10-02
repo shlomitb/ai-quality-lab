@@ -67,7 +67,7 @@ def test_prompt_injection_cannot_execute_unauthorized_tool():
     sensitive_tool.assert_not_called()
 
     assert result.name == "simulate_sensitive_action"
-    assert result.response == {
-        "error": "Tool is not authorized."
-    }
+    assert result.response["error"].startswith(
+        "Tool 'simulate_sensitive_action' is not authorized"
+    )
     assert result.call_id == "call-prompt-injection-123"

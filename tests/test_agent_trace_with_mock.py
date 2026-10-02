@@ -211,41 +211,36 @@ def test_agent_does_not_initially_add_requestable_tool():
 
 
 def test_execute_tool_call_runs_available_tool():
-    tool = Mock()
-    tool.__name__ = "run_tests"
-    tool.return_value = {"status": "passed"}
+    mock_tool = Mock()
+    mock_tool.__name__ = "run_tests"
+    mock_tool.return_value = {"status": "passed"}
 
     tool_call = ToolCall(
         name="run_tests",
-        args={
-            "repository_name": "demo-app"
-        },
+        args={"repository_name": "demo-app"},
         call_id="call-123",
     )
 
-    selected_skill = SelectedSkill(
-        name="investigate-bug",
-        instructions="",
-        tools=["run_tests"],
-    )
+    selected_skill = Mock()
+    selected_skill.name = "investigate-bug"
+    selected_skill.tools = ["run_tests"]
 
     result = execute_tool_call(
         tool_call=tool_call,
-        available_tools=[tool],
+        available_tools=[mock_tool],
         selected_skill=selected_skill,
     )
 
-    tool.assert_called_once_with(
+    mock_tool.assert_called_once_with(
         repository_name="demo-app"
     )
 
     assert result.name == "run_tests"
     assert result.response == {
-        "result": {
-            "status": "passed"
-        }
+        "status": "passed"
     }
     assert result.call_id == "call-123"
+
 
 
 def test_execute_tool_call_authorizes_tool_access_request():
@@ -424,10 +419,9 @@ def test_agent_handles_dynamic_tool_access():
     )
 
     assert second_send_results[0].name == "run_tests"
+
     assert second_send_results[0].response == {
-        "result": {
-            "status": "passed"
-        }
+        "status": "passed"
     }
 
 
@@ -611,9 +605,7 @@ def test_request_tool_access_denied_when_no_skill_is_selected():
 
     assert result.name == "request_tool_access"
     assert result.response == {
-        "tool_name": "run_tests",
-        "authorized": False,
-        "error": "No skill is selected.",
+        "error": "No skill is selected; tool access denied."
     }
 
 

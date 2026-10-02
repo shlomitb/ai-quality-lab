@@ -43,7 +43,7 @@ def test_execute_tool_call_blocks_unauthorized_tool():
     tool.assert_not_called()
 
     assert result.name == "simulate_sensitive_action"
-    assert result.response == {
-        "error": "Tool is not authorized."
-    }
+    assert result.response["error"].startswith(
+        "Tool 'simulate_sensitive_action' is not authorized"
+    )
     assert result.call_id == "call-security-123"

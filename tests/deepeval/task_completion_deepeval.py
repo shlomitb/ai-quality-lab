@@ -1,13 +1,3 @@
-
-
-from deepeval import assert_test
-from deepeval.dataset import Golden
-from deepeval.metrics import TaskCompletionMetric
-
-from src.agent import answer_customer_with_trace
-from src.llm_client import create_client
-from src.tools import orders, bug_fixed
-
 """
 DeepEval Task Completion tests.
 
@@ -17,9 +7,16 @@ be verified directly; TaskCompletionMetric evaluates the agent's overall
 task completion.
 
 Run tests here with:
-deepeval test run tests\deepeval\task_completion_deepeval.py -k test_bug_fix_agent_task_completion
+deepeval test run tests\deepeval\task_completion_deepeval.py -k test_bug_file_search_task_completion
 """
 
+from deepeval import assert_test
+from deepeval.dataset import Golden
+from deepeval.metrics import TaskCompletionMetric
+
+from src.agent import answer_customer_with_trace
+from src.llm_client import create_client
+from src.tools import orders, bug_fixed
 from tests.deepeval.helpers import create_gemini_model
 
 
@@ -76,7 +73,11 @@ def test_bug_file_search_task_completion():
     Task Completion metric:
     The agent accomplished the actual task: it investigated the ticket, identified the repository, found the relevant file, and reported it.
     """
-    task = "Investigate BUG-123 and find the file related to the login problem."
+
+    task = (
+        "Investigate BUG-123 and identify the source file related to the "
+        "login problem. Do not modify any files or run tests."
+    )
 
     golden = Golden(input=task)
 
@@ -102,7 +103,7 @@ def test_bug_file_search_task_completion():
     )
 
 
-def gtest_bug_fix_agent_task_completion(restore_login_file):
+def test_bug_fix_agent_task_completion(restore_login_file):
     task = (
         "Investigate BUG-456, fix the failing test, "
         "and verify that the tests pass."

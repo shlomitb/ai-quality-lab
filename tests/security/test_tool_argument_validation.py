@@ -44,7 +44,7 @@ def test_read_file_blocks_path_traversal():
             available_tools=[read_file],
             selected_skill=selected_skill,
         )
-        assert result.response["result"]["result"]["error"] == "Invalid file path."
+        assert result.response["result"]["error"] == "Invalid file path."
 
     finally:
         if secret_file.exists():
@@ -83,7 +83,7 @@ def test_edit_file_blocks_path_traversal():
             selected_skill=selected_skill,
         )
 
-        assert result.response["result"]["result"]["error"] == "Invalid file path."
+        assert result.response["result"]["error"] == "Invalid file path."
         assert secret_file.read_text() == "ORIGINAL CONTENT"
 
     finally:

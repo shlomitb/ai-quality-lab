@@ -444,7 +444,11 @@ def edit_file(
 
     # Security check: the resolved path must stay inside the repository.
     if not full_path.is_relative_to(repo_path):
-        return {"result": {"error": "Invalid file path."}}
+        return {
+            "result": {
+                "error": "Invalid file path."
+            }
+        }
 
     if not full_path.exists():
         return {"result": {"error": "File not found."}}
@@ -481,7 +485,11 @@ def read_file(repository_name: str, file_path: str) -> dict:
 
     # security check that the file is inside the project repo
     if not full_path.is_relative_to(repo_path):
-        return {"result": {"error": "Invalid file path."}}
+        return {
+            "result": {
+                "error": "Invalid file path."
+            }
+        }
 
     if not full_path.exists():
         return {
