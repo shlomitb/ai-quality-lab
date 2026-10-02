@@ -15,11 +15,80 @@ from src.agent import (
     get_tool_call_details,
     get_tool_result_details,
     MAX_AGENT_TURNS,
+    _find_tool,
+    _handle_tool_access_request,
+    _sanitize_tool_result,
 )
 from src.providers.response import AgentResponse, ToolCall, ToolResult
 from src.skills import get_selected_skill, SelectedSkill
 
 
+
+def test_find_tool_returns_matching_tool():
+    def fake_tool():
+        pass
+
+    fake_tool.__name__ = "fake_tool"
+
+    result = _find_tool(
+        "fake_tool",
+        [fake_tool],
+    )
+
+    assert result is fake_tool
+
+
+
+def test_handle_tool_access_request_authorizes_requestable_tool():
+    selected_skill = Mock()
+    selected_skill.name = "review-code"
+    selected_skill.tools = [
+        "search_files",
+        "read_file",
+        "request_tool_access",
+    ]
+
+    tool_call = ToolCall(
+        name="request_tool_access",
+        args={"tool_name": "run_tests"},
+        call_id="call-helper-test",
+    )
+
+    result = _handle_tool_access_request(
+        tool_call,
+        selected_skill,
+    )
+
+    assert result.name == "request_tool_access"
+    assert result.response == {
+        "tool_name": "run_tests",
+        "authorized": True,
+    }
+
+    assert "run_tests" in selected_skill.tools
+
+    def test_sanitize_tool_result_removes_sensitive_ticket_fields():
+        response = {
+            "result": {
+                "ticket_id": "BUG-SECRET",
+                "title": "Login issue",
+                "internal_notes": "INTERNAL-ONLY-12345",
+            }
+        }
+
+        result = _sanitize_tool_result(
+            "get_ticket",
+            response,
+        )
+
+        assert result == {
+            "result": {
+                "ticket_id": "BUG-SECRET",
+                "title": "Login issue",
+            }
+        }
+
+        assert "INTERNAL-ONLY-12345" not in str(result)
 
 def test_get_tool_calls():
     """
