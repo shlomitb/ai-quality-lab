@@ -295,18 +295,8 @@ def load_skill(skill_name: str) -> str:
 
 @observe(type="tool")
 def execute_tool_call(tool_call, available_tools, selected_skill):
-    """
-    Execute a tool call only when authorized by the selected skill.
+    """Execute an authorized tool call and sanitize its result."""
 
-    Normal tools must already be authorized by the skill.
-    Requestable tools must first be explicitly requested through
-    request_tool_access().
-    Tool results are sanitized before being returned to the agent.
-    """
-
-    # ---------------------------------------------------------
-    # 1. No skill = no authorization context
-    # ---------------------------------------------------------
     if selected_skill is None:
         return ToolResult(
             name=tool_call.name,
@@ -316,18 +306,14 @@ def execute_tool_call(tool_call, available_tools, selected_skill):
             call_id=tool_call.call_id,
         )
 
-    # ---------------------------------------------------------
-    # 2. Special case: request access to an additional tool
-    # ---------------------------------------------------------
+    # Handle requests for additional tools.
     if tool_call.name == "request_tool_access":
         requested_tool = tool_call.args.get("tool_name")
 
         if not isinstance(requested_tool, str) or not requested_tool:
             return ToolResult(
-                name="request_tool_access",
-                response={
-                    "error": "tool_name is required."
-                },
+                name=tool_call.name,
+                response={"error": "tool_name is required."},
                 call_id=tool_call.call_id,
             )
 
@@ -335,7 +321,7 @@ def execute_tool_call(tool_call, available_tools, selected_skill):
 
         if policy is None:
             return ToolResult(
-                name="request_tool_access",
+                name=tool_call.name,
                 response={
                     "error": (
                         f"No tool access policy for skill "
@@ -345,11 +331,9 @@ def execute_tool_call(tool_call, available_tools, selected_skill):
                 call_id=tool_call.call_id,
             )
 
-        # The requested tool must explicitly appear in the
-        # requestable_tools list for this skill.
         if requested_tool not in policy["requestable_tools"]:
             return ToolResult(
-                name="request_tool_access",
+                name=tool_call.name,
                 response={
                     "tool_name": requested_tool,
                     "authorized": False,
@@ -357,14 +341,11 @@ def execute_tool_call(tool_call, available_tools, selected_skill):
                 call_id=tool_call.call_id,
             )
 
-        # Authorization succeeded.
-        # Add the tool to the tools currently authorized
-        # for this agent run.
         if requested_tool not in selected_skill.tools:
             selected_skill.tools.append(requested_tool)
 
         return ToolResult(
-            name="request_tool_access",
+            name=tool_call.name,
             response={
                 "tool_name": requested_tool,
                 "authorized": True,
@@ -372,9 +353,7 @@ def execute_tool_call(tool_call, available_tools, selected_skill):
             call_id=tool_call.call_id,
         )
 
-    # ---------------------------------------------------------
-    # 3. Normal tool calls must already be authorized
-    # ---------------------------------------------------------
+    # Normal tools must already be authorized.
     if tool_call.name not in selected_skill.tools:
         return ToolResult(
             name=tool_call.name,
@@ -387,14 +366,12 @@ def execute_tool_call(tool_call, available_tools, selected_skill):
             call_id=tool_call.call_id,
         )
 
-    # ---------------------------------------------------------
-    # 4. Find the actual tool
-    # ---------------------------------------------------------
+    # Find the authorized tool.
     tool = next(
         (
-            available_tool
-            for available_tool in available_tools
-            if available_tool.__name__ == tool_call.name
+            candidate
+            for candidate in available_tools
+            if candidate.__name__ == tool_call.name
         ),
         None,
     )
@@ -408,26 +385,21 @@ def execute_tool_call(tool_call, available_tools, selected_skill):
             call_id=tool_call.call_id,
         )
 
-    # ---------------------------------------------------------
-    # 5. Execute the tool
-    # ---------------------------------------------------------
+    # Execute the tool.
     try:
         response = tool(**tool_call.args)
-
     except Exception as exc:
         return ToolResult(
             name=tool_call.name,
-            response={
-                "error": str(exc)
-            },
+            response={"error": str(exc)},
             call_id=tool_call.call_id,
         )
 
-    # ---------------------------------------------------------
-    # 6. Sanitize/redact before the result reaches the agent
-    # ---------------------------------------------------------
+    # Sanitize before returning the result to the agent.
     if tool_call.name == "get_ticket":
-        if isinstance(response, dict) and isinstance(response.get("result"), dict):
+        if isinstance(response, dict) and isinstance(
+            response.get("result"), dict
+        ):
             response["result"] = sanitize_ticket(response["result"])
         else:
             response = redact_sensitive_values(response)
@@ -438,16 +410,6 @@ def execute_tool_call(tool_call, available_tools, selected_skill):
         name=tool_call.name,
         response=response,
         call_id=tool_call.call_id,
-    )
-    response = redact_sensitive_values(response)
-
-    # ---------------------------------------------------------
-    # 7. Return the sanitized result to the agent
-    # ---------------------------------------------------------
-    return ToolResult(
-        name=tool_call.name,
-        response=response,
-        call_id=tool_call.call_id
     )
 
 
@@ -497,66 +459,6 @@ def is_tool_authorized_for_skill(tool_name, selected_skill):
         selected_skill.name,
         tool_name,
     )
-
-
-def execute_authorized_tool(tool_call, available_tools):
-    """
-    Execute a tool that has already been authorized.
-
-    This function is responsible for:
-    - finding the requested tool
-    - executing it exactly once
-    - sanitizing sensitive information before returning the result
-    - preserving the tool's existing response structure
-    """
-    tool_map = {
-        tool.__name__: tool
-        for tool in available_tools
-    }
-
-    tool = tool_map.get(tool_call.name)
-
-    if tool is None:
-        return ToolResult(
-            name=tool_call.name,
-            response={
-                "error": "Tool is not available.",
-            },
-            call_id=tool_call.call_id,
-        )
-
-    try:
-        # Execute the tool exactly once.
-        result = tool(**tool_call.args)
-
-        # Sanitize the result before it reaches the agent.
-        if tool_call.name == "get_ticket":
-            if (
-                isinstance(result, dict)
-                and isinstance(result.get("result"), dict)
-            ):
-                result["result"] = sanitize_ticket(
-                    result["result"]
-                )
-            else:
-                result = redact_sensitive_values(result)
-        else:
-            result = redact_sensitive_values(result)
-
-        return ToolResult(
-            name=tool_call.name,
-            response=result,
-            call_id=tool_call.call_id,
-        )
-
-    except Exception as exc:
-        return ToolResult(
-            name=tool_call.name,
-            response={
-                "error": str(exc),
-            },
-            call_id=tool_call.call_id,
-        )
 
 
 def filter_sensitive_information(response):
