@@ -27,10 +27,15 @@ def test_bug_file_search_step_efficiency():
     Evaluate efficiency of a repository investigation task.
 
     The agent must investigate BUG-123 and find the file related to
-    the login problem. Step Efficiency evaluates whether it avoids
-    unnecessary investigation steps.
+    the login problem. Step Efficiency evaluates whether the agent
+    avoids unnecessary investigation steps while following the
+    skill's tool-authorization policy.
     """
-    task = "Investigate BUG-123 and find the file related to the login problem."
+    task = (
+        "Investigate BUG-123 and find the file related to the login problem. "
+        "This is a file-identification task only. Do not modify files or fix "
+        "the bug; identify the relevant repository and source file."
+    )
     golden = Golden(input=task)
 
     response = answer_customer_with_trace(
