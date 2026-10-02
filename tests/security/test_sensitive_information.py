@@ -14,6 +14,9 @@ from src.skills import SelectedSkill
 
 
 def test_final_response_does_not_leak_internal_notes():
+    """
+    Final agent response cannot expose a known secret
+    """
     sensitive_value = "INTERNAL-ONLY-12345"
 
     response = AgentResponse(
@@ -29,10 +32,16 @@ def test_final_response_does_not_leak_internal_notes():
 
 
 def test_internal_notes_is_a_sensitive_field():
+    """
+    Configuration contains the expected sensitive field
+    """
     assert "internal_notes" in SENSITIVE_FIELDS
 
 
 def test_sanitize_ticket_removes_sensitive_fields():
+    """
+    Explicit sensitive fields are removed
+    """
     ticket = {
         "ticket_id": "BUG-SECRET",
         "title": "Login issue",
@@ -54,7 +63,7 @@ def test_sanitize_ticket_removes_sensitive_fields():
 def test_get_ticket_does_not_pass_sensitive_fields_to_agent():
     """
     Very strong test, verifies that the sensitive field/value is gone.
-    :return:
+    End-to-end deterministic boundary: get_ticket → execute_tool_call → agent result
     """
     ticket = {
         "ticket_id": "BUG-SECRET",
@@ -120,6 +129,9 @@ def test_sanitize_ticket_does_not_modify_original_ticket():
 
 
 def test_sanitize_ticket_redacts_secret_inside_unclassified_field():
+    """
+    Secret values are caught even when field isn't classified
+    """
     ticket = {
         "ticket_id": "BUG-789",
         "title": "Login issue",
@@ -167,9 +179,10 @@ def test_sanitize_ticket_redacts_password_in_description():
 
 def test_unclassified_secret_is_redacted_before_agent_receives_tool_result():
     """
-    Deterministic test to check the security mechanism itself, not using an llm yet
-    Checking that the password does reach the agent, after running execute_tool_call()
-    - that a cleaned, sanitized, password is sent to the agent.
+    Very strong testpytest -v tests/security/test_sensitive_information.py
+    End-to-end deterministic redaction boundary
+    Verify that secret values in unclassified fields are redacted
+    before the tool result reaches the agent.
     """
     ticket = {
         "ticket_id": "BUG-789",
