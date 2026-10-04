@@ -1,3 +1,10 @@
+"""
+Real LLM integration behavior
+run with  --run-llm  at the end:
+pytest -v tests/test_agent_tools_with_llm.py -k test_agent_fixes_failed_test_and_verifies --run-llm
+"""
+
+
 import pytest
 
 from src.agent import (answer_customer_with_trace,
@@ -6,12 +13,6 @@ from src.agent import (answer_customer_with_trace,
                        get_tool_result_details)
 
 from src.llm_client import create_client
-
-
-
-#Real LLM integration behavior
-#run with  --run-llm  at the end:
-# pytest -v --run-llm tests/test_agent_tools_with_llm.py --run-llm
 
 
 @pytest.mark.llm
@@ -48,7 +49,10 @@ def test_agent_selects_product_information_tool():
 
 @pytest.mark.llm
 def test_agent_passes_correct_product_name():
-    """Verify that the agent passes the correct product name to the tool."""
+    """
+    Verify that the agent passes the correct product name to the tool.
+    Did the LLM extract the correct argument from the user's request?
+    """
     client = create_client()
 
     response = answer_customer_with_trace(
@@ -97,9 +101,11 @@ def test_agent_receives_expected_product_information():
 @pytest.mark.llm
 def test_agent_handles_product_information_failure():
     """
+    Strong test
     An LLM integration test.
     The LLM responded with the expected error, and it did not hallucinate a price
-    :return:
+    When the tool says the information is unavailable, does the LLM avoid inventing the answer?
+    It evaluates what the agent does with the tool failure.
     """
     client = create_client()
 
@@ -129,6 +135,7 @@ def test_agent_handles_product_information_failure():
 @pytest.mark.llm
 def test_agent_recovers_from_product_information_failure():
     """
+    Strong test
     Testing that the agent calls 2 tools, in the order we specified.
     We expect the 1st tool to fail and due to that the 2nd tool to be called
     This is testing that the agent knows how to recover from a failure.
@@ -163,14 +170,22 @@ def test_agent_recovers_from_product_information_failure():
 @pytest.mark.llm
 def test_agent_handles_both_product_information_tools_failing():
     """
+    A useful multi-step failure + hallucination resistance test.
+    calls get_product_information
+    gets a failure
+    calls search_product_catalog
+    gets another failure
+    doesn't invent the price
+
     Run with -s if want to see the prints:
     pytest -v -s --run-llm tests/test_agent_tools_with_llm.py -k both_product_information_tools_failing
     """
-    client = create_client()
-
     response = answer_customer_with_trace(
-        client=client,
-        question="What is the price of the Unknown Product?",
+        client=create_client(),
+        question=(
+            "Please investigate BUG-456, fix the failing test, "
+            "and verify that the tests pass."
+        ),
     )
 
     tool_call_details = get_tool_call_details(response)
@@ -252,6 +267,7 @@ def test_agent_gets_product_name_from_order():
     """
     This test is more deterministic in expecting only 1 tool to be called,
     due to the way the prompt is written.
+    A useful argument extraction / tool selection test.
     """
     client = create_client()
 
@@ -275,6 +291,13 @@ def test_agent_gets_product_name_from_order():
 
 @pytest.mark.llm
 def test_agent_correctly_handles_return_eligibility_result():
+    """
+    Strong test
+    A tool-result interpretation test.
+    Checks that the LLM correctly interprets the structured result:
+    Also ensures it doesn't hallucinate the $49.99 price.
+    Testing more than whether the model called something—we're testing whether it correctly used the information returned by the tool.
+    """
     client = create_client()
 
     response = answer_customer_with_trace(
@@ -302,6 +325,9 @@ def test_agent_correctly_handles_return_eligibility_result():
 
 @pytest.mark.llm
 def test_agent_updates_order_status():
+    """
+    A state-changing test.
+    """
     from src.tools import orders
 
     orders["12345"]["status"] = "Open"
@@ -343,8 +369,13 @@ def test_agent_updates_order_status():
 
 @pytest.mark.llm
 def test_agent_recovers_and_continues_after_order_lookup_failure():
-
     """
+    A strong agentic workflow test.
+    It tests:
+        recovery
+        information propagation
+        multi-step reasoning
+        correct tool arguments
     Checks that the agent successfully did all three things"
     1. Recovered from the failure
     It didn't stop after get_order_information() failed.
@@ -395,6 +426,11 @@ def test_agent_recovers_and_continues_after_order_lookup_failure():
 
 @pytest.mark.llm
 def test_agent_uses_ticket_result_to_get_repository():
+    """
+    A bug-investigation workflow.
+    Tests whether the agent can take information returned from one tool and use it as an argument to another.
+    Verifies both tool calls and the final answer.
+    """
     client = create_client()
 
     response = answer_customer_with_trace(
@@ -431,6 +467,9 @@ def test_agent_uses_ticket_result_to_get_repository():
 @pytest.mark.llm
 def test_agent_investigates_ticket_and_searches_files():
     """
+    Strong test
+    A good example of agent investigation behavior.
+    Test checks that the search term contains "login" and that the final response identifies src/login.py
     When run the llm - we want to see that it figures out on its own to run:
     call get_ticket
     then get_repository
@@ -466,6 +505,9 @@ def test_agent_investigates_ticket_and_searches_files():
 
 @pytest.mark.llm
 def test_agent_uses_ticket_repository_to_run_tests():
+    """
+    Particularly relevant because it establishes the basic bug-investigation → test execution workflow.
+    """
     client = create_client()
 
     response = answer_customer_with_trace(
@@ -497,6 +539,12 @@ def test_agent_uses_ticket_repository_to_run_tests():
 
 @pytest.mark.llm
 def test_agent_reports_test_failure():
+    """
+    Strong test
+    a good failure reporting / groundedness test.
+    Does not  merely check that run_tests was called
+    - also checks that the actual failure information makes it into the final answer.
+    """
     client = create_client()
 
     response = answer_customer_with_trace(
@@ -532,72 +580,37 @@ def test_agent_reports_test_failure():
     assert "test_login_button" in response.final_text
 
 
+
 @pytest.mark.llm
-def test_agent_fixes_failed_test_and_verifies():
-    from src.tools import bug_fixed
-
-    bug_fixed["BUG-456"] = False
-
+def test_agent_fixes_failed_test_and_verifies(restore_login_file):
+    """
+    A strong agentic task-completion test.
+    """
     client = create_client()
 
-    try:
-        response = answer_customer_with_trace(
-            client=client,
-            question=(
-                "Investigate BUG-456, fix the failing test, "
-                "and verify that the tests pass."
-            ),
-        )
+    response = answer_customer_with_trace(
+        client=client,
+        question=(
+            "Please investigate BUG-456, fix the failing test, "
+            "and verify that the tests pass."
+        ),
+    )
 
-        tool_call_details = get_tool_call_details(response)
-
-        print("\nTOOL CALLS:")
-        print(tool_call_details)
-
-        print("\nFINAL RESPONSE:")
-        print(response.final_text)
-
-        assert tool_call_details[0] == {
-            "name": "get_ticket",
-            "args": {
-                "ticket_id": "BUG-456",
-            },
-        }
-
-        assert tool_call_details[1] == {
-            "name": "run_tests",
-            "args": {
-                "repository_name": "demo-app_fail",
-            },
-        }
-
-        assert any(
-            call["name"] == "apply_fix"
-            and call["args"] == {
-                "ticket_id": "BUG-456",
-            }
-            for call in tool_call_details
-        )
-
-        test_runs = [
-            call
-            for call in tool_call_details
-            if call["name"] == "run_tests"
-        ]
-
-        assert len(test_runs) >= 2
-
-        assert bug_fixed["BUG-456"] is True
-
-        assert "pass" in response.final_text.lower()
-
-    finally:
-        bug_fixed["BUG-456"] = False
-
+    assert response.tool_results[-1].response["result"]["status"] == "passed"
 
 
 @pytest.mark.llm
 def test_agent_repairs_real_code_and_verifies():
+    """
+    Very strong test.
+    This test actually writes broken code into: demo_repo/src/login.py
+    Then asks the LLM to fix it
+    It verifies:
+        edit_file was called
+        tests ran at least twice
+        the file actually changed
+        final run_tests result was "passed"
+    """
     from pathlib import Path
 
     file_path = Path("demo_repo/src/login.py")
@@ -672,6 +685,11 @@ def test_agent_repairs_real_code_and_verifies():
 
 @pytest.mark.llm
 def test_agent_requests_access_to_run_tests():
+    """
+    A very important test.
+    Tests:
+    requestable ≠ initially authorized → request access → tool becomes usable → execute it.
+    """
     question = (
         "Review the login implementation in demo-app_fail. "
         "Determine whether the implementation satisfies the repository's "

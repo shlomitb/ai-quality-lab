@@ -18,6 +18,8 @@ from src.agent import execute_tool_call
 from src.skills import get_selected_skill, request_tool_access
 from src.providers.response import ToolCall
 
+
+
 def test_requestable_tool_is_blocked_without_authorization():
     """
     A requestable tool must not execute unless access was explicitly
@@ -80,12 +82,6 @@ def test_denied_tool_request_does_not_grant_access():
     denied request → does not grant access
     If the agent is denied permission, can it somehow continue and use that capability anyway?
     """
-    from unittest.mock import Mock
-
-    from src.agent import execute_tool_call
-    from src.providers.response import ToolCall
-    from src.skills import get_selected_skill
-
     skill = get_selected_skill(
         "Please review this code."
     )
@@ -138,10 +134,6 @@ def test_authorizing_one_requestable_tool_does_not_grant_other_tools():
     """
     Authorizing X → does not grant Y
     """
-    from src.agent import execute_tool_call
-    from src.providers.response import ToolCall
-    from src.skills import get_selected_skill
-
     skill = get_selected_skill(
         "Please review this code."
     )
@@ -170,10 +162,6 @@ def test_authorizing_one_requestable_tool_does_not_grant_other_tools():
 
 
 def test_unlisted_tool_cannot_be_authorized():
-    from src.agent import execute_tool_call
-    from src.providers.response import ToolCall
-    from src.skills import get_selected_skill
-
     skill = get_selected_skill(
         "Please review this code."
     )
@@ -205,7 +193,6 @@ def test_requestable_tool_authorization_does_not_leak_between_skill_instances():
     Authorization granted during one skill instance must not carry over
     to a separate skill instance.
     """
-
     first_skill = get_selected_skill(
         "Review the code and run tests if necessary."
     )
@@ -228,13 +215,12 @@ def test_requestable_tool_authorization_does_not_leak_between_skill_instances():
     assert "run_tests" not in second_skill.tools
 
 
-def test_new_skill_instance_gets_only_initial_tools():
+def test_requestable_tool_is_not_initially_authorized():
     """
     A new skill instance starts with exactly its configured initial tools.
-    Requestable tools must not be automatically authorized.
+    Requestable tools (here run_tests) must not be automatically authorized, would need tobe requested.
+    So run_tools should not be in the skill.tools available
     """
-    from src.skills import get_selected_skill
-
     skill = get_selected_skill(
         "Review the code and run tests if necessary."
     )
@@ -245,13 +231,4 @@ def test_new_skill_instance_gets_only_initial_tools():
         "search_files",
         "read_file",
     ]
-
-
-
-def test_requestable_tool_is_not_initially_authorized():
-    skill = get_selected_skill(
-        "Review the code and run tests if necessary."
-    )
-
-    assert skill is not None
-    assert "run_tests" not in skill.tools
+    # assert "run_tests" not in skill.tools

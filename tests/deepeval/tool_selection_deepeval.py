@@ -1,13 +1,12 @@
 """
 DeepEval tool-selection tests.
 
-These tests evaluate whether the agent selects the appropriate tool
-when multiple tools are available.
+Given a user request and a set of available tools, did the agent choose the appropriate tools?
 
-They specifically test tool selection, not tool arguments,
-task completion, or step efficiency.
+These tests evaluate whether the agent selects the appropriate tool when multiple tools are available.
+
+They specifically test tool selection, not tool arguments, task completion, or step efficiency.
 Those dimensions are evaluated separately.
-
 
 Run with (ex):
 deepeval test run tests\deepeval\tool_selection_deepeval.py -k test_code_review_selects_search_files_when_file_is_unknown -v -s
@@ -37,10 +36,18 @@ def run_tool_selection_test(
 ):
     """
     Run one tool-selection evaluation.
+    Did the agent select the right tools
 
-    The agent generates the actual tool calls. DeepEval then uses
-    ToolCorrectnessMetric to evaluate whether the selected tools
-    were appropriate given the available tools.
+    The agent generates the actual tool calls.
+    DeepEval then uses ToolCorrectnessMetric to evaluate whether the selected tools were appropriate given the available tools.
+
+    The expected trajectory is:
+        search_files
+             ↓
+        read_file
+
+    And by using: should_consider_ordering=True
+        Checking that the tools are used in this correct order.
     """
     client = create_client()
 
@@ -112,7 +119,34 @@ def test_code_review_selects_read_file_when_file_is_known():
     When the repository and file path are already known,
     the review-code skill should use read_file rather than search_files.
 
-    Since the question explicitly passes the file path, there is not reason for the llm to call search_files first
+    Since the question explicitly provides the file path, there is no reason for the LLM to call search_files first.
+
+    Important: This test fails - chatGPT said for now o leave the test failing. Do not change the test.
+
+    The test is doing its job. It says:
+        Given that the user explicitly provides src/login.py, the agent should select only read_file.
+        But the actual agent selected read_file plus unnecessary tools.
+    The failure is therefore telling us about a real behavior problem in the agent.
+    Expected:
+        read_file
+
+    Actual:
+        read_file
+        search_files
+        search_files
+        read_file
+        request_tool_access
+        run_tests
+
+    DeepEval scored it only 0.25, because although read_file was correct, the additional tool choices were inappropriate.
+
+    Keep this test as-is.
+    Look at the agent's behavior/prompt to understand why it continues making unnecessary calls after successfully reading the known file.
+    Decide whether this is something we want to fix in the agent itself.
+    Re-run the test.
+    Ideally get it back to 1.0.
+
+    This is actually a useful discovery from our evaluation work.
     """
     question = (
         "Review the code in the demo-app repository at src/login.py "

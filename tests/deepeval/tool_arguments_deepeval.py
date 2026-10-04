@@ -1,15 +1,3 @@
-
-from dotenv import load_dotenv
-from deepeval import assert_test
-from deepeval.metrics import ArgumentCorrectnessMetric
-from deepeval.test_case import LLMTestCase, ToolCall
-
-from src.agent import answer_customer_with_trace, get_tool_call_details
-from src.llm_client import create_client
-from tests.deepeval.helpers import create_gemini_model
-
-
-
 """
 DeepEval Tool Argument Correctness tests.
 
@@ -27,6 +15,20 @@ This is different from tool selection:
 The agent itself makes the first LLM call. DeepEval then uses an LLM
 judge to evaluate whether the observed tool arguments were correct.
 """
+
+
+from dotenv import load_dotenv
+from deepeval import assert_test
+from deepeval.metrics import ArgumentCorrectnessMetric
+from deepeval.test_case import LLMTestCase, ToolCall
+
+from src.agent import answer_customer_with_trace, get_tool_call_details
+from src.llm_client import create_client
+from tests.deepeval.helpers import create_gemini_model
+
+
+
+
 
 load_dotenv()
 

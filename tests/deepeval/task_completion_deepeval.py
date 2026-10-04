@@ -111,8 +111,6 @@ def test_bug_fix_agent_task_completion(restore_login_file):
     )
 
 
-
-
 def test_return_eligibility_task_completion():
     task = "Can I return order 54321?"
     golden = Golden(input=task)

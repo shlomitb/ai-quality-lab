@@ -67,28 +67,29 @@ def test_handle_tool_access_request_authorizes_requestable_tool():
 
     assert "run_tests" in selected_skill.tools
 
-    def test_sanitize_tool_result_removes_sensitive_ticket_fields():
-        response = {
-            "result": {
-                "ticket_id": "BUG-SECRET",
-                "title": "Login issue",
-                "internal_notes": "INTERNAL-ONLY-12345",
-            }
+
+def test_sanitize_tool_result_removes_sensitive_ticket_fields():
+    response = {
+        "result": {
+            "ticket_id": "BUG-SECRET",
+            "title": "Login issue",
+            "internal_notes": "INTERNAL-ONLY-12345",
         }
+    }
 
-        result = _sanitize_tool_result(
-            "get_ticket",
-            response,
-        )
+    result = _sanitize_tool_result(
+        "get_ticket",
+        response,
+    )
 
-        assert result == {
-            "result": {
-                "ticket_id": "BUG-SECRET",
-                "title": "Login issue",
-            }
+    assert result == {
+        "result": {
+            "ticket_id": "BUG-SECRET",
+            "title": "Login issue",
         }
+    }
 
-        assert "INTERNAL-ONLY-12345" not in str(result)
+    assert "INTERNAL-ONLY-12345" not in str(result)
 
 def test_get_tool_calls():
     """
@@ -766,8 +767,6 @@ def test_agent_does_not_report_success_when_tests_fail():
         "The tests failed, so I cannot report the "
         "verification as successful."
     )
-
-
 
 
 def test_enforce_tool_result_consistency_rejects_success_after_failed_tests():
