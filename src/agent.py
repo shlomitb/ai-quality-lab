@@ -130,6 +130,7 @@ def get_authorized_tools(selected_skill):
 
     return tools
 
+
 def enforce_tool_result_consistency(response):
     """
     Prevent the agent from reporting successful test verification

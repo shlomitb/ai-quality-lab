@@ -152,6 +152,7 @@ def get_selected_skill(question: str) -> SelectedSkill | None:
         tools=tools,
     )
 
+
 def get_skill_info(question: str) -> tuple[str, int]:
     skill = get_selected_skill(question)
 

@@ -76,11 +76,25 @@ class GeminiProvider(LLMProvider):
 
         self.conversation.append(function_response_content)
 
+        print("\n--- GEMINI TOOL RESULT TURN ---")
+        print("Tool results sent:")
+        for tool_result in tool_results:
+            print(f"  {tool_result.name}: {tool_result.response}")
+
+        print(f"Conversation messages sent: {len(self.conversation)}")
+
         response = self.client.models.generate_content(
             model=self.model,
             contents=list(self.conversation),
             config=config,
         )
+
+        print("Gemini requested tool calls:")
+        for function_call in response.function_calls or []:
+            print(f"  {function_call.name}: {dict(function_call.args or {})}")
+
+        print(f"Gemini final text: {response.text!r}")
+        print("--- END GEMINI TOOL RESULT TURN ---\n")
 
         tool_calls = []
 
