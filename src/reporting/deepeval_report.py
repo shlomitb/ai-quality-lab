@@ -34,10 +34,11 @@ def load_deepeval_results(
         metrics = []
 
         for metric in test_case.get("metricsData", []):
+            score = metric.get("score")
             metrics.append(
                 DeepEvalMetricResult(
                     name=metric["name"],
-                    score=float(metric["score"]),
+                    score=float(score) if score is not None else None,
                     threshold=float(metric["threshold"]),
                     success=bool(metric["success"]),
                     reason=metric.get("reason", ""),
@@ -47,6 +48,8 @@ def load_deepeval_results(
                     output_tokens=metric.get("outputTokenCount"),
                 )
             )
+            print("\nDEEPEVAL METRIC:")
+            print(metric)
 
         trajectory = []
 
@@ -54,22 +57,25 @@ def load_deepeval_results(
         agent_spans = trace.get("agentSpans", [])
 
         if agent_spans:
-            agent_output = agent_spans[0].get("output", {})
-            tool_calls = agent_output.get("tool_calls", [])
+            tools_called = agent_spans[0].get("toolsCalled", [])
 
-            for tool_call in tool_calls:
-                name = tool_call.get("name")
+            for tool_call in tools_called:
+                output = tool_call.get("output", {})
+                name = output.get("name")
 
                 if name == "request_tool_access":
                     tool_name = (
-                        tool_call.get("args", {})
+                        tool_call
+                        .get("inputParameters", {})
+                        .get("tool_call", {})
+                        .get("args", {})
                         .get("tool_name")
                     )
 
                     trajectory.append(
                         f"request_tool_access({tool_name})"
                     )
-                else:
+                elif name:
                     trajectory.append(name)
 
         results.append(

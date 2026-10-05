@@ -14,7 +14,7 @@ class PytestSummary:
 @dataclass
 class DeepEvalMetricResult:
     name: str
-    score: float
+    score: float | None
     threshold: float
     success: bool
     reason: str
@@ -36,8 +36,10 @@ class DeepEvalTestResult:
 
 
 @dataclass
+@dataclass
 class MetricChange:
-    name: str
+    test_name: str
+    metric_name: str
     previous: float
     current: float
     change: float

@@ -79,9 +79,15 @@ def _render_deepeval(report: QualityReport) -> list[str]:
                 "PASS" if metric.success else "FAIL"
             )
 
+            score = (
+                f"{metric.score:.2f}"
+                if metric.score is not None
+                else "N/A"
+            )
+
             lines.append(
                 f"| {metric.name} "
-                f"| {metric.score:.2f} "
+                f"| {score} "
                 f"| {metric.threshold:.2f} "
                 f"| {metric_status} |"
             )
@@ -232,7 +238,7 @@ def _render_comparison(report: QualityReport) -> list[str]:
 
         for metric in comparison.deepeval_metrics:
             lines.append(
-                f"| {metric.name} | "
+                f"| {metric.test_name} — {metric.metric_name} | "
                 f"{metric.previous:.2f} | "
                 f"{metric.current:.2f} | "
                 f"{metric.change:+.2f} |"

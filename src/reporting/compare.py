@@ -37,20 +37,29 @@ def compare_quality_reports(
             if key in previous_metrics:
                 previous_score = previous_metrics[key]
                 current_score = metric.score
+
+                if previous_score is None or current_score is None:
+                    continue
+
                 change = current_score - previous_score
 
                 comparison.deepeval_metrics.append(
                     MetricChange(
-                        name=metric.name,
+                        test_name=test_result.name,
+                        metric_name=metric.name,
                         previous=previous_score,
                         current=current_score,
                         change=change,
                     )
                 )
 
+                metric_label = (
+                    f"{test_result.name} — {metric.name}"
+                )
+
                 if change < 0:
-                    comparison.regressions.append(metric.name)
+                    comparison.regressions.append(metric_label)
                 elif change > 0:
-                    comparison.improvements.append(metric.name)
+                    comparison.improvements.append(metric_label)
 
     return comparison
