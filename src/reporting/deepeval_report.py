@@ -35,6 +35,7 @@ def load_deepeval_results(
 
         for metric in test_case.get("metricsData", []):
             score = metric.get("score")
+
             metrics.append(
                 DeepEvalMetricResult(
                     name=metric["name"],
@@ -48,23 +49,25 @@ def load_deepeval_results(
                     output_tokens=metric.get("outputTokenCount"),
                 )
             )
-            print("\nDEEPEVAL METRIC:")
-            print(metric)
 
+        # Extract a concise agent trajectory from DeepEval's trace.
         trajectory = []
 
-        trace = test_case.get("trace", {})
-        agent_spans = trace.get("agentSpans", [])
+        trace = test_case.get("trace") or {}
 
-        if agent_spans:
-            tools_called = agent_spans[0].get("toolsCalled", [])
+        for agent_span in trace.get("agentSpans", []):
 
-            for tool_call in tools_called:
-                output = tool_call.get("output", {})
-                name = output.get("name")
+            # Current DeepEval format:
+            # agentSpan -> toolsCalled -> execute_tool_call -> output.name
+            for tool_call in agent_span.get("toolsCalled", []):
+                output = tool_call.get("output") or {}
+                tool_name = output.get("name")
 
-                if name == "request_tool_access":
-                    tool_name = (
+                if not tool_name:
+                    continue
+
+                if tool_name == "request_tool_access":
+                    requested_tool = (
                         tool_call
                         .get("inputParameters", {})
                         .get("tool_call", {})
@@ -72,11 +75,48 @@ def load_deepeval_results(
                         .get("tool_name")
                     )
 
-                    trajectory.append(
-                        f"request_tool_access({tool_name})"
-                    )
-                elif name:
-                    trajectory.append(name)
+                    if requested_tool:
+                        trajectory.append(
+                            f"request_tool_access({requested_tool})"
+                        )
+                    else:
+                        trajectory.append(tool_name)
+
+                else:
+                    trajectory.append(tool_name)
+
+            # Fixture / simplified format:
+            # agentSpan -> output -> tool_calls -> name
+            if not agent_span.get("toolsCalled"):
+                output = agent_span.get("output") or {}
+
+                for tool_call in output.get("tool_calls", []):
+                    tool_name = tool_call.get("name")
+
+                    if not tool_name:
+                        continue
+
+                    if tool_name == "request_tool_access":
+                        requested_tool = (
+                            tool_call
+                            .get("args", {})
+                            .get("tool_name")
+                        )
+
+                        if requested_tool:
+                            trajectory.append(
+                                f"request_tool_access({requested_tool})"
+                            )
+                        else:
+                            trajectory.append(tool_name)
+
+                    else:
+                        trajectory.append(tool_name)
+
+        # Older/simplified DeepEval fixtures may store the trajectory
+        # directly in the trace.
+        if not trajectory:
+            trajectory = trace.get("trajectory", [])
 
         results.append(
             DeepEvalTestResult(

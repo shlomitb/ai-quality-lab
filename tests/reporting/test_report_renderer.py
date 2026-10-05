@@ -136,13 +136,15 @@ def test_render_markdown_includes_comparison():
         },
         deepeval_metrics=[
             MetricChange(
-                name="Task Completion",
+                test_name="test-run-001",
+                metric_name="Task Completion",
                 previous=1.0,
                 current=0.9,
                 change=-0.1,
             ),
             MetricChange(
-                name="Step Efficiency",
+                test_name="test-run-001",
+                metric_name="Step Efficiency",
                 previous=0.8,
                 current=0.9,
                 change=0.1,

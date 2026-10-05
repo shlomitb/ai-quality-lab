@@ -76,7 +76,8 @@ def test_save_and_load_quality_report(tmp_path):
             },
             deepeval_metrics=[
                 MetricChange(
-                    name="Task Completion",
+                    test_name="test_agent",
+                    metric_name="Task Completion",
                     previous=0.8,
                     current=0.9,
                     change=0.1,

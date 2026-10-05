@@ -36,7 +36,6 @@ class DeepEvalTestResult:
 
 
 @dataclass
-@dataclass
 class MetricChange:
     test_name: str
     metric_name: str

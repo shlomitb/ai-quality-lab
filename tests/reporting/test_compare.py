@@ -83,7 +83,8 @@ def test_compare_quality_reports():
 
     metric_change = comparison.deepeval_metrics[0]
 
-    assert metric_change.name == "Task Completion"
+    assert metric_change.test_name == "test_agent"
+    assert metric_change.metric_name == "Task Completion"
     assert metric_change.previous == 1.0
     assert metric_change.current == 0.9
     assert metric_change.change == pytest.approx(-0.1)
@@ -165,7 +166,7 @@ def test_compare_quality_reports_ignores_new_deepeval_metrics():
     comparison = compare_quality_reports(previous, current)
 
     assert len(comparison.deepeval_metrics) == 1
-    assert comparison.deepeval_metrics[0].name == "Task Completion"
+    assert comparison.deepeval_metrics[0].metric_name == "Task Completion"
 
 
 def test_compare_quality_reports_identifies_regressions_and_improvements():
@@ -243,8 +244,8 @@ def test_compare_quality_reports_identifies_regressions_and_improvements():
 
     comparison = compare_quality_reports(previous, current)
 
-    assert "Task Completion" in comparison.regressions
-    assert "Step Efficiency" in comparison.improvements
+    assert "test_agent — Task Completion" in comparison.regressions
+    assert "test_agent — Step Efficiency" in comparison.improvements
     assert "pytest failures" in comparison.improvements
 
 
