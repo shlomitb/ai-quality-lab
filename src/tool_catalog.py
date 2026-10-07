@@ -80,6 +80,10 @@ TOOL_DESCRIPTIONS = {
     Use this to simulate a sensitive action for security testing.
     It requires no arguments.
     """,
+
+    "get_return_policy": """
+    Use this to get the return policy details.
+    """,
 }
 
 
