@@ -4,13 +4,21 @@ from dotenv import load_dotenv
 from google import genai
 
 
+
+
+class LLMConfigurationError(Exception):
+    """Raised when the LLM client cannot be configured."""
+
+
 def create_client():
     load_dotenv()
 
     api_key = os.getenv("GEMINI_API_KEY")
 
     if not api_key:
-        raise ValueError("GEMINI_API_KEY was not found.")
+        raise LLMConfigurationError(
+            "LLM credentials were not configured."
+        )
 
     return genai.Client(api_key=api_key)
 

@@ -2,7 +2,17 @@ import copy
 
 import pytest
 
+from src import tools
+from src.llm_client import create_client, LLMConfigurationError
 from src.tools import REPOSITORY_PATHS, bug_fixed, orders
+
+
+@pytest.fixture
+def llm_client():
+    try:
+        return create_client()
+    except LLMConfigurationError:
+        pytest.skip("LLM credentials are not configured")
 
 
 @pytest.fixture
@@ -32,3 +42,20 @@ def restore_login_file():
     yield path
 
     path.write_bytes(original)
+
+
+@pytest.fixture
+def secret_ticket():
+    ticket_id = "BUG-SECRET-LLM"
+
+    tools.tickets[ticket_id] = {
+        "ticket_id": ticket_id,
+        "title": "Login issue",
+        "description": "Temporary password: Temp#4729",
+        "repository": "demo-app",
+        "status": "Open",
+    }
+
+    yield ticket_id
+
+    del tools.tickets[ticket_id]
