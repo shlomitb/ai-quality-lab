@@ -38,6 +38,12 @@ TOOL_ACCESS_POLICY = {
             "run_tests",
         ],
     },
+    "customer-support": {
+        "initial_tools": [
+            "get_return_policy",
+        ],
+        "requestable_tools": [],
+    },
 }
 
 

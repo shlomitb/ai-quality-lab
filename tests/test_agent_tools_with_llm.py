@@ -2,6 +2,8 @@
 Real LLM integration behavior
 run with  --run-llm  at the end:
 pytest -v tests/test_agent_tools_with_llm.py -k test_agent_fixes_failed_test_and_verifies --run-llm
+addthe -s to show print outcomes in the consold:
+pytest -v tests/test_agent_tools_with_llm.py -k test_agent_fixes_failed_test_and_verifies -s --run-llm
 """
 
 
@@ -16,20 +18,33 @@ from src.llm_client import create_client
 
 
 @pytest.mark.llm
-def test_agent_calls_return_policy_tool():
-    """Verify that the agent selects the return-policy tool."""
-    client = create_client()
-
+def test_agent_calls_return_policy_tool(llm_client):
     response = answer_customer_with_trace(
-        client=client,
-        question="Can I return an opened product after 20 days if defective?"
+        client=llm_client,
+        question="Can I return an opened product after 20 days if defective?",
     )
 
-    tool_calls = get_tool_calls(response)
+    # print("FINAL RESPONSE:", response.final_text)
+    # print("TOOL CALLS:", get_tool_calls(response))
 
-    print(tool_calls)
+    assert get_tool_calls(response) == ["get_return_policy"]
 
-    assert tool_calls == ["get_return_policy"]
+
+@pytest.mark.llm
+def test_agent_correctly_interprets_return_policy(llm_client):
+    response = answer_customer_with_trace(
+        client=llm_client,
+        question="Can I return an opened product after 20 days if defective?",
+    )
+
+    print("FINAL RESPONSE:", response.final_text)
+    print("TOOL CALLS:", get_tool_calls(response))
+
+    final_text = response.final_text.lower()
+
+    assert "not eligible" in final_text or "not be eligible" in final_text
+    assert "14 days" in final_text
+
 
 
 @pytest.mark.llm

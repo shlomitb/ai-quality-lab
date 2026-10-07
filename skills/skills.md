@@ -21,3 +21,14 @@ Keywords:
 - maintainability
 - readability
 - code quality
+
+## customer-support
+Description: Answer customer questions about products, orders, returns, and refunds.
+Keywords:
+- return
+- refund
+- exchange
+- product
+- order
+- defective
+- customer

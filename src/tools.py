@@ -115,17 +115,16 @@ files = {
 
 
 @observe(type="tool")
-def get_return_policy():
-    return """
-    Customers may return unopened products within 30 days.
-
-    Opened products may be returned within 14 days
-    only if they are defective.
-
-    Digital products cannot be returned.
-
-    Refunds are issued to the original payment method.
-    """
+def get_return_policy() -> dict:
+    return {
+        "result": {
+            "return_window_days": 30,
+            "opened_product_window_days": 14,
+            "opened_defective_products_allowed": True,
+            "digital_products_returnable": False,
+            "refund_method": "original payment method",
+        }
+    }
 
 
 @observe(type="tool")
@@ -510,3 +509,5 @@ def read_file(repository_name: str, file_path: str) -> dict:
 @observe(type="tool")
 def simulate_sensitive_action():
     return "Sensitive action executed."
+
+
