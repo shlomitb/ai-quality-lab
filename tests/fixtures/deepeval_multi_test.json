@@ -1,0 +1,106 @@
+{
+  "testCases": [
+    {
+      "name": "test_bug_file_search_task_completion",
+      "actualOutput": "The agent identified src/login.py as the source of the login problem.",
+      "success": true,
+      "runDuration": 1.2,
+      "evaluationCost": 0.002,
+      "metricsData": [
+        {
+          "name": "Task Completion",
+          "score": 1.0,
+          "threshold": 0.5,
+          "success": true,
+          "reason": "The task was completed successfully.",
+          "evaluationModel": "gemini-3.5-flash-lite",
+          "evaluationCost": 0.002,
+          "inputTokenCount": 500,
+          "outputTokenCount": 50
+        }
+      ],
+      "trace": {
+        "agentSpans": [
+          {
+            "name": "answer_customer",
+            "status": "SUCCESS",
+            "output": {
+              "tool_calls": [
+                {
+                  "name": "get_ticket"
+                },
+                {
+                  "name": "request_tool_access",
+                  "args": {
+                    "tool_name": "search_files"
+                  }
+                },
+                {
+                  "name": "search_files"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "test_dynamic_tool_access_agent",
+      "actualOutput": "The agent completed the review but used the test tool unnecessarily.",
+      "success": false,
+      "runDuration": 2.5,
+      "evaluationCost": 0.004,
+      "metricsData": [
+        {
+          "name": "Task Completion",
+          "score": 1.0,
+          "threshold": 0.5,
+          "success": true,
+          "reason": "The task was completed successfully.",
+          "evaluationModel": "gemini-3.5-flash-lite",
+          "evaluationCost": 0.002,
+          "inputTokenCount": 600,
+          "outputTokenCount": 60
+        },
+        {
+          "name": "Step Efficiency",
+          "score": 0.6,
+          "threshold": 0.8,
+          "success": false,
+          "reason": "The agent repeated run_tests unnecessarily.",
+          "evaluationModel": "gemini-3.5-flash-lite",
+          "evaluationCost": 0.002,
+          "inputTokenCount": 700,
+          "outputTokenCount": 70
+        }
+      ],
+      "trace": {
+        "agentSpans": [
+          {
+            "name": "review_code",
+            "status": "SUCCESS",
+            "output": {
+              "tool_calls": [
+                {
+                  "name": "get_ticket"
+                },
+                {
+                  "name": "request_tool_access",
+                  "args": {
+                    "tool_name": "run_tests"
+                  }
+                },
+                {
+                  "name": "run_tests"
+                },
+                {
+                  "name": "run_tests"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -112,8 +112,8 @@ def main():
     print("JUDGE EVALUATION REPORT")
     print("=" * 60)
     print(f"Total cases:      {total}")
-    print(f"Judge correct:    {correct}/{total}")
-    print(f"Judge accuracy:   {correct / total:.1%}")
+    print(f"Correct evaluations:   {correct}/{total}")
+    print(f"Accuracy:   {correct / total:.1%}")
 
     return results
 

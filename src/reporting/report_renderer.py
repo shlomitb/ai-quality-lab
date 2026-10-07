@@ -17,6 +17,360 @@ def _render_run_information(report: QualityReport) -> list[str]:
     ]
 
 
+def _build_deepeval_findings(
+    report: QualityReport,
+) -> list[str]:
+    """Build concise findings from DeepEval results."""
+
+    findings = []
+
+    if not report.deepeval:
+        return findings
+
+    total_tests = len(report.deepeval)
+    passed_tests = sum(
+        1
+        for test in report.deepeval
+        if test.success
+    )
+
+    findings.append(
+        f"DeepEval: {passed_tests} of "
+        f"{total_tests} agent tests passed."
+    )
+
+    for test in report.deepeval:
+        for metric in test.metrics:
+            score = (
+                f"{metric.score:.2f}"
+                if metric.score is not None
+                else "N/A"
+            )
+
+            status = (
+                "passed"
+                if metric.success
+                else "failed"
+            )
+
+            findings.append(
+                f"{metric.name} {status} for "
+                f"`{test.name}` "
+                f"(score {score}, "
+                f"threshold {metric.threshold:.2f})."
+            )
+
+    return findings
+
+
+def _build_agent_behavior_findings(
+    report: QualityReport,
+) -> list[str]:
+    """Build findings from agent tool trajectories."""
+
+    findings = []
+
+    for test in report.deepeval:
+        trajectory = test.trajectory
+
+        for index, step in enumerate(trajectory):
+            if not step.startswith("request_tool_access("):
+                continue
+
+            requested_tool = step[
+                len("request_tool_access("):-1
+            ]
+
+            later_steps = trajectory[index + 1:]
+
+            if requested_tool in later_steps:
+                findings.append(
+                    f"Agent behavior in `{test.name}`: "
+                    f"requested access to `{requested_tool}` "
+                    f"before using it."
+                )
+
+    return findings
+
+
+def _format_count(
+    count: int,
+    singular: str,
+    plural: str | None = None,
+) -> str:
+    if plural is None:
+        plural = singular + "s"
+
+    return f"{count} {singular if count == 1 else plural}"
+
+def _build_tool_efficiency_findings(
+    report: QualityReport,
+) -> list[str]:
+    """Identify repeated tool calls when Step Efficiency fails."""
+
+    findings = []
+
+    for test in report.deepeval:
+        step_efficiency_failed = any(
+            metric.name == "Step Efficiency"
+            and not metric.success
+            for metric in test.metrics
+        )
+
+        if not step_efficiency_failed:
+            continue
+
+        tool_counts = {}
+
+        for step in test.trajectory:
+            if step.startswith("request_tool_access("):
+                continue
+
+            tool_counts[step] = tool_counts.get(step, 0) + 1
+
+        repeated_tools = [
+            (tool_name, count)
+            for tool_name, count in tool_counts.items()
+            if count > 1
+        ]
+
+        for tool_name, count in repeated_tools:
+            findings.append(
+                f"Efficiency concern in `{test.name}`: "
+                f"`{tool_name}` was called {count} times "
+                f"and Step Efficiency failed."
+            )
+
+    return findings
+
+
+
+def _render_executive_summary(
+    report: QualityReport,
+) -> list[str]:
+    """Render a high-level summary of the quality results."""
+
+    # Pytest summary
+    pytest_summary = "N/A"
+
+    if report.pytest is not None:
+        pytest = report.pytest
+
+        if pytest.total:
+            pytest_summary = (
+                f"{pytest.passed}/{pytest.total} passed"
+            )
+
+    # DeepEval test summary
+    deepeval_tests = len(report.deepeval)
+    deepeval_tests_passed = sum(
+        1
+        for test in report.deepeval
+        if test.success
+    )
+
+    deepeval_summary = (
+        f"{deepeval_tests_passed}/{deepeval_tests} passed"
+        if deepeval_tests
+        else "N/A"
+    )
+
+    # DeepEval metric summary
+    all_metrics = [
+        metric
+        for test in report.deepeval
+        for metric in test.metrics
+    ]
+
+    metrics_passed = sum(
+        1
+        for metric in all_metrics
+        if metric.success
+    )
+
+    metrics_summary = (
+        f"{metrics_passed}/{len(all_metrics)} passed"
+        if all_metrics
+        else "N/A"
+    )
+
+    # Judge summary
+    judge_summary = "N/A"
+
+    if report.judge:
+        judge_passed = sum(
+            1
+            for result in report.judge
+            if result.success
+        )
+
+        judge_summary = (
+            f"{judge_passed}/{len(report.judge)} correct"
+        )
+
+    # Comparison summary
+    regression_count = 0
+    improvement_count = 0
+
+    if report.comparison is not None:
+        regression_count = len(
+            report.comparison.regressions
+        )
+        improvement_count = len(
+            report.comparison.improvements
+        )
+
+    # Determine overall assessment
+    has_pytest_failures = (
+        report.pytest is not None
+        and (
+            report.pytest.failed > 0
+            or report.pytest.errors > 0
+        )
+    )
+
+    has_deepeval_failures = any(
+        not test.success
+        for test in report.deepeval
+    )
+
+    has_metric_failures = any(
+        not metric.success
+        for metric in all_metrics
+    )
+
+    if has_deepeval_failures or has_metric_failures:
+        assessment = (
+            "🔴 FAIL — AI quality evaluation failed"
+        )
+
+    elif has_pytest_failures:
+        assessment = (
+            "⚠️ NEEDS ATTENTION — automated test failures detected; "
+            "AI quality evaluation passed"
+        )
+
+    elif regression_count > 0:
+        assessment = (
+            "⚠️ NEEDS ATTENTION — regressions detected"
+        )
+
+    else:
+        assessment = (
+            "🟢 PASS — no significant quality issues detected"
+        )
+
+    lines = [
+        "## Executive Summary",
+        "",
+        f"### Overall Assessment",
+        "",
+        f"**{assessment}**",
+        "",
+        "### Quality Snapshot",
+        "",
+        "| Area | Result |",
+        "|---|---|",
+        f"| Pytest | {pytest_summary} |",
+        f"| DeepEval Tests | {deepeval_summary} |",
+        f"| DeepEval Metrics | {metrics_summary} |",
+        f"| Security Judge | {judge_summary} |",
+        f"| Regressions | {regression_count} |",
+        f"| Improvements | {improvement_count} |",
+        "",
+    ]
+
+    # Key findings
+    findings = []
+
+    if has_pytest_failures:
+        failed = _format_count(
+            report.pytest.failed,
+            "failed test",
+        )
+
+        errors = report.pytest.errors
+
+        if errors:
+            findings.append(
+                f"Pytest has {failed} and "
+                f"{_format_count(errors, 'error')}."
+            )
+        else:
+            findings.append(
+                f"Pytest has {failed} and no errors."
+            )
+
+    findings.extend(
+        _build_deepeval_findings(report)
+    )
+
+    findings.extend(
+        _build_agent_behavior_findings(report)
+    )
+
+    findings.extend(
+        _build_tool_efficiency_findings(report)
+    )
+
+    if has_deepeval_failures:
+        failed_tests = [
+            test.name
+            for test in report.deepeval
+            if not test.success
+        ]
+
+        findings.append(
+            "DeepEval failures: "
+            + ", ".join(failed_tests)
+            + "."
+        )
+
+    failed_metrics = [
+        f"{test.name} — {metric.name}"
+        for test in report.deepeval
+        for metric in test.metrics
+        if not metric.success
+    ]
+
+    if failed_metrics:
+        findings.append(
+            "Failed quality metrics: "
+            + ", ".join(failed_metrics)
+            + "."
+        )
+
+    if regression_count:
+        findings.append(
+            f"{regression_count} regression(s) detected "
+            "compared with the previous run."
+        )
+
+    if improvement_count:
+        findings.append(
+            f"{improvement_count} improvement(s) detected "
+            "compared with the previous run."
+        )
+
+    if not findings:
+        findings.append(
+            "No significant quality issues were detected."
+        )
+
+    lines.extend(
+        [
+            "### Key Findings",
+            "",
+        ]
+    )
+
+    for finding in findings:
+        lines.append(f"- {finding}")
+
+    lines.append("")
+
+    return lines
+
 def _render_pytest(report: QualityReport) -> list[str]:
     if report.pytest is None:
         return []
@@ -285,6 +639,7 @@ def render_markdown(report: QualityReport) -> str:
     """
 
     lines = _render_run_information(report)
+    lines.extend(_render_executive_summary(report))
     lines.extend(_render_pytest(report))
     lines.extend(_render_deepeval(report))
     lines.extend(_render_judge(report))

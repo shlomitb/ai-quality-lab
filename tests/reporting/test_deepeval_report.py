@@ -70,3 +70,58 @@ def test_load_deepeval_results_missing_test_cases(tmp_path):
     results = load_deepeval_results(report_file)
 
     assert results == []
+
+
+def test_load_deepeval_results_with_multiple_tests():
+    fixture_path = (
+        Path(__file__).resolve().parents[2]
+        / "tests"
+        / "fixtures"
+        / "deepeval_multi_test.json"
+    )
+
+    results = load_deepeval_results(fixture_path)
+
+    assert len(results) == 2
+
+    first_test = results[0]
+
+    assert first_test.name == (
+        "test_bug_file_search_task_completion"
+    )
+    assert first_test.success is True
+    assert first_test.trajectory == [
+        "get_ticket",
+        "request_tool_access(search_files)",
+        "search_files",
+    ]
+
+    assert len(first_test.metrics) == 1
+    assert first_test.metrics[0].name == "Task Completion"
+    assert first_test.metrics[0].score == 1.0
+    assert first_test.metrics[0].success is True
+
+    second_test = results[1]
+
+    assert second_test.name == (
+        "test_dynamic_tool_access_agent"
+    )
+    assert second_test.success is False
+    assert second_test.trajectory == [
+        "get_ticket",
+        "request_tool_access(run_tests)",
+        "run_tests",
+        "run_tests",
+    ]
+
+    assert len(second_test.metrics) == 2
+
+    assert second_test.metrics[0].name == "Task Completion"
+    assert second_test.metrics[0].success is True
+
+    assert second_test.metrics[1].name == "Step Efficiency"
+    assert second_test.metrics[1].score == 0.6
+    assert second_test.metrics[1].threshold == 0.8
+    assert second_test.metrics[1].success is False
+
+
