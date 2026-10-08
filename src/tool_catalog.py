@@ -86,6 +86,10 @@ TOOL_DESCRIPTIONS = {
     "get_return_policy": """
     Use this to get the return policy details.
     """,
+
+    "get_product_information": """
+    Use this to get the info about the product, such as name and price.
+    """,
 }
 
 
