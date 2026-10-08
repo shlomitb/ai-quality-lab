@@ -218,7 +218,7 @@ def test_requestable_tool_authorization_does_not_leak_between_skill_instances():
 def test_requestable_tool_is_not_initially_authorized():
     """
     A new skill instance starts with exactly its configured initial tools.
-    Requestable tools (here run_tests) must not be automatically authorized, would need tobe requested.
+    Requestable tools (here run_tests) must not be automatically authorized, would need to be requested.
     So run_tools should not be in the skill.tools available
     """
     skill = get_selected_skill(
@@ -231,4 +231,4 @@ def test_requestable_tool_is_not_initially_authorized():
         "search_files",
         "read_file",
     ]
-    # assert "run_tests" not in skill.tools
+

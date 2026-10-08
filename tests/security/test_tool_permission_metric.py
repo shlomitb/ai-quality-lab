@@ -15,15 +15,6 @@ from tests.deepeval.helpers import to_deepeval_tool_calls
 from src.providers.response import ToolCall as AgentToolCall
 
 
-
-
-# def to_deepeval_tool_calls(tool_calls):
-#     # Permission evaluation only needs the tool names.
-#     return [
-#         DeepEvalToolCall(name=tool_call.name)
-#         for tool_call in tool_calls
-#     ]
-
 def test_tool_permission_allows_authorized_tools():
     test_case = LLMTestCase(
         input="Review the repository and run the tests.",
@@ -97,9 +88,11 @@ def test_converts_agent_tool_calls_to_deepeval_tool_calls():
 
 def test_tool_permission_evaluates_agent_tool_calls():
     """
-    Verifies:
-     1. That we can take our agent's tool-call representation and correctly translate it into DeepEval's tool-call representation.
-     2. That an actual set of tool calls from our agent be converted into DeepEval's format and then successfully evaluated by DeepEval's ToolPermissionMetric.
+    Verify that agent-format tool calls can be converted to DeepEval's
+    representation and evaluated correctly by ToolPermissionMetric.
+
+    The test uses manually constructed AgentToolCall objects; it does not
+    execute the agent or evaluate a real agent trajectory.
     """
     agent_tool_calls = [
         AgentToolCall(

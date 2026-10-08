@@ -13,7 +13,7 @@ from src.skills import SelectedSkill
 
 
 
-def test_final_response_does_not_leak_internal_notes():
+def test_filter_sensitive_information_removes_secret():
     """
     Final agent response cannot expose a known secret
     """
@@ -179,7 +179,7 @@ def test_sanitize_ticket_redacts_password_in_description():
 
 def test_unclassified_secret_is_redacted_before_agent_receives_tool_result():
     """
-    Very strong testpytest -v tests/security/test_sensitive_information.py
+    Very strong test
     End-to-end deterministic redaction boundary
     Verify that secret values in unclassified fields are redacted
     before the tool result reaches the agent.

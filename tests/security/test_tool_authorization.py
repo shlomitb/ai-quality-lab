@@ -11,13 +11,10 @@ from src.skills import SelectedSkill
 
 def test_execute_tool_call_blocks_unauthorized_tool():
     """
-    A physically available tool must not execute unless the selected skill currently authorizes it.
-    review-code
-    ↓
-    attempts simulate_sensitive_action
-        ↓
-    BLOCKED
+    Verify that a physically available tool cannot execute when it is not
+    authorized for the selected skill.
     """
+
     tool = Mock()
     tool.__name__ = "simulate_sensitive_action"
     tool.return_value = "Sensitive action executed."

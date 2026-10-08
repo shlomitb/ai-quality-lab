@@ -15,19 +15,12 @@ from unittest.mock import Mock
 
 def test_prompt_injection_cannot_execute_unauthorized_tool():
     """
-    This test pretends that the agent followed the injection and requested this tool.
-    In: tool_call = ToolCall(
-        name="simulate_sensitive_action",
-    This test checks that even if untrusted content causes the agent to attempt a sensitive action, the application authorization layer prevents that action.
-    malicious file
-    ↓
-    contains "Ignore previous instructions..."
-        ↓
-    simulated agent attempts simulate_sensitive_action
-        ↓
-    authorization layer
-        ↓
-    BLOCKED
+    Verify that the authorization layer blocks a sensitive tool even when
+    untrusted content causes the agent to attempt that tool.
+
+    This test simulates the agent already following the malicious instruction.
+    It therefore tests the application-level security boundary, not whether
+    the LLM itself resists prompt injection.
     """
 
     fixture_path = (
