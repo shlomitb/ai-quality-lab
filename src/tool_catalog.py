@@ -8,6 +8,7 @@ from src.tools import (
     read_file,
     simulate_sensitive_action,
     get_return_policy,
+    get_product_information,
 )
 
 
@@ -33,6 +34,7 @@ TOOLS = {
     "simulate_sensitive_action": simulate_sensitive_action,
     "request_tool_access": request_tool_access,
     "get_return_policy": get_return_policy,
+    "get_product_information": get_product_information,
 }
 
 

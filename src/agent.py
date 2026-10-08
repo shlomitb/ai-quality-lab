@@ -123,7 +123,11 @@ def get_authorized_tools(selected_skill):
     if selected_skill is None:
         return []
 
+    print("TOOLS REQUESTED:", selected_skill.tools)
+
     tools = get_tools(selected_skill.tools)
+
+    print("TOOLS FROM get_tools:", [tool.__name__ for tool in tools])
 
     if get_requestable_tools(selected_skill.name):
         tools.append(request_tool_access)
@@ -170,6 +174,9 @@ def answer_customer_with_trace(client, question):
     """Run the software-development agent and return the full response."""
     selected_skill = get_selected_skill(question)
 
+    print("SELECTED SKILL:", selected_skill.name if selected_skill else None)
+    print("SKILL TOOLS:", selected_skill.tools if selected_skill else None)
+
     prompt = build_prompt(
         question,
         selected_skill,
@@ -180,6 +187,8 @@ def answer_customer_with_trace(client, question):
     )
 
     tools = get_authorized_tools(selected_skill)
+
+    print("AUTHORIZED TOOLS:", [tool.__name__ for tool in tools])
 
     config = types.GenerateContentConfig(
         tools=tools,

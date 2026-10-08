@@ -41,6 +41,7 @@ TOOL_ACCESS_POLICY = {
     "customer-support": {
         "initial_tools": [
             "get_return_policy",
+            "get_product_information",
         ],
         "requestable_tools": [],
     },

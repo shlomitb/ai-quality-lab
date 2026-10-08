@@ -32,3 +32,5 @@ Keywords:
 - order
 - defective
 - customer
+- price
+- pricing

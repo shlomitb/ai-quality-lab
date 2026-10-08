@@ -48,16 +48,18 @@ def test_agent_correctly_interprets_return_policy(llm_client):
 
 
 @pytest.mark.llm
-def test_agent_selects_product_information_tool():
+def test_agent_selects_product_information_tool(llm_client):
     """Verify that the agent selects the product-information tool."""
-    client = create_client()
 
     response = answer_customer_with_trace(
-        client=client,
+        client=llm_client,
         question="What is the price of the Example Product?"
     )
 
     tool_calls = get_tool_calls(response)
+
+    print("FINAL RESPONSE:", response.final_text)
+    print("TOOL CALLS:", tool_calls)
 
     assert tool_calls == ["get_product_information"]
 
