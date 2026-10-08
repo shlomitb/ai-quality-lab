@@ -84,7 +84,7 @@ def test_evaluator_returns_fail():
     assert result.result == "FAIL"
 
 
-def test_evaluator_invokes_llm():
+def test_evaluator_calls_ask_llm():
     client = Mock()
 
     expected_result = EvaluationResult(

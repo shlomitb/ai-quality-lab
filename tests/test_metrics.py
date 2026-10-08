@@ -35,7 +35,7 @@ def test_calculate_accuracy_all_wrong():
     assert result == 0.0
 
 
-def test_calculate_accuracy_empty_list():
+def test_calculate_accuracy_empty_actual_list():
     expected = ["PASS", "FAIL", "PASS", "FAIL"]
     actual = []
 
