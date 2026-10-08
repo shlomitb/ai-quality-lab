@@ -14,10 +14,12 @@ The project focuses on several areas of AI quality:
 
 * **AI agent testing** — evaluating whether an agent follows the required procedure and completes a task correctly.
 * **LLM evaluation** — measuring whether an AI response satisfies expected behavior and criteria.
-* **Tool-use testing** — checking which tools an agent selects, how it uses them, and whether tool arguments are valid.
+* **Tool-use and trajectory testing** — checking which tools an agent selects,
+how it uses them, whether tool arguments are valid, and whether its sequence
+of actions is appropriate and efficient.
 * **Dynamic tool access** — testing whether an agent can request access to tools that are not initially available.
 * **Security testing** — testing protections against prompt injection, unauthorized tool access, path traversal, sensitive-information leakage, and resource exhaustion.
-* **Tracing and observability** — capturing information about agent execution and tool calls.
+* **Tracing and execution analysis** — capturing information about agent execution and tool-call trajectories for evaluation and debugging.
 * **Quality reporting** — combining test results and evaluation results into a structured quality report.
 
 ---
@@ -28,10 +30,14 @@ The project contains a tool-using AI agent with different skills, including:
 
 * `investigate-bug`
 * `review-code`
+* `customer-support`
 
 Each skill defines the procedure the agent should follow and the tools it is initially allowed to use.
 
-Some tools can be requested dynamically when they are needed. Tool access is controlled by an explicit policy rather than being left entirely to the model.
+Some tools can be requested dynamically when they are needed. Tool access is
+controlled by an explicit policy that distinguishes between tools available
+initially and tools that may be requested later. Additional access must be
+explicitly authorized rather than being left entirely to the model.
 
 The agent can work with tools such as:
 
@@ -64,9 +70,21 @@ Traditional Python tests verify deterministic application behavior, including:
 
 The majority of the test suite does not require an external LLM.
 
+### Real LLM integration tests
+
+A separate set of Pytest tests runs the agent against a real LLM. These tests
+verify agent behavior such as tool selection, tool arguments, multi-step
+workflows, failure recovery, dynamic tool access, task boundaries, and
+security-related behavior.
+
+These tests are marked `llm` and are kept separate from the deterministic
+suite because they depend on external model availability, rate limits, and API
+quota.
+
 ### DeepEval
 
-DeepEval is used for evaluation of AI-agent behavior and LLM-based metrics.
+DeepEval is used to evaluate AI-agent behavior with specialized evaluation
+metrics and agent traces.
 
 Examples include testing:
 
@@ -77,19 +95,25 @@ Examples include testing:
 * step efficiency
 * agent traces
 
-Some DeepEval tests require a real LLM call and therefore depend on API availability and quota.
+The DeepEval tests include both deterministic metric-level tests and
+LLM-backed agent evaluations. Tests that require a real LLM depend on model
+availability, rate limits, and API quota.
 
 ### LLM-as-a-Judge
 
 Before adopting DeepEval, I built a standalone LLM-as-a-judge implementation to understand the underlying concepts.
 
-That implementation:
+This earlier implementation:
 
 1. sends an AI response to a judge model,
 2. asks the model to evaluate it against a policy and criteria,
 3. requests structured JSON output,
 4. validates the result with Pydantic,
-5. compares the result against expected behavior.
+5. returns the structured evaluation result for further analysis.
+
+This implementation is intentionally preserved as a learning example. It is
+separate from the current agent evaluation architecture, where DeepEval is used
+for specialized agent and trajectory evaluation.
 
 This earlier implementation is preserved under:
 
@@ -101,31 +125,51 @@ It is kept as a learning example rather than being part of the current main eval
 
 ---
 
+### Golden and regression testing
+
+The project includes golden evaluation cases with expected outcomes for
+agent behavior and judge evaluations.
+
+These cases can be used to detect regressions when the agent, prompts, tools,
+policies, or evaluation logic change. The project also includes comparison of
+quality reports from different runs to identify changes in evaluation results.
+
+
 ## Security Testing
 
 AI agents introduce security concerns that are different from traditional application testing.
 
 This project includes tests for:
 
-### Prompt injection
+#### Prompt injection
 
-Tests whether malicious instructions contained in data can cause the agent to perform actions that are not authorized by its current skill.
+Tests whether malicious instructions contained in untrusted data can influence
+agent behavior, and whether the application's authorization layer prevents
+unauthorized actions even if such an instruction is followed.
 
 ### Tool authorization
 
-Tests that the agent cannot execute tools that are outside the tools authorized for the selected skill.
+Tests that the agent can execute only tools authorized for the selected skill.
+This includes least-privilege controls and dynamic tool access, where additional
+tools must be explicitly requested and authorized before they can be used.
 
 ### Tool argument validation
 
-Tests unsafe arguments such as path-traversal attempts that could access files outside the allowed repository.
+Tests that tools validate potentially unsafe arguments before execution. This
+includes path-traversal attempts that could access or modify files outside the
+authorized repository, while still allowing normalized paths that remain
+inside the repository.
 
 ### Sensitive information
 
-Tests that sensitive information is removed or redacted before it reaches inappropriate parts of the system.
+Tests that sensitive information is removed or redacted before it reaches the
+agent or appears in the final response. This includes explicit sensitive fields
+as well as secrets embedded in otherwise unclassified fields.
 
 ### Resource limits
 
-Tests protections such as timeouts for test execution so that an agent cannot cause an unbounded operation.
+Tests protections such as bounded test-execution timeouts so that an
+agent-triggered operation cannot consume an unbounded amount of time.
 
 ---
 
@@ -147,8 +191,10 @@ Tests protections such as timeouts for test execution so that an agent cannot ca
 │   └── reporting/              # Quality-report generation
 └── tests/
     ├── security/               # Agent security tests
-    ├── reporting/              # Reporting tests
+    ├── reporting/              # Quality-report tests
     ├── deepeval/               # DeepEval-based evaluations
+    ├── golden/                 # Golden/regression tests
+    ├── fixtures/               # Shared evaluation and test data
     └── learning/               # Tests for learning implementations
 ```
 
@@ -156,15 +202,21 @@ Tests protections such as timeouts for test execution so that an agent cannot ca
 
 ## Quality Reporting
 
-The project collects results from multiple sources and combines them into a quality report.
+TThe project collects results from multiple evaluation sources and combines
+them into a structured quality report.
 
-The current reporting pipeline can include:
+The reporting pipeline can include:
 
 * Pytest results
-* DeepEval results
-* judge results
+* DeepEval metrics and evaluation results
+* LLM-as-a-judge results
+* agent trajectories
 * historical quality reports
 * comparison with a previous run
+* regression and improvement detection
+
+The report is designed to distinguish ordinary automated-test failures from
+AI-quality evaluation findings.
 
 The report can be generated with:
 
@@ -182,8 +234,14 @@ From the project root:
 
 ### Run tests that do not require a real LLM
 
+```markdown id="r4k8n2"
+> **Note:** `demo_repo/` contains an intentionally failing test. The
+> `demo-app_fail` repository is used by agent investigation and code-repair
+> scenarios, so its failure is expected. The deterministic `ai-quality-lab`
+> test suite can be run independently with the `demo_repo` excluded.
+
 ```powershell
-python -m pytest tests -m "not llm" -q
+python -m pytest -q --ignore=demo_repo
 ```
 
 ### Run a specific test file
@@ -200,7 +258,10 @@ DeepEval tests require a configured LLM/API and may consume API quota.
 deepeval test run tests\deepeval
 ```
 
-The tests marked `llm` are separated from the regular deterministic test suite so that the two types of testing can be run independently.
+The tests marked `llm` are separated from the regular deterministic test suite
+so that the two types of testing can be run independently. LLM tests require
+a configured model/API and may be affected by model availability, rate limits,
+or API quota.
 
 ---
 
@@ -208,20 +269,23 @@ The tests marked `llm` are separated from the regular deterministic test suite s
 
 One purpose of this repository is to document the progression from basic AI evaluation concepts toward more complete AI-agent quality testing.
 
-The project began with a simple standalone LLM judge using structured Pydantic output.
-
-It then evolved toward:
+The project began with a simple standalone LLM-as-a-judge implementation and
+then expanded into a broader AI-agent quality lab:
 
 ```text
 LLM-as-a-Judge
       ↓
-DeepEval metrics
+Deterministic and mocked agent testing
       ↓
-Agent trace evaluation
+Real LLM agent testing
       ↓
-Tool-use evaluation
+Tool-use and trajectory evaluation
+      ↓
+Dynamic tool access and authorization
       ↓
 Security testing
+      ↓
+Regression and golden testing
       ↓
 Quality reporting
 ```
@@ -232,17 +296,17 @@ Keeping the earlier implementation in the `learning/` directory makes it possibl
 
 ## Current Focus
 
-The current focus is **AI agent quality and reliability**.
+The current focus is **AI agent quality, reliability, and security**.
 
-Areas being explored include:
+Areas covered include:
 
-* evaluating agent behavior
-* evaluating tool selection and arguments
-* testing dynamic tool access
-* improving security boundaries
-* tracing agent execution
-* building reusable evaluation techniques
-* understanding how AI quality measurements can be applied to real agent systems
+* evaluating agent behavior and task completion
+* evaluating tool selection, arguments, results, and trajectories
+* testing failure recovery and dynamic tool access
+* testing authorization, least privilege, and security boundaries
+* evaluating execution efficiency
+* detecting quality and security regressions
+* generating structured quality reports from multiple evaluation sources
 
 ---
 
@@ -250,11 +314,17 @@ Areas being explored include:
 
 The project is an ongoing learning and portfolio project.
 
-The deterministic test suite currently contains more than 150 passing tests. LLM-based evaluations are kept separate because they depend on external model availability and API limits.
+The deterministic `ai-quality-lab` test suite currently contains **205 passing
+tests**. The `demo_repo/` contains an intentionally failing test used by agent
+investigation and code-repair scenarios.
+
+LLM-based evaluations are kept separate because they depend on external model
+availability, rate limits, and API quota.
 
 The project intentionally combines:
 
-**traditional software testing + AI evaluation + security testing + observability**
+**traditional software testing + AI evaluation + security testing + tracing
+and execution analysis**
 
 rather than treating AI quality as only an LLM scoring problem.
 
@@ -274,4 +344,8 @@ AI systems introduce additional questions:
 * Can an adversarial input change its behavior?
 * Can we detect regressions when the model or prompt changes?
 
-This project is an attempt to explore those questions in a practical, testable way.
+This project explores those questions in a practical, testable way. The focus
+is not simply on whether an AI system produces the right final answer, but also
+on how the agent behaves, what actions it takes, whether those actions are
+authorized and efficient, and whether the system can detect quality and
+security regressions.
