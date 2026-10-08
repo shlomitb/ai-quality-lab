@@ -21,7 +21,6 @@ from deepeval.metrics import (
 from deepeval.models import GeminiModel
 
 from src.agent import answer_customer_with_trace
-from src.llm_client import create_client
 
 
 # Save DeepEval test runs in our project reports directory.
@@ -32,7 +31,7 @@ os.environ.setdefault(
 
 
 @pytest.mark.llm
-def test_dynamic_tool_access_task_completion():
+def test_dynamic_tool_access_task_completion(llm_client):
     golden = Golden(
         input=(
             "Review the login implementation in demo-app_fail. "
@@ -47,8 +46,6 @@ def test_dynamic_tool_access_task_completion():
     )
 
     load_dotenv()
-
-    client = create_client()
 
     api_key = os.getenv("GEMINI_API_KEY")
 
@@ -73,7 +70,7 @@ def test_dynamic_tool_access_task_completion():
     ]
 
     response = answer_customer_with_trace(
-        client=client,
+        client=llm_client,
         question=golden.input,
     )
 

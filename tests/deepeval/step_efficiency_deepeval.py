@@ -15,14 +15,13 @@ from deepeval.dataset import Golden
 from deepeval.metrics import StepEfficiencyMetric
 
 from src.agent import answer_customer_with_trace
-from src.llm_client import create_client
 
 from tests.deepeval.helpers import create_gemini_model
 
 gemini_model = create_gemini_model()
 
 
-def test_bug_file_search_step_efficiency():
+def test_bug_file_search_step_efficiency(llm_client):
     """
     Evaluate efficiency of a repository investigation task.
 
@@ -39,7 +38,7 @@ def test_bug_file_search_step_efficiency():
     golden = Golden(input=task)
 
     response = answer_customer_with_trace(
-        client=create_client(),
+        client=llm_client,
         question=golden.input,
     )
 

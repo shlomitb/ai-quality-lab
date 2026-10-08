@@ -10,14 +10,13 @@ from deepeval.dataset import Golden
 from deepeval.metrics import TaskCompletionMetric, StepEfficiencyMetric
 
 from src.agent import answer_customer_with_trace
-from src.llm_client import create_client
 from src.tools import run_tests
 from tests.deepeval.helpers import create_gemini_model
 
 gemini_model = create_gemini_model()
 
 
-def test_real_code_bug_fix_trajectory(restore_login_file):
+def test_real_code_bug_fix_trajectory(llm_client, restore_login_file):
     """
     tests the agent against an actual file rather than your bug_fixed mock state.
     Has deterministic checks, asserts
@@ -43,7 +42,7 @@ def test_real_code_bug_fix_trajectory(restore_login_file):
     golden = Golden(input=task)
 
     response = answer_customer_with_trace(
-        client=create_client(),
+        client=llm_client,
         question=golden.input,
     )
 

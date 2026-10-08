@@ -42,8 +42,14 @@ TOOL_ACCESS_POLICY = {
         "initial_tools": [
             "get_return_policy",
             "get_product_information",
+            "get_order_information",
+            "check_return_eligibility",
         ],
-        "requestable_tools": [],
+        "requestable_tools": [
+            "search_product_catalog",
+            "search_order_database",
+            "update_order_status",
+        ],
     },
 }
 

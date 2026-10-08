@@ -34,3 +34,4 @@ Keywords:
 - customer
 - price
 - pricing
+- status

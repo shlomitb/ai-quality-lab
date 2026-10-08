@@ -9,6 +9,11 @@ from src.tools import (
     simulate_sensitive_action,
     get_return_policy,
     get_product_information,
+    search_product_catalog,
+    get_order_information,
+    check_return_eligibility,
+    search_order_database,
+    update_order_status,
 )
 
 
@@ -24,6 +29,7 @@ def request_tool_access(tool_name: str) -> dict:
     }
 
 
+#A registry mapping tool names to the actual Python functions
 TOOLS = {
     "get_ticket": get_ticket,
     "get_repository": get_repository,
@@ -35,6 +41,11 @@ TOOLS = {
     "request_tool_access": request_tool_access,
     "get_return_policy": get_return_policy,
     "get_product_information": get_product_information,
+    "search_product_catalog": search_product_catalog,
+    "get_order_information": get_order_information,
+    "check_return_eligibility": check_return_eligibility,
+    "search_order_database": search_order_database,
+    "update_order_status": update_order_status,
 }
 
 
@@ -89,6 +100,33 @@ TOOL_DESCRIPTIONS = {
 
     "get_product_information": """
     Use this to get the info about the product, such as name and price.
+    """,
+
+    "search_product_catalog": (
+        "Search the product catalog for product information such as "
+        "price, category, and product details."
+    ),
+
+    "get_order_information": """
+    Use this to retrieve information about a specific customer order.
+    It requires the order_id argument.
+    """,
+
+    "check_return_eligibility": """
+    Use this to determine whether an order is eligible for return.
+    It requires the product_name, days_since_purchase, opened,
+    and defective arguments.
+    """,
+
+    "search_order_database": """
+    Use this to retrieve information about a specific customer order
+    when the primary order information service is unavailable.
+    It requires the order_id argument.
+    """,
+
+    "update_order_status": """
+    Use this to update the status of a specific customer order.
+    It requires the order_id and status arguments.
     """,
 }
 

@@ -16,20 +16,16 @@ from deepeval.metrics import ToolPermissionMetric
 from deepeval.test_case import LLMTestCase
 
 from src.agent import answer_customer_with_trace, execute_tool_call
-from src.llm_client import create_client
 from src.skills import get_requestable_tools, get_selected_skill
-from src.tool_catalog import get_tools
 from tests.deepeval.helpers import to_deepeval_tool_calls
 from src.providers.response import AgentResponse, ToolCall
 
 
 @pytest.mark.llm
-def test_real_agent_trajectory_uses_only_configured_tools():
+def test_real_agent_trajectory_uses_only_configured_tools(llm_client):
     """
     Did the agent use only tools from the permitted universe?
     """
-    client = create_client()
-
     question = (
         "Review the login implementation in demo-app_fail. "
         "Determine whether the implementation satisfies the repository's "
@@ -38,7 +34,7 @@ def test_real_agent_trajectory_uses_only_configured_tools():
     )
 
     response = answer_customer_with_trace(
-        client=client,
+        client=llm_client,
         question=question,
     )
 
@@ -71,7 +67,7 @@ def test_real_agent_trajectory_uses_only_configured_tools():
     assert metric.score == 1.0
 
 
-def test_real_agent_trajectory_requires_authorization_for_requestable_tools():
+def test_real_agent_trajectory_requires_authorization_for_requestable_tools(llm_client):
     """
     1. search_files
         ↓
@@ -85,8 +81,6 @@ def test_real_agent_trajectory_requires_authorization_for_requestable_tools():
     The agent did not simply call run_tests.
     It first requested access, the application authorized it, and only then was run_tests executed.
     """
-    client = create_client()
-
     question = (
         "Review the login implementation in demo-app_fail. "
         "Determine whether the implementation satisfies the repository's "
@@ -97,7 +91,7 @@ def test_real_agent_trajectory_requires_authorization_for_requestable_tools():
     selected_skill = get_selected_skill(question)
 
     response = answer_customer_with_trace(
-        client=client,
+        client=llm_client,
         question=question,
     )
 
