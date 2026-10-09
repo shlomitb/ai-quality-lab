@@ -4,6 +4,7 @@ DeepEval tests for real code-change workflows.
 These tests exercise the agent against actual files in demo_repo,
 including making a code change and verifying the resulting test state.
 """
+import pytest
 
 from deepeval import assert_test
 from deepeval.dataset import Golden
@@ -16,6 +17,7 @@ from tests.deepeval.helpers import create_gemini_model
 gemini_model = create_gemini_model()
 
 
+@pytest.mark.llm
 def test_real_code_bug_fix_trajectory(llm_client, restore_login_file):
     """
     tests the agent against an actual file rather than your bug_fixed mock state.

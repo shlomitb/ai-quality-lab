@@ -18,11 +18,10 @@ from deepeval.test_case import LLMTestCase
 from src.agent import answer_customer_with_trace, execute_tool_call
 from src.skills import get_requestable_tools, get_selected_skill
 from tests.deepeval.helpers import to_deepeval_tool_calls
-from src.providers.response import AgentResponse, ToolCall
 
 
 @pytest.mark.llm
-def test_real_agent_trajectory_uses_only_configured_tools(llm_client):
+def test_real_agent_trajectory_uses_only_allowed_tools(llm_client):
     """
     Did the agent use only tools from the permitted universe?
     """
@@ -67,6 +66,7 @@ def test_real_agent_trajectory_uses_only_configured_tools(llm_client):
     assert metric.score == 1.0
 
 
+@pytest.mark.llm
 def test_real_agent_trajectory_requires_authorization_for_requestable_tools(llm_client):
     """
     1. search_files

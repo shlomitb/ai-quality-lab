@@ -9,9 +9,9 @@ They specifically test tool selection, not tool arguments, task completion, or s
 Those dimensions are evaluated separately.
 
 Run with (ex):
-deepeval test run tests\deepeval\tool_selection_deepeval.py -k test_code_review_selects_search_files_when_file_is_unknown -v -s
+deepeval test run tests\deepeval\tool_selection_deepeval.py -k test_code_review_selects_search_files_when_file_is_unknown -v -s  --run-llm
 """
-
+import pytest
 from dotenv import load_dotenv
 
 from deepeval import assert_test
@@ -31,27 +31,6 @@ from tests.deepeval.helpers import create_gemini_model
 load_dotenv()
 
 gemini_model = create_gemini_model()
-
-
-def to_deepeval_available_tools(tools):
-    return [
-        ToolCall(name=tool["name"])
-        for tool in tools
-    ]
-
-
-def get_deepeval_available_tools(question: str) -> list[ToolCall]:
-    selected_skill = get_selected_skill(question)
-
-    if selected_skill is None:
-        return []
-
-    authorized_tools = get_authorized_tools(selected_skill)
-
-    return [
-        ToolCall(name=tool.__name__)
-        for tool in authorized_tools
-    ]
 
 
 def run_tool_selection_test(
@@ -119,6 +98,7 @@ def run_tool_selection_test(
     )
 
 
+@pytest.mark.llm
 def test_code_review_searches_then_reads_when_file_is_unknown():
     """
     When the relevant file is unknown, the review-code skill should
@@ -139,39 +119,16 @@ def test_code_review_searches_then_reads_when_file_is_unknown():
     )
 
 
+@pytest.mark.llm
 def test_code_review_selects_read_file_when_file_is_known():
     """
-    When the repository and file path are already known,
-    the review-code skill should use read_file rather than search_files.
+    Evaluate whether the agent selects the appropriate tool when the
+    source file is already known.
 
-    Since the question explicitly provides the file path, there is no reason for the LLM to call search_files first.
+    The expected behavior is to use read_file directly rather than
+    searching for a file whose path was provided in the task.
 
-    Important: This test fails - chatGPT said for now o leave the test failing. Do not change the test.
-
-    The test is doing its job. It says:
-        Given that the user explicitly provides src/login.py, the agent should select only read_file.
-        But the actual agent selected read_file plus unnecessary tools.
-    The failure is therefore telling us about a real behavior problem in the agent.
-    Expected:
-        read_file
-
-    Actual:
-        read_file
-        search_files
-        search_files
-        read_file
-        request_tool_access
-        run_tests
-
-    DeepEval scored it only 0.25, because although read_file was correct, the additional tool choices were inappropriate.
-
-    Keep this test as-is.
-    Look at the agent's behavior/prompt to understand why it continues making unnecessary calls after successfully reading the known file.
-    Decide whether this is something we want to fix in the agent itself.
-    Re-run the test.
-    Ideally get it back to 1.0.
-
-    This is actually a useful discovery from our evaluation work.
+    Strict tool-correctness evaluation exposes unnecessary tool calls.
     """
     question = (
         "Review the code in the demo-app repository at src/login.py "

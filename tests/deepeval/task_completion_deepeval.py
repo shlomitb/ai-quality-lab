@@ -7,7 +7,8 @@ be verified directly; TaskCompletionMetric evaluates the agent's overall
 task completion.
 
 Run tests here with:
-deepeval test run tests\deepeval\task_completion_deepeval.py -k test_bug_file_search_task_completion
+deepeval test run .\tests\deepeval\task_completion_deepeval.py -k test_bug_repository_language_task_completion -v -s --run-llm
+
 """
 import pytest
 from deepeval import assert_test
@@ -16,14 +17,13 @@ from deepeval.metrics import TaskCompletionMetric
 
 from src.agent import answer_customer_with_trace
 from src.llm_client import create_client
-from src.tools import orders, bug_fixed
 from tests.deepeval.helpers import create_gemini_model
 
 
 gemini_model = create_gemini_model()
 
 
-
+@pytest.mark.llm
 def test_bug_file_search_task_completion():
     """
     Task Completion metric:
@@ -59,6 +59,7 @@ def test_bug_file_search_task_completion():
     )
 
 
+@pytest.mark.llm
 def test_bug_fix_agent_task_completion(restore_login_file):
     task = (
         "Investigate BUG-456, fix the failing test, "
@@ -111,6 +112,7 @@ def test_bug_fix_agent_task_completion(restore_login_file):
     )
 
 
+@pytest.mark.llm
 def test_return_eligibility_task_completion():
     task = "Can I return order 54321?"
     golden = Golden(input=task)
@@ -132,6 +134,7 @@ def test_return_eligibility_task_completion():
     )
 
 
+@pytest.mark.llm
 def test_unavailable_product_task_completion():
     task = "What is the price of the Unavailable Product?"
     golden = Golden(input=task)
@@ -153,11 +156,11 @@ def test_unavailable_product_task_completion():
     )
 
 
-def test_bug_repository_language_task_completion():
+@pytest.mark.llm
+def test_bug_repository_language_task_completion(llm_client):
     """
     Testing that the agent actually answered the user's question - the answer is python.
     And that the steps taken were efficient.
-    Run with: deepeval test run tests/deepeval/coding_agent_trajectory_deepeval.py
     """
 
     task = "What programming language is the repository for BUG-123 written in?"
@@ -165,7 +168,7 @@ def test_bug_repository_language_task_completion():
     golden = Golden(input=task)
 
     response = answer_customer_with_trace(
-        client=create_client(),
+        client=llm_client,
         question=golden.input,
     )
 
@@ -186,18 +189,18 @@ def test_bug_repository_language_task_completion():
     )
 
 
-
-
 @pytest.mark.llm
 def test_agent_does_not_claim_success_when_verification_fails(
     restore_login_file,
 ):
     """
+    Does an LLM judge consider the agent's overall outcome successful, given the task and evidence?
     The agent must accurately report a failed verification result.
 
     The repository intentionally starts with a failing login test.
     The agent is asked to investigate and verify the problem without
     modifying the source code.
+
     """
 
     task = (
@@ -264,45 +267,3 @@ def test_agent_does_not_claim_success_when_verification_fails(
 # that the agent can retrieve order information, update the status to
 # "Reviewed", and report successful completion.
 # ---------------------------------------------------------------------------
-# def test_order_status_task_completion():
-#
-#     """
-#     This test is not checking the value: orders["12345"]["status"] == "Reviewed"
-#     The deterministic test does that.
-#     Here we are checking if the agent's overall trajectory accomplish the task:
-#     Using TaskCompletionMetric
-#     This test has an LLM client and a judge call
-#
-#     run with:
-#     deepeval test run tests/deepeval/order_status_task_completion_deepeval.py
-#
-#     Result: The system successfully invoked the 'update_order_status' tool with the correct order ID and
-#     status, and the tool confirmed the order was updated to 'Reviewed', perfectly matching the desired task.
-#     """
-#     # Start from a known state
-#
-#     task = "Mark order 12345 as Reviewed."
-#     orders["12345"]["status"] = "Open"
-#
-#     golden = Golden(input=task)
-#
-#     answer_customer_with_trace(
-#         client=create_client(),
-#         question=golden.input,
-#     )
-#
-#     metric = TaskCompletionMetric(
-#         threshold=0.5,
-#         model=gemini_model,
-#         task=task,
-#     )
-#
-#     try:
-#         assert_test(
-#             golden=golden,
-#             metrics=[metric],
-#         )
-#     finally:
-#         # Reset shared state for other tests
-#         orders["12345"]["status"] = "Open"
-

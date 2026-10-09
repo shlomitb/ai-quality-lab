@@ -14,27 +14,25 @@ This is different from tool selection:
 
 The agent itself makes the first LLM call. DeepEval then uses an LLM
 judge to evaluate whether the observed tool arguments were correct.
+
+To run:
+deepeval test run .\tests\deepeval\tool_arguments_deepeval.py -k test_product_information_tool_argument_correctness -v -s --run-llm
 """
-
-
-from dotenv import load_dotenv
+import pytest
 from deepeval import assert_test
 from deepeval.metrics import ArgumentCorrectnessMetric
 from deepeval.test_case import LLMTestCase, ToolCall
 
 from src.agent import answer_customer_with_trace, get_tool_call_details
-from src.llm_client import create_client
 from tests.deepeval.helpers import create_gemini_model
 
 
 
-
-
-load_dotenv()
-
 gemini_model = create_gemini_model()
 
-def test_product_information_tool_argument_correctness():
+
+@pytest.mark.llm
+def test_product_information_tool_argument_correctness(llm_client):
     """
     Gemini LLM call #1
     → runs your agent
@@ -45,15 +43,12 @@ def test_product_information_tool_argument_correctness():
     → judges whether the argument was correct
 
     Given the user's request, does the argument the agent generated make sense?
-
-    :return:
     """
-    client = create_client()
 
     question = "What is the price of the Example Product?"
 
     response = answer_customer_with_trace(
-        client=client,
+        client=llm_client,
         question=question,
     )
 

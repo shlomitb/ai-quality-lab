@@ -5,6 +5,9 @@ Evaluates whether the agent completes the task successfully and uses
 an efficient trajectory while handling the need for additional tool access.
 
 Direct permission and dynamic-access enforcement are tested separately.
+
+To run:
+deepeval test run .\tests\deepeval\dynamic_tool_access_deepeval.py -k test_end_to_end_agent_workflow -v -s --run-llm
 """
 
 import os
@@ -18,10 +21,9 @@ from deepeval.metrics import (
     TaskCompletionMetric,
     StepEfficiencyMetric,
 )
-from deepeval.models import GeminiModel
 
 from src.agent import answer_customer_with_trace
-
+from tests.deepeval.helpers import create_gemini_model
 
 # Save DeepEval test runs in our project reports directory.
 os.environ.setdefault(
@@ -31,7 +33,12 @@ os.environ.setdefault(
 
 
 @pytest.mark.llm
-def test_dynamic_tool_access_task_completion(llm_client):
+def test_end_to_end_agent_workflow(llm_client):
+    """
+    This is a scenario-level regression test for the core agent workflow.
+    It intentionally combines task completion and step efficiency rather than
+    testing a single isolated capability.
+    """
     golden = Golden(
         input=(
             "Review the login implementation in demo-app_fail. "
@@ -52,10 +59,8 @@ def test_dynamic_tool_access_task_completion(llm_client):
     if not api_key:
         raise ValueError("GEMINI_API_KEY was not found.")
 
-    judge_model = GeminiModel(
-        model="gemini-3.5-flash-lite",
-        api_key=api_key,
-        temperature=0,
+    judge_model = create_gemini_model(
+        model_name="gemini-3.5-flash-lite"
     )
 
     metrics = [
