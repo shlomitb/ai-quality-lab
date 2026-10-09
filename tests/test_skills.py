@@ -5,7 +5,7 @@ Verifies that the skill system selects and loads the correct skill and instructi
 that initial and requestable tools are configured correctly,
 and that authorized or unauthorized tool-access requests are handled properly.
 """
-
+from copy import deepcopy
 from src.skills import (
     TOOL_ACCESS_POLICY,
     ToolAccessRequest,
@@ -294,8 +294,8 @@ def test_investigate_bug_requestable_tool_is_authorized():
 
 def test_investigate_bug_unlisted_tool_is_not_authorized():
     assert not is_tool_permitted_by_policy(
-        "run_tests",
-        "search_files",
+        "investigate-bug",
+        "update_order_status",
     )
 
 
@@ -342,7 +342,19 @@ def test_unknown_skill_cannot_request_tool_access():
 
 
 def test_granting_access_does_not_mutate_policy():
+    # Save a snapshot of the configured policy.
+    policy_before = deepcopy(TOOL_ACCESS_POLICY)
+
     skill = get_selected_skill("investigate bug")
-    request_tool_access(skill, "get_repository")
+
+    assert skill is not None
+    assert "get_repository" not in skill.tools
+
+    # Grant access for this selected skill.
+    assert request_tool_access(skill, "get_repository")
+
+    # The selected skill should now have access.
     assert "get_repository" in skill.tools
-    assert "get_repository" not in get_initial_tools("investigate-bug")
+
+    # The configured policy itself must remain unchanged.
+    assert TOOL_ACCESS_POLICY == policy_before
