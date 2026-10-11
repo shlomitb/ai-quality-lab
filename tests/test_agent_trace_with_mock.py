@@ -740,9 +740,33 @@ def test_agent_returns_failure_message_when_max_turns_reached():
 
 
 def test_agent_does_not_report_success_when_tests_fail():
-    failed_test_result = ToolResult(
-        name="run_tests",
-        response={
+    """The agent loop must not claim success when run_tests fails."""
+    tool_call_response = AgentResponse(
+        final_text="",
+        tool_calls=[
+            ToolCall(
+                name="run_tests",
+                args={"repository_name": "demo-app"},
+                call_id="call-run-tests",
+            )
+        ],
+        tool_results=[],
+    )
+
+    # Simulate the provider incorrectly claiming that verification passed.
+    claimed_success_response = AgentResponse(
+        final_text="The tests passed successfully.",
+        tool_calls=[],
+        tool_results=[],
+    )
+
+    fake_provider = Mock()
+    fake_provider.generate.return_value = tool_call_response
+    fake_provider.send_tool_results.return_value = claimed_success_response
+
+    # Return a failed test result in the structure expected by the guard.
+    fake_run_tests = Mock(
+        return_value={
             "result": {
                 "result": {
                     "status": "failed",
@@ -750,20 +774,38 @@ def test_agent_does_not_report_success_when_tests_fail():
                     "tests_failed": 1,
                 }
             }
-        },
-        call_id="test-call",
+        }
     )
+    fake_run_tests.__name__ = "run_tests"
 
-    response = AgentResponse(
-        final_text="The tests passed successfully.",
-        tool_calls=[],
-        tool_results=[failed_test_result],
-        parsed=None,
+    with patch(
+        "src.agent.create_provider",
+        return_value=fake_provider,
+    ):
+        with patch.dict(
+            "src.tool_catalog.TOOLS",
+            {"run_tests": fake_run_tests},
+            clear=False,
+        ):
+            response = answer_customer_with_trace(
+                client=Mock(),
+                question="Investigate BUG-456 and fix the failing test.",
+            )
+
+    # The actual agent loop must execute the requested tool.
+    fake_run_tests.assert_called_once_with(
+        repository_name="demo-app"
     )
+    fake_provider.generate.assert_called_once()
+    fake_provider.send_tool_results.assert_called_once()
 
-    safe_response = enforce_tool_result_consistency(response)
-
-    assert safe_response.final_text == (
+    # The agent must preserve the failure evidence and correct its answer.
+    assert response.tool_results[0].name == "run_tests"
+    assert (
+        response.tool_results[0].response["result"]["result"]["status"]
+        == "failed"
+    )
+    assert response.final_text == (
         "The tests failed, so I cannot report the "
         "verification as successful."
     )
@@ -893,3 +935,53 @@ def test_enforce_tool_result_consistency_uses_latest_test_result():
     safe_response = enforce_tool_result_consistency(response)
 
     assert safe_response is response
+
+
+def test_enforce_tool_result_consistency_rejects_success_when_latest_test_fails():
+    """verifies that a previous successful run does not conceal a later failure."""
+    passed_test_result = ToolResult(
+        name="run_tests",
+        response={
+            "result": {
+                "result": {
+                    "status": "passed",
+                    "tests_run": 1,
+                    "tests_failed": 0,
+                }
+            }
+        },
+        call_id="passed-call",
+    )
+
+    failed_test_result = ToolResult(
+        name="run_tests",
+        response={
+            "result": {
+                "result": {
+                    "status": "failed",
+                    "tests_run": 1,
+                    "tests_failed": 1,
+                }
+            }
+        },
+        call_id="failed-call",
+    )
+
+    response = AgentResponse(
+        final_text="The tests passed successfully.",
+        tool_calls=[],
+        tool_results=[
+            passed_test_result,
+            failed_test_result,
+        ],
+        parsed=None,
+    )
+
+    safe_response = enforce_tool_result_consistency(response)
+
+    assert safe_response.final_text == (
+        "The tests failed, so I cannot report the "
+        "verification as successful."
+    )
+    assert safe_response is not response
+    assert safe_response.tool_results == response.tool_results
