@@ -1,6 +1,9 @@
 """
 Tests the agent's configuration and prompt construction.
 Verifies that skills, instructions, tools, and the dynamic tool-access mechanism are correctly included in the prompt for each type of request.
+
+These tests call build_prompt() and inspect its output.
+They do not test whether the LLM follows the prompt, nor do they prove that the agent enforces permissions during execution.
 """
 
 
@@ -50,12 +53,31 @@ def test_bug_request_loads_investigate_bug_skill():
 
 
 def test_review_request_loads_review_code_skill():
+    """
+    checks both the identity of the selected skill and the contents of that skill's instructions
+    """
     prompt = build_prompt(
         "Please review this code for maintainability."
     )
 
-    assert "Selected skill instructions:" in prompt
-    assert "Review the code" in prompt
+    selected_skill = prompt.split(
+        "Selected skill:",
+        1,
+    )[1].split(
+        "Selected skill instructions:",
+        1,
+    )[0].strip()
+
+    instructions = prompt.split(
+        "Selected skill instructions:",
+        1,
+    )[1].split(
+        "Available tools for this task:",
+        1,
+    )[0]
+
+    assert selected_skill == "review-code"
+    assert "Review the code" in instructions
 
 
 def test_unrelated_request_does_not_load_a_skill():
