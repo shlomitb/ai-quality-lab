@@ -64,10 +64,15 @@ class JudgeTestResult:
     success: bool
     reason: str
 
+
 @dataclass
 class QualityReport:
     run_id: str
     timestamp: str
+
+    pytest_timestamp: str | None = None
+    deepeval_timestamp: str | None = None
+    judge_timestamp: str | None = None
 
     pytest: PytestSummary | None = None
     deepeval: list[DeepEvalTestResult] = field(default_factory=list)
@@ -77,6 +82,7 @@ class QualityReport:
     notes: list[str] = field(default_factory=list)
 
     comparison: QualityReportComparison | None = None
+
 
 
 

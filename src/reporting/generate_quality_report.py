@@ -112,6 +112,17 @@ def find_previous_quality_report(
     )
 
 
+def get_file_timestamp(path: Path) -> str | None:
+    """Return a file's last-modified timestamp, or None if unavailable."""
+    if not path.exists():
+        return None
+
+    return datetime.fromtimestamp(
+        path.stat().st_mtime
+    ).astimezone().isoformat()
+
+
+
 def generate_quality_report() -> Path:
     deepeval_report = find_latest_deepeval_report()
 
@@ -134,6 +145,9 @@ def generate_quality_report() -> Path:
         pytest_summary=pytest_summary,
         deepeval_results=deepeval_results,
         judge=judge_results,
+        pytest_timestamp=get_file_timestamp(PYTEST_REPORT),
+        deepeval_timestamp=get_file_timestamp(deepeval_report),
+        judge_timestamp=get_file_timestamp(JUDGE_REPORT),
     )
 
     # Look for the most recent previous quality report.

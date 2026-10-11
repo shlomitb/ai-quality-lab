@@ -8,9 +8,23 @@ agent trajectories, and historical comparisons for human review.
 """
 
 
-
+from datetime import datetime
 from pathlib import Path
 from .models import QualityReport
+
+
+
+
+def _format_timestamp(timestamp: str | None) -> str:
+    """Format an ISO timestamp for human-readable reports."""
+    if not timestamp:
+        return "Unknown"
+
+    try:
+        parsed = datetime.fromisoformat(timestamp)
+        return parsed.strftime("%d %b %Y, %H:%M:%S %Z").strip().rstrip()
+    except ValueError:
+        return timestamp
 
 
 def _render_run_information(report: QualityReport) -> list[str]:
@@ -20,9 +34,16 @@ def _render_run_information(report: QualityReport) -> list[str]:
         "## Run Information",
         "",
         f"- **Run ID:** {report.run_id}",
-        f"- **Timestamp:** {report.timestamp}",
+        f"- **Report generated:** {_format_timestamp(report.timestamp)}",
+        "",
+        "## Source Timestamps",
+        "",
+        f"- **Pytest results:** {_format_timestamp(report.pytest_timestamp)}",
+        f"- **DeepEval results:** {_format_timestamp(report.deepeval_timestamp)}",
+        f"- **Judge results:** {_format_timestamp(report.judge_timestamp)}",
         "",
     ]
+
 
 
 def _build_deepeval_findings(

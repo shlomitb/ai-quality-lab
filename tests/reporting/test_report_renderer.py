@@ -88,7 +88,7 @@ def test_render_markdown():
     assert "request_tool_access(run_tests)" in markdown
     assert "run_tests" in markdown
 
-    assert "2026-09-20T10:00:00" in markdown
+    assert "20 Sep 2026, 10:00:00" in markdown
     assert "4.5" in markdown
     assert "0.0145" in markdown
 
