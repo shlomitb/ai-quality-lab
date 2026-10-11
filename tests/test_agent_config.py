@@ -52,32 +52,25 @@ def test_bug_request_loads_investigate_bug_skill():
     assert selected_skill == "investigate-bug"
 
 
+
+
 def test_review_request_loads_review_code_skill():
-    """
-    checks both the identity of the selected skill and the contents of that skill's instructions
-    """
-    prompt = build_prompt(
-        "Please review this code for maintainability."
+    prompt = build_prompt("Please review this code for maintainability.")
+
+    selected_skill = (
+        prompt.split("Selected skill:", 1)[1]
+        .split("Selected skill instructions:", 1)[0]
+        .strip()
     )
-
-    selected_skill = prompt.split(
-        "Selected skill:",
-        1,
-    )[1].split(
-        "Selected skill instructions:",
-        1,
-    )[0].strip()
-
-    instructions = prompt.split(
-        "Selected skill instructions:",
-        1,
-    )[1].split(
-        "Available tools for this task:",
-        1,
-    )[0]
+    instructions = (
+        prompt.split("Selected skill instructions:", 1)[1]
+        .split("Investigate and respond", 1)[0]
+    )
 
     assert selected_skill == "review-code"
     assert "Review the code" in instructions
+
+
 
 
 def test_unrelated_request_does_not_load_a_skill():
@@ -109,6 +102,8 @@ def test_bug_prompt_contains_initial_bug_tools_and_access_tool():
         1
     )[0]
 
+
+
     assert "get_ticket" in tools_section
     assert "run_tests" in tools_section
     assert "read_file" in tools_section
@@ -117,6 +112,7 @@ def test_bug_prompt_contains_initial_bug_tools_and_access_tool():
 
     assert "search_files" not in tools_section
     assert "get_repository" not in tools_section
+
 
 
 def test_review_prompt_contains_only_review_tools():
