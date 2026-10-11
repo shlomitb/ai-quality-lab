@@ -29,7 +29,7 @@ class DeepEvalTestResult:
     name: str
     success: bool
     actual_output: str
-    duration_seconds: float
+    duration_seconds: float | None = None
     evaluation_cost: float | None = None
     metrics: list[DeepEvalMetricResult] = field(default_factory=list)
     trajectory: list[str] = field(default_factory=list)

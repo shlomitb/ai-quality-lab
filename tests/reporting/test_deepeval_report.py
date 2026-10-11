@@ -140,7 +140,6 @@ def test_load_deepeval_results_extracts_execution_metrics(tmp_path):
                 "name": "test_agent_execution",
                 "success": True,
                 "actualOutput": "Done",
-                "runDuration": 12.0,
                 "metricsData": [],
                 "trace": {
                     "agentSpans": [
@@ -174,6 +173,7 @@ def test_load_deepeval_results_extracts_execution_metrics(tmp_path):
 
     assert result.tool_call_count == 2
     assert result.trace_duration_seconds == pytest.approx(9.891)
+    assert result.duration_seconds == pytest.approx(9.891)
 
 
 
@@ -189,7 +189,6 @@ def test_load_deepeval_results_without_timestamps(tmp_path):
                 "name": "test_agent_without_timestamps",
                 "success": True,
                 "actualOutput": "Done",
-                "runDuration": 3.0,
                 "metricsData": [],
                 "trace": {
                     "agentSpans": [
@@ -216,6 +215,7 @@ def test_load_deepeval_results_without_timestamps(tmp_path):
     assert len(results) == 1
     assert results[0].tool_call_count == 1
     assert results[0].trace_duration_seconds is None
+    assert results[0].duration_seconds is None
 
 
 

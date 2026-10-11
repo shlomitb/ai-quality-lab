@@ -424,7 +424,7 @@ def test_render_deepeval_includes_execution_metrics():
                 name="test_agent_without_trace",
                 success=True,
                 actual_output="Done",
-                duration_seconds=3.0,
+                duration_seconds=None,  # Changed from 3.0
                 tool_call_count=0,
                 trace_duration_seconds=None,
             ),
@@ -438,4 +438,5 @@ def test_render_deepeval_includes_execution_metrics():
 
     assert "- **Tool-call count:** 0" in rendered
     assert "- **Trace duration:** Unknown" in rendered
+
 

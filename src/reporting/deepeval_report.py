@@ -145,8 +145,10 @@ def load_deepeval_results(
                     "actualOutput",
                     "",
                 ),
-                duration_seconds=float(
-                    test_case.get("runDuration", 0.0)
+                duration_seconds=(
+                    float(test_case["runDuration"])
+                    if test_case.get("runDuration") is not None
+                    else trace_duration_seconds
                 ),
                 evaluation_cost=test_case.get(
                     "evaluationCost"
