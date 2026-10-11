@@ -438,9 +438,16 @@ def _render_deepeval(report: QualityReport) -> list[str]:
             [
                 f"### {test_result.name}",
                 "",
+
                 f"- **Status:** {status}",
                 f"- **Duration:** "
                 f"{test_result.duration_seconds:.2f} seconds",
+                f"- **Tool-call count:** "
+                f"{test_result.tool_call_count}",
+                f"- **Trace duration:** "
+                f"{test_result.trace_duration_seconds:.2f} seconds"
+                if test_result.trace_duration_seconds is not None
+                else "- **Trace duration:** Unknown",
             ]
         )
 

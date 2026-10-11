@@ -125,3 +125,126 @@ def test_load_deepeval_results_with_multiple_tests():
     assert second_test.metrics[1].success is False
 
 
+
+def test_load_deepeval_results_extracts_execution_metrics(tmp_path):
+    """
+    Verifies that the duration comes from the trace timestamps, not runDuration.
+    Verifies that two recorded tool calls produce a count of two.
+    pytest.approx() avoids brittle floating-point comparisons.
+    """
+    report_file = tmp_path / "trace_report.json"
+
+    report_data = {
+        "testCases": [
+            {
+                "name": "test_agent_execution",
+                "success": True,
+                "actualOutput": "Done",
+                "runDuration": 12.0,
+                "metricsData": [],
+                "trace": {
+                    "agentSpans": [
+                        {
+                            "startTime": "2026-10-09T07:46:49.098Z",
+                            "endTime": "2026-10-09T07:46:58.989Z",
+                            "toolsCalled": [
+                                {
+                                    "output": {"name": "search_files"}
+                                },
+                                {
+                                    "output": {"name": "read_file"}
+                                },
+                            ],
+                        }
+                    ]
+                },
+            }
+        ]
+    }
+
+    report_file.write_text(
+        json.dumps(report_data),
+        encoding="utf-8",
+    )
+
+    results = load_deepeval_results(report_file)
+
+    assert len(results) == 1
+    result = results[0]
+
+    assert result.tool_call_count == 2
+    assert result.trace_duration_seconds == pytest.approx(9.891)
+
+
+
+def test_load_deepeval_results_without_timestamps(tmp_path):
+    """
+    Checks that missing timestamps don't cause an error and that the parser still captures the tool call.
+    """
+    report_file = tmp_path / "no_timestamps.json"
+
+    report_data = {
+        "testCases": [
+            {
+                "name": "test_agent_without_timestamps",
+                "success": True,
+                "actualOutput": "Done",
+                "runDuration": 3.0,
+                "metricsData": [],
+                "trace": {
+                    "agentSpans": [
+                        {
+                            "toolsCalled": [
+                                {
+                                    "output": {"name": "search_files"}
+                                }
+                            ]
+                        }
+                    ]
+                },
+            }
+        ]
+    }
+
+    report_file.write_text(
+        json.dumps(report_data),
+        encoding="utf-8",
+    )
+
+    results = load_deepeval_results(report_file)
+
+    assert len(results) == 1
+    assert results[0].tool_call_count == 1
+    assert results[0].trace_duration_seconds is None
+
+
+
+def test_load_deepeval_results_without_trace(tmp_path):
+    """
+    Checks that if a test result does not contain a trace field at all, then  the parser returns sensible defaults rather than fails.
+    """
+    report_file = tmp_path / "no_trace.json"
+
+    report_data = {
+        "testCases": [
+            {
+                "name": "test_agent_without_trace",
+                "success": True,
+                "actualOutput": "Done",
+                "runDuration": 2.0,
+                "metricsData": [],
+            }
+        ]
+    }
+
+    report_file.write_text(
+        json.dumps(report_data),
+        encoding="utf-8",
+    )
+
+    results = load_deepeval_results(report_file)
+
+    assert len(results) == 1
+    assert results[0].trajectory == []
+    assert results[0].tool_call_count == 0
+    assert results[0].trace_duration_seconds is None

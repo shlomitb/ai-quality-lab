@@ -10,6 +10,8 @@ from src.reporting.report_renderer import (
     render_markdown,
     write_markdown_report,
 )
+from src.reporting.report_renderer import render_markdown
+
 
 
 def test_render_markdown():
@@ -400,3 +402,40 @@ def test_render_markdown_with_multiple_deepeval_tests():
         "🔴 FAIL — AI quality evaluation failed"
         in markdown
     )
+
+
+
+def test_render_deepeval_includes_execution_metrics():
+
+
+    report = QualityReport(
+        run_id="test-run",
+        timestamp="2026-10-11T10:00:00",
+        deepeval=[
+            DeepEvalTestResult(
+                name="test_agent_execution",
+                success=True,
+                actual_output="Done",
+                duration_seconds=12.0,
+                tool_call_count=2,
+                trace_duration_seconds=9.891,
+            ),
+            DeepEvalTestResult(
+                name="test_agent_without_trace",
+                success=True,
+                actual_output="Done",
+                duration_seconds=3.0,
+                tool_call_count=0,
+                trace_duration_seconds=None,
+            ),
+        ],
+    )
+
+    rendered = render_markdown(report)
+
+    assert "- **Tool-call count:** 2" in rendered
+    assert "- **Trace duration:** 9.89 seconds" in rendered
+
+    assert "- **Tool-call count:** 0" in rendered
+    assert "- **Trace duration:** Unknown" in rendered
+

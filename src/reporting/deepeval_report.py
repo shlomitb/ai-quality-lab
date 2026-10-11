@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 from pathlib import Path
 
 from .models import DeepEvalMetricResult, DeepEvalTestResult
@@ -50,12 +51,30 @@ def load_deepeval_results(
                 )
             )
 
+        trace_duration_seconds = None
         # Extract a concise agent trajectory from DeepEval's trace.
         trajectory = []
 
         trace = test_case.get("trace") or {}
 
         for agent_span in trace.get("agentSpans", []):
+
+            start_time = agent_span.get("startTime")
+            end_time = agent_span.get("endTime")
+
+            if start_time and end_time:
+                try:
+                    start = datetime.fromisoformat(
+                        start_time.replace("Z", "+00:00")
+                    )
+                    end = datetime.fromisoformat(
+                        end_time.replace("Z", "+00:00")
+                    )
+                    trace_duration_seconds = (
+                        (end - start).total_seconds()
+                    )
+                except ValueError:
+                    pass
 
             # Current DeepEval format:
             # agentSpan -> toolsCalled -> execute_tool_call -> output.name
@@ -134,6 +153,8 @@ def load_deepeval_results(
                 ),
                 metrics=metrics,
                 trajectory=trajectory,
+                tool_call_count=len(trajectory),
+                trace_duration_seconds=trace_duration_seconds,
             )
         )
 
