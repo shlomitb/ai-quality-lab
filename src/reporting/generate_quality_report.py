@@ -1,3 +1,12 @@
+"""
+Run this file to create the report:
+python -m src.reporting.generate_quality_report
+"""
+
+
+import argparse
+import subprocess
+import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -9,10 +18,7 @@ from .report import build_quality_report
 from .report_renderer import write_markdown_report
 from .serialization import load_quality_report, save_quality_report
 
-"""
-Run this file to create the report:
-python -m src.reporting.generate_quality_report
-"""
+
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -36,6 +42,38 @@ SUMMARY_DIR = (
 HISTORY_DIR = SUMMARY_DIR / "history"
 
 OUTPUT_REPORT = SUMMARY_DIR / "ai_quality_report.md"
+
+
+
+def run_pytest() -> None:
+    """Run the main deterministic test suite and refresh its JUnit XML report."""
+    PYTEST_REPORT.parent.mkdir(parents=True, exist_ok=True)
+
+    command = [
+        sys.executable,
+        "-m",
+        "pytest",
+        "-q",
+        "--ignore=demo_repo",
+        f"--junitxml={PYTEST_REPORT}",
+    ]
+
+    print("Running the deterministic Pytest suite...")
+
+    result = subprocess.run(
+        command,
+        cwd=PROJECT_ROOT,
+        check=False,
+    )
+
+    if result.returncode not in (0, 1):
+        raise RuntimeError(
+            f"Pytest could not complete successfully "
+            f"(exit code {result.returncode})."
+        )
+
+    print("Pytest results written to:", PYTEST_REPORT)
+
 
 
 def find_latest_deepeval_report() -> Path:
@@ -134,6 +172,20 @@ def generate_quality_report() -> Path:
     return OUTPUT_REPORT
 
 
+
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Generate the AI quality report."
+    )
+    parser.add_argument(
+        "--run-pytest",
+        action="store_true",
+        help="Run the deterministic Pytest suite before generating the report.",
+    )
+    args = parser.parse_args()
+
+    if args.run_pytest:
+        run_pytest()
+
     report_path = generate_quality_report()
     print(f"Report generated: {report_path}")

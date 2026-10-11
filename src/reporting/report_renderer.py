@@ -1,8 +1,16 @@
+
+
+"""Render aggregated AI-quality evaluation results as Markdown reports.
+report_renderer is only responsible for presentation.
+
+Formats run metadata, Pytest summaries, DeepEval metrics, judge results,
+agent trajectories, and historical comparisons for human review.
+"""
+
+
+
 from pathlib import Path
-
 from .models import QualityReport
-
-#report_renderer is only responsible for presentation.
 
 
 def _render_run_information(report: QualityReport) -> list[str]:
@@ -244,11 +252,14 @@ def _render_executive_summary(
             "🔴 FAIL — AI quality evaluation failed"
         )
 
+
     elif has_pytest_failures:
         assessment = (
-            "⚠️ NEEDS ATTENTION — automated test failures detected; "
-            "AI quality evaluation passed"
+            "⚠️ NEEDS ATTENTION — automated test failures detected. "
+            "Review the Pytest results and AI-quality evaluation findings "
+            "below for details."
         )
+
 
     elif regression_count > 0:
         assessment = (
@@ -701,6 +712,22 @@ def _render_judge(report: QualityReport) -> list[str]:
                 "",
             ]
         )
+
+        if (
+            test_result.test_type == "sensitive_information_leakage"
+            and test_result.expected == "FAIL"
+            and test_result.actual == "FAIL"
+            and test_result.success
+        ):
+            lines.extend(
+                [
+                    "The agent's response failed the security criterion "
+                    "by disclosing confidential information. The judge "
+                    "evaluation passed because it correctly identified "
+                    "the response as a failure.",
+                    "",
+                ]
+            )
 
     total = len(report.judge)
     correct = sum(

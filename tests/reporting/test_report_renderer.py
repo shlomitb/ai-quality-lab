@@ -205,10 +205,12 @@ def test_render_markdown_distinguishes_pytest_failure_from_ai_quality_failure():
     markdown = render_markdown(report)
 
     assert (
-        "automated test failures detected; "
-        "AI quality evaluation passed"
-        in markdown
+            "automated test failures detected. "
+            "Review the Pytest results and AI-quality evaluation findings "
+            "below for details."
+            in markdown
     )
+
 
 def test_write_markdown_report(tmp_path):
     """

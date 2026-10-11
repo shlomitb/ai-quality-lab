@@ -135,13 +135,30 @@ policies, or evaluation logic change. The project also includes comparison of
 quality reports from different runs to identify changes in evaluation results.
 
 
+
+## What This Project Demonstrates
+
+This project explores how QA engineers can test AI agents whose decisions are not fully predictable.
+
+It demonstrates a layered testing approach:
+
+- **Deterministic tests** for application rules, permissions, and security controls.
+- **Mocked agent tests** for controlled failure scenarios and evidence-based behavior.
+- **Live LLM tests** for model-driven tool selection and multi-step workflows.
+- **LLM-based evaluations** for assessing agent behavior beyond exact-match assertions.
+- **Regression testing** for detecting changes in agent behavior and evaluation results.
+
+The central principle is that an agent's final answer is not sufficient evidence of correctness. Tests should also examine the actions taken, the tools used, the evidence obtained, and whether the actions were authorized.
+
+---
+
 ## Security Testing
 
 AI agents introduce security concerns that are different from traditional application testing.
 
 This project includes tests for:
 
-#### Prompt injection
+### Prompt injection
 
 Tests whether malicious instructions contained in untrusted data can influence
 agent behavior, and whether the application's authorization layer prevents
@@ -202,23 +219,22 @@ agent-triggered operation cannot consume an unbounded amount of time.
 
 ## Quality Reporting
 
-TThe project collects results from multiple evaluation sources and combines
-them into a structured quality report.
+The project combines results from multiple testing and evaluation sources into a structured Markdown quality report.
 
-The reporting pipeline can include:
+The report can include:
 
-* Pytest results
-* DeepEval metrics and evaluation results
-* LLM-as-a-judge results
-* agent trajectories
-* historical quality reports
-* comparison with a previous run
-* regression and improvement detection
+- **Pytest results:** passed, failed, skipped, and error counts
+- **DeepEval results:** agent-evaluation outcomes, metric scores, thresholds, and reasons
+- **LLM-as-a-judge results:** whether the judge correctly identified the expected outcome
+- **Agent trajectories:** the sequence of tool calls and actions taken by the agent
+- **Run information:** a run ID and timestamp
+- **Historical comparison:** changes between the current run and a previous run, including reported regressions and improvements
 
-The report is designed to distinguish ordinary automated-test failures from
-AI-quality evaluation findings.
+The report distinguishes ordinary automated-test failures from AI-quality evaluation findings. It also helps distinguish an agent failing an evaluation from an evaluator correctly identifying that failure.
 
-The report can be generated with:
+A successfully generated report does not mean that the agent passed every test or evaluation. The report presents the results and findings from the available evaluation sources so that failures can be investigated and distinguished from failures of the evaluation mechanisms themselves.
+
+Generate the report after producing the required input reports:
 
 ```powershell
 python -m src.reporting.generate_quality_report
@@ -230,38 +246,59 @@ Generated reports are kept out of source control.
 
 ## Running the Tests
 
-From the project root:
+Run commands from the project root.
 
-### Run tests that do not require a real LLM
+### Deterministic and non-LLM tests
 
-```markdown id="r4k8n2"
-> **Note:** `demo_repo/` contains an intentionally failing test. The
-> `demo-app_fail` repository is used by agent investigation and code-repair
-> scenarios, so its failure is expected. The deterministic `ai-quality-lab`
-> test suite can be run independently with the `demo_repo` excluded.
-
+The `demo_repo/` directory contains an intentionally failing test used by agent investigation and code-repair scenarios. It is excluded from the main project test run. The exclusion prevents the demo repository's expected failure from being counted as a failure of the main project's own tests.
 ```powershell
 python -m pytest -q --ignore=demo_repo
 ```
 
+### Generating the Quality Report
+
+The quality report combines Pytest results with the latest available DeepEval and LLM-as-a-judge results.
+
+Generate the report using the existing result files, without running Pytest:
+
+```powershell
+python -m src.reporting.generate_quality_report
+```
+
+To run the deterministic Pytest suite first, refresh the JUnit XML results, and then generate the report:
+
+```powershell
+python -m src.reporting.generate_quality_report --run-pytest
+```
+
+The `--run-pytest` option runs the main test suite with `demo_repo` excluded. Test failures are included in the report rather than preventing report generation.
+
+Neither command automatically runs DeepEval or the LLM-as-a-judge tests. Those results are loaded from their existing report files and may therefore reflect an earlier evaluation run.
+
+
 ### Run a specific test file
 
 ```powershell
-python -m pytest path\to\test_file.py -q
+python -m pytest tests/test_agent_config.py -q
 ```
 
-### DeepEval tests
+### Live LLM tests
 
-DeepEval tests require a configured LLM/API and may consume API quota.
+Tests that call a real LLM depend on model availability, API credentials, rate limits, and quota. Run them separately from the deterministic suite to control cost and variability.
 
 ```powershell
-deepeval test run tests\deepeval
+python -m pytest -m llm -v
 ```
 
-The tests marked `llm` are separated from the regular deterministic test suite
-so that the two types of testing can be run independently. LLM tests require
-a configured model/API and may be affected by model availability, rate limits,
-or API quota.
+### DeepEval evaluations
+
+DeepEval evaluations may also require an LLM and consume API quota. Run the specific evaluation you want to examine:
+
+```powershell
+deepeval test run tests/deepeval/dynamic_tool_access_deepeval.py
+```
+
+Check the project's pytest configuration and actual test markers to confirm that each command selects the intended tests.
 
 ---
 
@@ -312,21 +349,25 @@ Areas covered include:
 
 ## Current Status
 
-The project is an ongoing learning and portfolio project.
+The project is an ongoing learning and portfolio project focused on AI agent quality, reliability, and security.
 
-The deterministic `ai-quality-lab` test suite currently contains **205 passing
-tests**. The `demo_repo/` contains an intentionally failing test used by agent
-investigation and code-repair scenarios.
+### Deterministic test suite
 
-LLM-based evaluations are kept separate because they depend on external model
-availability, rate limits, and API quota.
+- **Last verified:** October 11, 2026
+- **Command:** `python -m pytest -q --ignore=demo_repo`
+- **Result:** 206 passed, 0 failed, 26 skipped
 
-The project intentionally combines:
+The `demo_repo/` directory contains an intentionally failing test used by agent investigation and code-repair scenarios. It is excluded from the main project test run.
 
-**traditional software testing + AI evaluation + security testing + tracing
-and execution analysis**
+### LLM-based evaluations
 
-rather than treating AI quality as only an LLM scoring problem.
+Live LLM tests and LLM-backed evaluations are maintained separately from the deterministic suite because they depend on model availability, API credentials, rate limits, and quota.
+
+- **Last verified:** [date, or "Not run in this status update"]
+- **Evaluations run:** [list the specific test files or evaluation groups]
+- **Result:** [brief summary of the actual results]
+
+The project combines traditional software testing, AI evaluation, security testing, and execution analysis rather than treating AI quality as only an LLM scoring problem.
 
 ---
 
