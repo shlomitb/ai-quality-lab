@@ -73,6 +73,7 @@ def test_review_request_loads_review_code_skill():
 
 
 
+
 def test_unrelated_request_does_not_load_a_skill():
     prompt = build_prompt(
         "What is the weather today?"
@@ -86,7 +87,26 @@ def test_unrelated_request_does_not_load_a_skill():
         1
     )[0].strip()
 
+    tools_section = prompt.split(
+        "Available tools for this task:",
+        1
+    )[1].split(
+        "Requestable tools:",
+        1
+    )[0].strip()
+
+    requestable_tools_section = prompt.split(
+        "Requestable tools:",
+        1
+    )[1].split(
+        "You may request access",
+        1
+    )[0].strip()
+
     assert selected_skill == "None"
+    assert tools_section == ""
+    assert requestable_tools_section == "None"
+
 
 
 def test_bug_prompt_contains_initial_bug_tools_and_access_tool():
@@ -112,6 +132,14 @@ def test_bug_prompt_contains_initial_bug_tools_and_access_tool():
 
     assert "search_files" not in tools_section
     assert "get_repository" not in tools_section
+
+    requestable_tools = prompt.split("Requestable tools:", 1)[1].split(
+        "You may request access", 1
+    )[0]
+
+    assert "get_repository" in requestable_tools
+    assert "search_files" in requestable_tools
+
 
 
 
@@ -158,3 +186,6 @@ def test_access_tool_description_is_in_prompt():
     )
 
     assert "The application will check whether the requested tool is authorized." in prompt
+
+
+
